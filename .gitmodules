@@ -1,0 +1,3 @@
+[submodule "ShojiWM"]
+	path = ShojiWM
+	url = https://github.com/bea4dev/ShojiWM
