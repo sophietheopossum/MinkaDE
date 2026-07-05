@@ -2,7 +2,7 @@ I'm working on a high-performance, highly customizable Linux desktop environment
 
 ### Core Architecture & Strategy
 1. Fork ShojiWM and implement HDR support by extending its custom shader pipeline to flag HDR metadata (PQ/Rec.2020) and handle Wayland color management.
-2. Build the companion desktop panels, menus, and system trays using a reactive TypeScript ecosystem (like Astal/Ags) to seamlessly match ShojiWM's TSX architecture. 
+2. Build the companion desktop panels, menus, and system trays using a reactive TypeScript ecosystem (like Astal/Ags) to seamlessly match ShojiWM's TSX architecture. shoji-bar-2 (https://github.com/bea4dev/shoji-bar-2) may be a good starting point.
 3. Create a specialized dual-display mode tailored for the ASUS Zenbook Duo UX482. When active, all panels, system tray widgets (power, audio, notifications), and global menus must pin to the bottom secondary display (1920x515), leaving the main display entirely clear for application windows. Make sure there is a basic KDE-style layout available for other systems.
 
 ### Visual & Shader Constraints
