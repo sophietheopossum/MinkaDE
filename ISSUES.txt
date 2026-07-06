@@ -1,4 +1,4 @@
-2. The battery widget remains stuck on calculating
+2. The battery widget's extra info remains stuck on calculating
 
 Since 0.1.0
 
