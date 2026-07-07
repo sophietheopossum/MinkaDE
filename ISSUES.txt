@@ -11,6 +11,10 @@ discovered 0.2.1
 
 9. shojiwm/shojiwm install.sh has issues with dbus:
 
+Jul 06 21:51:18 khymaeric-seed sudo[144370]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/rm -rf /usr/lib/shojiwm
+Jul 06 21:51:18 khymaeric-seed sudo[144370]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:20 khymaeric-seed sudo[144370]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:20 khymaeric-seed sudo[144370]: pam_unix(sudo:session): session closed for user root
 
 Jul 06 21:51:20 khymaeric-seed sudo[144559]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/install -Dm755 /home/seirra/Documents/src/MinkaDE/ShojiWM/target/release-fast/shoji_wm /usr/bin/shoji_wm
 Jul 06 21:51:20 khymaeric-seed sudo[144559]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
@@ -32,12 +36,10 @@ Jul 06 21:51:21 khymaeric-seed sudo[144574]: pam_unix(sudo:session): session ope
 Jul 06 21:51:21 khymaeric-seed sudo[144574]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
 Jul 06 21:51:21 khymaeric-seed sudo[144574]: pam_unix(sudo:session): session closed for user root
 
-
 Jul 06 21:51:21 khymaeric-seed sudo[144579]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/rm -rf /usr/share/shojiwm/default-config
 Jul 06 21:51:21 khymaeric-seed sudo[144579]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
 Jul 06 21:51:21 khymaeric-seed sudo[144579]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
 Jul 06 21:51:21 khymaeric-seed sudo[144579]: pam_unix(sudo:session): session closed for user root
-
 
 Jul 06 21:51:21 khymaeric-seed sudo[144587]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/mkdir -p /usr/share/shojiwm/default-config
 Jul 06 21:51:21 khymaeric-seed sudo[144587]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
