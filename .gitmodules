@@ -4,3 +4,6 @@
 [submodule "shoji-bar-2"]
 	path = shoji-bar-2
 	url = https://github.com/sophietheopossum/shoji-bar-2
+[submodule "minka-shell"]
+	path = minka-shell
+	url = git@github.com:sophietheopossum/minka-shell.git
