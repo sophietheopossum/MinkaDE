@@ -10,6 +10,13 @@ I'm working on a high-performance, highly customizable Linux desktop environment
 * The system must heavily leverage ShojiWM's fragment shaders to achieve two distinct effects: a "frosted glass" blur on window titlebars, and a reactive "liquid glass" physics distortion on transparent surfaces (similar to liquid-terminal-config-shojiwm).
 * Prioritize raw rendering performance and animation fluidity over complex security sandboxing.
 
+### Deferred / Later
+HDR polish (working baseline shipped 2026-07: config `hdr: true` → PQ/BT.2020 signaling + fp16 encode pass; not urgent):
+* PQ client-content input transform: surfaces tagged PQ/BT.2020 via `wp_color_management_v1` are still composited as if sRGB — HDR video (mpv) looks washed out until a per-surface input transform lands in the render pipeline.
+* Promote `SHOJI_SDR_NITS` (SDR white level on the PQ signal, default 203) from env var into the runtime display config (`sdrNits` per output), same pattern as the `hdr` flag — env vars don't reach DM-launched sessions.
+* Consider decoding the SDR composite with pure gamma 2.2 instead of the piecewise sRGB EOTF in `output_encode.frag` (KWin does this; avoids raised shadows / grayish blacks on HDR outputs).
+* Send `image_description_changed`/`preferred_changed` to already-bound color-management clients on a live SDR↔HDR switch (needs per-object tracking in `protocols/color_management.rs`).
+
 ### Scope & Execution
 Focus entirely on the foundational architecture, the HDR shader pipeline, and the dual-screen display management code first. Skip generic utilities like text editors. You are fully empowered to choose the cleanest technical implementation for this desktop environment—if a specific shader approach or library works better than what I suggested, implement it and show me the results, this includes the window manager. 
 
