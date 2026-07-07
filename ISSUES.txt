@@ -1,4 +1,4 @@
-Since 0.1.0
+discovered 0.1.0
 
 2. The battery widget's extra info remains stuck on calculating
 3. Mouse acceleration is slow by default, there is no option to change it
@@ -7,7 +7,62 @@ Since 0.1.0
 7. The install script located in the ShojiWM repo at ./dist/install.sh does not work with fish
 8. Unable to use power menu as it goes offscreen
 
-Since 0.2.0
+discovered 0.2.1
 
-1. There is a regression where opening rio terminal will cause ShojiWM to crash
-4. On asus UX482 devices the bottom display is not identified by ShojiWM
+9. shojiwm/shojiwm install.sh has issues with dbus:
+
+
+Jul 06 21:51:20 khymaeric-seed sudo[144559]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/install -Dm755 /home/seirra/Documents/src/MinkaDE/ShojiWM/target/release-fast/shoji_wm /usr/bin/shoji_wm
+Jul 06 21:51:20 khymaeric-seed sudo[144559]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:20 khymaeric-seed sudo[144559]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:20 khymaeric-seed sudo[144559]: pam_unix(sudo:session): session closed for user root
+
+Jul 06 21:51:20 khymaeric-seed sudo[144563]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/mkdir -p /usr/lib/shojiwm
+Jul 06 21:51:20 khymaeric-seed sudo[144563]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:20 khymaeric-seed sudo[144563]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:20 khymaeric-seed sudo[144563]: pam_unix(sudo:session): session closed for user root
+
+Jul 06 21:51:21 khymaeric-seed sudo[144568]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/cp -a /tmp/tmp.NDOaXlVaHK/shojiwm-runtime/. /usr/lib/shojiwm/
+Jul 06 21:51:21 khymaeric-seed sudo[144568]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:21 khymaeric-seed sudo[144568]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:21 khymaeric-seed sudo[144568]: pam_unix(sudo:session): session closed for user root
+
+Jul 06 21:51:21 khymaeric-seed sudo[144574]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/install -Dm644 /home/seirra/Documents/src/MinkaDE/ShojiWM/dist/shojiwm.desktop /usr/share/wayland-sessions/shojiwm.desktop
+Jul 06 21:51:21 khymaeric-seed sudo[144574]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:21 khymaeric-seed sudo[144574]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:21 khymaeric-seed sudo[144574]: pam_unix(sudo:session): session closed for user root
+
+
+Jul 06 21:51:21 khymaeric-seed sudo[144579]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/rm -rf /usr/share/shojiwm/default-config
+Jul 06 21:51:21 khymaeric-seed sudo[144579]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:21 khymaeric-seed sudo[144579]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:21 khymaeric-seed sudo[144579]: pam_unix(sudo:session): session closed for user root
+
+
+Jul 06 21:51:21 khymaeric-seed sudo[144587]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/mkdir -p /usr/share/shojiwm/default-config
+Jul 06 21:51:21 khymaeric-seed sudo[144587]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:21 khymaeric-seed sudo[144587]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:21 khymaeric-seed sudo[144587]: pam_unix(sudo:session): session closed for user root
+
+Jul 06 21:51:21 khymaeric-seed sudo[144592]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/cp -a /home/seirra/Documents/src/MinkaDE/ShojiWM/packages/config/. /usr/share/shojiwm/default-config/
+Jul 06 21:51:21 khymaeric-seed sudo[144592]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:21 khymaeric-seed sudo[144592]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:21 khymaeric-seed sudo[144592]: pam_unix(sudo:session): session closed for user root
+
+Jul 06 21:51:21 khymaeric-seed sudo[144600]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/install -Dm755 /home/seirra/Documents/src/MinkaDE/ShojiWM/target/release-fast/xdg-desktop-portal-shojiwm /usr/bin/xdg-desktop-portal-shojiwm
+Jul 06 21:51:21 khymaeric-seed sudo[144600]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:21 khymaeric-seed sudo[144600]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:21 khymaeric-seed sudo[144600]: pam_unix(sudo:session): session closed for user root
+
+Jul 06 21:51:21 khymaeric-seed sudo[144604]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/install -Dm644 /home/seirra/Documents/src/MinkaDE/ShojiWM/dist/shojiwm.portal /usr/share/xdg-desktop-portal/portals/shojiwm.portal
+Jul 06 21:51:21 khymaeric-seed sudo[144604]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:21 khymaeric-seed sudo[144604]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:21 khymaeric-seed sudo[144604]: pam_unix(sudo:session): session closed for user root
+
+Jul 06 21:51:21 khymaeric-seed sudo[144609]:   seirra : TTY=pts/3 ; PWD=/home/seirra/Documents/src/MinkaDE/ShojiWM ; USER=root ; COMMAND=/usr/bin/install -Dm644 /home/seirra/Documents/src/MinkaDE/ShojiWM/dist/org.freedesktop.impl.portal.desktop.shojiwm.service /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service
+Jul 06 21:51:21 khymaeric-seed sudo[144609]: pam_unix(sudo:session): session opened for user root(uid=0) by seirra(uid=1000)
+Jul 06 21:51:21 khymaeric-seed sudo[144609]: pam_systemd(sudo:session): Failed to check if /run/user/0/bus exists, ignoring: Permission denied
+Jul 06 21:51:21 khymaeric-seed sudo[144609]: pam_unix(sudo:session): session closed for user root
+Jul 06 21:51:21 khymaeric-seed dbus-broker-launch[1066]: ERROR launcher_reload_config @ ../dbus-broker-37/src/launch/launcher.c +1193: Permission denied
+Jul 06 21:51:21 khymaeric-seed dbus-broker-launch[1066]:       launcher_on_dirwatch @ ../dbus-broker-37/src/launch/launcher.c +156
+Jul 06 21:51:21 khymaeric-seed dbus-broker-launch[1066]: Noticed file-system modification, trigger reload.
