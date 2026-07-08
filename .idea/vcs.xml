@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/MinkaIPC" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaShell" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ShojiWM" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/shoji-bar-2" vcs="Git" />
