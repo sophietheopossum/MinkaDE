@@ -7,3 +7,6 @@
 [submodule "MinkaShell"]
 	path = MinkaShell
 	url = git@github.com:sophietheopossum/MinkaShell.git
+[submodule "MinkaIPC"]
+	path = MinkaIPC
+	url = git@github.com:sophietheopossum/MinkaIPC.git
