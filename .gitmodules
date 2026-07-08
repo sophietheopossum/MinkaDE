@@ -10,3 +10,6 @@
 [submodule "MinkaIPC"]
 	path = MinkaIPC
 	url = git@github.com:sophietheopossum/MinkaIPC.git
+[submodule "MinkaFX"]
+	path = MinkaFX
+	url = git@github.com:sophietheopossum/MinkaFX.git
