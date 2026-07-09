@@ -8,5 +8,6 @@
     <mapping directory="$PROJECT_DIR$/MinkaShell" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ShojiWM" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/shoji-bar-2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/smithay" vcs="Git" />
   </component>
 </project>
