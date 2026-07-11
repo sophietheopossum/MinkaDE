@@ -19,3 +19,6 @@
 [submodule "smithay"]
 	path = smithay
 	url = git@github.com:sophietheopossum/smithay.git
+[submodule "xwayland-satellite"]
+	path = xwayland-satellite
+	url = git@github.com:sophietheopossum/xwayland-satellite.git
