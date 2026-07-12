@@ -11,3 +11,10 @@ set -gx SHOJI_CONFIG $HOME/Documents/src/MinkaDE/ShojiWM/packages/config/src/ind
 set -gx SHOJI_XWAYLAND_SATELLITE_PATH $HOME/Documents/src/MinkaDE/xwayland-satellite/target/release/xwayland-satellite
 # activate mixed mode scaling
 set -gx XWLS_LOGICAL_GEOMETRY 1
+
+# KDE apps (Dolphin's open-with, kickoff-style menus) build their service
+# cache from ${XDG_MENU_PREFIX}applications.menu; only the plasma- one is
+# installed, and without the prefix kbuildsycoca6 silently builds a cache
+# with no application tree.
+set -gx XDG_MENU_PREFIX plasma-
+
