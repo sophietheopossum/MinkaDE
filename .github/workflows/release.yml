@@ -53,15 +53,15 @@ jobs:
 
       - name: Build ShojiWM (compositor + portal)
         working-directory: ShojiWM
-        run: cargo build --release
+        run: cargo build --release --locked
 
       - name: Build xwayland-satellite
         working-directory: xwayland-satellite
-        run: cargo build --release
+        run: cargo build --release --locked
 
       - name: Build MinkaFX
         working-directory: MinkaFX
-        run: cargo build --release
+        run: cargo build --release --locked
 
       - name: Assemble tarball
         run: packaging/make-tarball.sh "${GITHUB_REF_NAME}"
