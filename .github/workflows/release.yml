@@ -43,6 +43,7 @@ jobs:
             libwayland-dev wayland-protocols libxkbcommon-dev \
             libudev-dev libinput-dev libseat-dev libgbm-dev libdrm-dev \
             libegl1-mesa-dev libgles2-mesa-dev \
+            libpixman-1-dev \
             libpipewire-0.3-dev \
             libxcb1-dev libxcb-cursor-dev
 
