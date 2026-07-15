@@ -63,7 +63,7 @@ install -m644 ShojiWM/dist/org.freedesktop.impl.portal.desktop.shojiwm.service "
 install -m644 ShojiWM/dist/xdg-desktop-portal-shojiwm.service "$STAGE/dist/"
 install -m755 packaging/install.sh "$STAGE/"
 install -m755 packaging/uninstall.sh "$STAGE/"
-install -m644 packaging/README.md "$STAGE/"
+install -m644 README.md "$STAGE/"
 
 OUT="$REPO_ROOT/minkade-$VERSION-linux-x86_64.tar.gz"
 echo ">> compressing $OUT"
