@@ -19,3 +19,6 @@
 [submodule "xwayland-satellite"]
 	path = xwayland-satellite
 	url = git@github.com:sophietheopossum/xwayland-satellite.git
+[submodule "MinkaMon"]
+	path = MinkaMon
+	url = git@github.com:sophietheopossum/MinkaMon.git
