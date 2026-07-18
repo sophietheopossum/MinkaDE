@@ -5,6 +5,7 @@
     <mapping directory="$PROJECT_DIR$/MinkaConf" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaFX" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaIPC" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/MinkaMon" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaShell" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ShojiWM" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/shoji-bar-2" vcs="Git" />
