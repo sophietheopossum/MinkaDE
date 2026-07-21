@@ -1,0 +1,523 @@
+<title>MinkaMon — schematic layout options</title>
+<style>
+  /* Deliberately single-theme: this is a pitch for MinkaMon's own
+     dark-only "Eternal Darkness" identity, mocked in its real tokens. */
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    background: #0a0709;
+    color: #ece5e7;
+    font-family: "Noto Sans", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 1020px; margin: 0 auto; }
+  .mono {
+    font-family: ui-monospace, "JetBrains Mono", "Cascadia Mono", monospace;
+  }
+  .eyebrow {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .22em;
+    color: #e0263c;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-family: ui-monospace, monospace;
+    font-size: 26px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .intro { color: #a3959b; max-width: 62ch; margin: 0 0 46px; }
+  .intro em { color: #ece5e7; font-style: normal; }
+
+  section { margin: 0 0 64px; }
+  .sechead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 6px;
+  }
+  .notch { width: 4px; height: 15px; background: #e0263c; flex: none; }
+  h2 {
+    font-family: ui-monospace, monospace;
+    font-size: 15px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #ece5e7;
+    margin: 0;
+  }
+  .subline {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: #6e6167;
+    margin: 0 0 18px;
+  }
+
+  .frame {
+    background: #0d090b;
+    border: 1px solid #2e2228;
+    border-radius: 4px;
+    padding: 10px;
+    overflow-x: auto;
+  }
+  .frame svg { display: block; width: 100%; height: auto; min-width: 640px; }
+  .caption {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .05em;
+    color: #6e6167;
+    margin: 8px 2px 0;
+  }
+
+  .spec {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+    margin: 18px 0 0;
+  }
+  .card {
+    background: #161013;
+    border: 1px solid #2e2228;
+    border-radius: 3px;
+    padding: 14px 16px;
+  }
+  .card h3 {
+    font-family: ui-monospace, monospace;
+    font-size: 10.5px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #a3959b;
+    margin: 0 0 10px;
+  }
+  .card ul { margin: 0; padding: 0; list-style: none; }
+  .card li {
+    color: #a3959b;
+    font-size: 13.5px;
+    padding: 3px 0 3px 14px;
+    position: relative;
+  }
+  .card li::before {
+    content: "·";
+    position: absolute; left: 2px;
+    color: #8f1e2d;
+  }
+  .card li strong { color: #ece5e7; font-weight: 600; }
+  .card li.plus::before  { content: "+"; color: #7dc98c; }
+  .card li.minus::before { content: "−"; color: #e0263c; }
+  .card li code {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: #ece5e7;
+    background: #1e161a;
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid #2e2228;
+    color: #a3959b;
+  }
+  th {
+    font-family: ui-monospace, monospace;
+    font-size: 10.5px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #6e6167;
+  }
+  td:first-child { color: #ece5e7; }
+  .verdict p { color: #a3959b; max-width: 66ch; }
+  .verdict p strong { color: #ece5e7; }
+
+  /* shared SVG mockup styles */
+  .p    { fill: #161013; stroke: #2e2228; }
+  .pt   { font: 10px ui-monospace, monospace; letter-spacing: 1.5px; fill: #a3959b; }
+  .band { fill: #1e161a; }
+  .tag  { font: 8px ui-monospace, monospace; letter-spacing: .5px; fill: #6e6167; }
+  .tagv { font: 8px ui-monospace, monospace; fill: #a3959b; }
+  .s0 { stroke: #ff4a5e; fill: none; stroke-width: 1.2; }
+  .s1 { stroke: #e0a026; fill: none; stroke-width: 1.2; }
+  .s2 { stroke: #a488c9; fill: none; stroke-width: 1.2; }
+  .s3 { stroke: #7dc98c; fill: none; stroke-width: 1.2; }
+  .cmp { stroke: #e0263c; fill: none; stroke-width: 1.1; }
+  .dim { stroke: #8f1e2d; fill: none; }
+  .ld  { stroke: #ff4a5e; fill: none; stroke-width: 1.2; opacity: .62; }
+  .ldd { fill: #ff4a5e; }
+  .ldt { fill: #ff4a5e; opacity: .8; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">MinkaMon // layout pitch</p>
+  <h1>Schematic front &amp; centre — two ways</h1>
+  <p class="intro">Both options keep the globe. The fork is <em>whose stage the
+  schematic takes</em>: option 1 gives it the centre of the whole page and turns
+  every panel into a wired readout; option 3 keeps the page as-is and rebuilds
+  the thermal panel around a smaller centred schematic. Mockups use the real
+  Eternal&nbsp;Darkness tokens and the real 32/38/30 column split; line routing
+  is indicative, final positions get tuned in QML.</p>
+
+  <!-- ============================= OPTION 1 ============================= -->
+  <section>
+    <div class="sechead"><span class="notch"></span><h2>Option 1 — machine centre-stage</h2></div>
+    <p class="subline">schematic swaps places with the globe · every panel ties into it · thermal trends return as a readout strip</p>
+
+    <div class="frame">
+    <svg viewBox="0 0 960 540" role="img" aria-label="Option 1 mockup: schematic centre stage with leader lines from every panel">
+      <!-- panels -->
+      <rect class="p" x="8"   y="8"   width="292" height="204"/>
+      <rect class="p" x="8"   y="220" width="292" height="164"/>
+      <rect class="p" x="8"   y="392" width="292" height="140"/>
+      <rect class="p" x="308" y="8"   width="362" height="524"/>
+      <rect class="p" x="678" y="8"   width="274" height="220"/>
+      <rect class="p" x="678" y="236" width="274" height="296"/>
+
+      <!-- headers -->
+      <rect x="18" y="17" width="3" height="10" fill="#e0263c"/><text class="pt" x="27" y="26">CPU</text>
+      <rect x="18" y="229" width="3" height="10" fill="#e0263c"/><text class="pt" x="27" y="238">GPU</text>
+      <rect x="18" y="401" width="3" height="10" fill="#e0263c"/><text class="pt" x="27" y="410">NETWORK</text>
+      <rect x="318" y="17" width="3" height="10" fill="#e0263c"/><text class="pt" x="327" y="26">SYSTEM // UX482EG</text>
+      <text class="tagv" x="660" y="26" text-anchor="end">MAX 62°C</text>
+      <rect x="688" y="17" width="3" height="10" fill="#e0263c"/><text class="pt" x="697" y="26">MEMORY</text>
+      <rect x="688" y="245" width="3" height="10" fill="#e0263c"/><text class="pt" x="697" y="254">GLOBE</text>
+
+      <!-- CPU panel: legend + two stacked bands -->
+      <text class="tagv" x="228" y="26"><tspan fill="#ff4a5e">0</tspan> <tspan fill="#e0a026">1</tspan> <tspan fill="#a488c9">2</tspan> <tspan fill="#7dc98c">3</tspan></text>
+      <rect class="band" x="18" y="36" width="272" height="78"/>
+      <polyline class="s0" points="18,96 52,90 86,100 120,78 154,88 188,66 222,82 256,58 290,72"/>
+      <polyline class="s1" points="18,104 52,100 86,94 120,98 154,84 188,92 222,74 256,84 290,80"/>
+      <polyline class="s2" points="18,88 52,96 86,84 120,92 154,98 188,80 222,90 256,94 290,86"/>
+      <text class="tag" x="22" y="46">LOAD</text>
+      <rect class="band" x="18" y="122" width="272" height="80"/>
+      <polyline class="s0" points="18,176 52,172 86,178 120,168 154,172 188,160 222,168 256,156 290,162"/>
+      <polyline class="s1" points="18,184 52,180 86,174 120,180 154,168 188,176 222,164 256,170 290,166"/>
+      <text class="tag" x="22" y="132">TEMP</text>
+
+      <!-- GPU panel -->
+      <text class="tag" x="18" y="252">IRIS XE · 400 MHz</text>
+      <rect class="band" x="18" y="258" width="272" height="86"/>
+      <polyline class="s0" points="18,330 52,318 86,332 120,308 154,320 188,296 222,314 256,288 290,304"/>
+      <polyline class="s2" points="18,336 52,332 86,326 120,332 154,320 188,328 222,316 256,324 290,318"/>
+      <text class="tag" x="22" y="268">ENGINES</text>
+      <text class="tag" x="18" y="360">MX450 · DORMANT</text>
+
+      <!-- NET panel -->
+      <text class="tag" x="18" y="424">▼ <tspan fill="#ff4a5e">1.2 MB/s</tspan>   ▲ <tspan fill="#a488c9">88 KB/s</tspan></text>
+      <rect class="band" x="18" y="432" width="272" height="66"/>
+      <polyline class="s0" points="18,488 52,478 86,490 120,464 154,480 188,452 222,472 256,444 290,462"/>
+      <polyline class="s2" points="18,492 52,490 86,486 120,490 154,482 188,488 222,478 256,486 290,482"/>
+      <text class="tag" x="18" y="512">wlan0  ▼ 1.2 MB/s  ▲ 88 KB/s</text>
+
+      <!-- MEMORY panel -->
+      <circle class="dim" cx="742" cy="120" r="42" stroke-width="7" opacity=".45"/>
+      <path d="M 742 78 A 42 42 0 1 1 704 141" fill="none" stroke="#ff4a5e" stroke-width="7"/>
+      <text class="tagv" x="742" y="124" text-anchor="middle">62%</text>
+      <text class="tag" x="800" y="96">RAM 9.9 / 16 GB</text>
+      <rect class="band" x="800" y="106" width="136" height="8"/>
+      <rect x="800" y="106" width="84" height="8" fill="#8f1e2d"/>
+      <text class="tag" x="800" y="134">SWAP 0.4 / 8 GB</text>
+      <rect class="band" x="800" y="144" width="136" height="8"/>
+      <rect x="800" y="144" width="12" height="8" fill="#8f1e2d"/>
+
+      <!-- GLOBE panel (shrunk, alive) -->
+      <circle class="dim" cx="815" cy="392" r="108"/>
+      <ellipse class="dim" cx="815" cy="392" rx="54" ry="108" opacity=".7"/>
+      <ellipse class="dim" cx="815" cy="392" rx="94" ry="108" opacity=".5"/>
+      <ellipse class="dim" cx="815" cy="392" rx="108" ry="40" opacity=".7"/>
+      <ellipse class="dim" cx="815" cy="392" rx="108" ry="80" opacity=".5"/>
+      <circle cx="778" cy="352" r="2" fill="#a488c9"/>
+      <circle cx="866" cy="412" r="2" fill="#a488c9"/>
+      <path class="dim" d="M 778 352 Q 822 330 866 412" opacity=".9" stroke="#a488c9"/>
+
+      <!-- ===== schematic: chassis ===== -->
+      <rect class="dim" x="326" y="42" width="320" height="218" rx="10"/>
+      <rect x="400" y="42" width="44" height="5" fill="#8f1e2d" opacity=".5"/>
+      <rect x="520" y="42" width="44" height="5" fill="#8f1e2d" opacity=".5"/>
+      <rect class="dim" x="342" y="52" width="288" height="72" rx="4" opacity=".6"/>
+
+      <!-- heat blobs -->
+      <defs>
+        <radialGradient id="hot"><stop offset="0" stop-color="rgba(255,90,80,.55)"/><stop offset="1" stop-color="rgba(255,74,94,0)"/></radialGradient>
+        <radialGradient id="warm"><stop offset="0" stop-color="rgba(190,40,55,.42)"/><stop offset="1" stop-color="rgba(190,40,55,0)"/></radialGradient>
+        <radialGradient id="cool"><stop offset="0" stop-color="rgba(143,30,45,.35)"/><stop offset="1" stop-color="rgba(143,30,45,0)"/></radialGradient>
+      </defs>
+      <circle cx="489" cy="104" r="55" fill="url(#cool)"/>
+      <circle cx="464" cy="87"  r="48" fill="url(#hot)"/>
+      <circle cx="399" cy="143" r="30" fill="url(#warm)"/>
+      <circle cx="574" cy="116" r="24" fill="url(#cool)"/>
+
+      <!-- fans -->
+      <circle class="dim" cx="369" cy="87" r="30"/><circle class="dim" cx="369" cy="87" r="7"/>
+      <circle class="dim" cx="369" cy="87" r="18" stroke-dasharray="8 6"/>
+      <circle class="dim" cx="601" cy="87" r="30"/><circle class="dim" cx="601" cy="87" r="7"/>
+      <circle class="dim" cx="601" cy="87" r="18" stroke-dasharray="8 6"/>
+
+      <!-- heat pipes -->
+      <polyline class="dim" points="394,82 450,82 474,87 514,92 554,87 576,84" stroke-width="4" opacity=".8"/>
+      <polyline class="dim" points="396,92 464,96 516,100" stroke-width="4" opacity=".8"/>
+
+      <!-- dies + ram + m.2 + wifi -->
+      <rect x="453" y="76" width="11" height="11" fill="rgba(224,38,60,.45)"/>
+      <rect x="464" y="76" width="11" height="11" fill="rgba(255,74,94,.5)"/>
+      <rect x="453" y="87" width="11" height="11" fill="rgba(143,30,45,.5)"/>
+      <rect x="464" y="87" width="11" height="11" fill="rgba(224,38,60,.4)"/>
+      <rect class="cmp" x="453" y="76" width="22" height="22"/>
+      <rect class="cmp" x="508" y="84" width="16" height="16"/>
+      <rect class="dim" x="430" y="76" width="14" height="10"/>
+      <rect class="dim" x="430" y="90" width="14" height="10"/>
+      <rect class="cmp" x="359" y="137" width="80" height="12"/>
+      <line class="cmp" x1="365" y1="137" x2="365" y2="149"/>
+      <rect class="cmp" x="566" y="109" width="16" height="14"/>
+
+      <!-- battery + speakers -->
+      <rect class="dim" x="384" y="162" width="204" height="84" rx="6" opacity=".7"/>
+      <text class="tag" x="486" y="208" text-anchor="middle">BATTERY</text>
+      <rect class="dim" x="344" y="216" width="30" height="30" rx="4" opacity=".7"/>
+      <rect class="dim" x="598" y="216" width="30" height="30" rx="4" opacity=".7"/>
+
+      <!-- schematic tags -->
+      <text class="tag" x="453" y="71">CPU <tspan class="tagv">62°</tspan></text>
+      <text class="tag" x="506" y="114">MX450 <tspan>DORMANT</tspan></text>
+      <text class="tag" x="359" y="133">SSD <tspan class="tagv">43°</tspan></text>
+      <text class="tag" x="566" y="105">WIFI <tspan class="tagv">40°</tspan></text>
+      <text class="tag" x="344" y="132">BOARD <tspan class="tagv">53°</tspan></text>
+
+      <!-- thermal readout strip (history returns) -->
+      <rect class="band" x="334" y="440" width="100" height="72"/>
+      <polyline class="s1" points="338,496 356,492 374,498 392,486 410,492 430,482"/>
+      <text class="tag" x="338" y="450">SSD °C</text>
+      <rect class="band" x="442" y="440" width="100" height="72"/>
+      <polyline class="s0" points="446,492 464,484 482,494 500,478 518,486 538,472"/>
+      <text class="tag" x="446" y="450">CPU °C</text>
+      <rect class="band" x="550" y="440" width="100" height="72"/>
+      <polyline class="s2" points="554,494 572,492 590,496 608,488 626,492 646,486"/>
+      <text class="tag" x="554" y="450">WIFI °C</text>
+
+      <!-- strip risers -->
+      <polyline class="ld" points="384,438 384,170 397,152" opacity=".45"/>
+      <circle class="ldd" cx="398" cy="150" r="2" opacity=".7"/>
+      <polyline class="ld" points="492,438 492,120 468,100" opacity=".45"/>
+      <circle class="ldd" cx="466" cy="99" r="2" opacity=".7"/>
+      <polyline class="ld" points="600,438 600,140 578,126" opacity=".45"/>
+      <circle class="ldd" cx="576" cy="124" r="2" opacity=".7"/>
+
+      <!-- panel leader lines: lanes above the chassis, verticals in gutters -->
+      <rect class="ldt" x="297" y="58" width="4" height="4"/>
+      <polyline class="ld" points="300,60 312,60 312,30 464,30 464,72"/>
+      <circle class="ldd" cx="464" cy="74" r="2.5"/>
+
+      <rect class="ldt" x="297" y="266" width="4" height="4"/>
+      <polyline class="ld" points="300,268 318,268 318,34 516,34 516,80"/>
+      <circle class="ldd" cx="516" cy="82" r="2.5"/>
+
+      <rect class="ldt" x="297" y="428" width="4" height="4"/>
+      <polyline class="ld" points="300,430 304,430 304,38 570,38 570,107"/>
+      <circle class="ldd" cx="570" cy="109" r="2.5"/>
+
+      <rect class="ldt" x="675" y="78" width="4" height="4"/>
+      <polyline class="ld" points="678,80 674,80 674,26 439,26 439,72"/>
+      <circle class="ldd" cx="439" cy="74" r="2.5"/>
+    </svg>
+    </div>
+    <p class="caption">CPU → package · GPU → MX450 die (Xe lives in the package anyway) · NETWORK → Wi-Fi module · MEMORY → the soldered LPDDR4X flanking the package. Bottom strip: per-sensor temperature history, back from the dead, wired straight up into the board.</p>
+
+    <div class="spec">
+      <div class="card"><h3>Structure</h3><ul>
+        <li><strong>Schematic takes the centre column</strong>; heatmap + tags unchanged</li>
+        <li>Globe moves to the old thermal slot, right-bottom</li>
+        <li>Thermal trend charts return as a readout strip under the board</li>
+        <li>CPU / GPU / NET / MEM panels stay where they are</li>
+      </ul></div>
+      <div class="card"><h3>Line plumbing</h3><ul>
+        <li>New page-level overlay item draws all leader lines in one Canvas</li>
+        <li>Schematic already computes the mm→px transform — it just exports component anchor points</li>
+        <li>Panel tie points are panel-edge midpoints via <code>mapToItem</code></li>
+        <li>Lines run through column gutters + a lane above the chassis, so they never fight the board art</li>
+      </ul></div>
+      <div class="card"><h3>Space @ 1920×1080</h3><ul>
+        <li>Schematic ≈ <strong>660×450</strong> (today's thermal slot: 544×373)</li>
+        <li>Readout strip ≈ 650×360 below the board</li>
+        <li>Globe ≈ 540 px diameter (was ≈ 655 — keeps 82%)</li>
+      </ul></div>
+      <div class="card"><h3>Trade-offs</h3><ul>
+        <li class="plus">Leader lines get room to travel — the full eDEX look</li>
+        <li class="plus">"Readout" concept covers every subsystem, not just temps</li>
+        <li class="plus">Page reads as <strong>the machine itself</strong></li>
+        <li class="minus">Globe demoted from centrepiece to companion</li>
+        <li class="minus">Touches MonitorPage + new overlay + anchor exports (~medium rework)</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- ============================= OPTION 3 ============================= -->
+  <section>
+    <div class="sechead"><span class="notch"></span><h2>Option 3 — contained thermal revamp</h2></div>
+    <p class="subline">globe keeps the throne · schematic centred inside THERMAL with corner readouts · one file changes</p>
+
+    <div class="frame">
+    <svg viewBox="0 0 960 540" role="img" aria-label="Option 3 mockup: page unchanged, thermal panel reworked with corner readouts">
+      <!-- panels -->
+      <rect class="p" x="8"   y="8"   width="292" height="204"/>
+      <rect class="p" x="8"   y="220" width="292" height="164"/>
+      <rect class="p" x="8"   y="392" width="292" height="140"/>
+      <rect class="p" x="308" y="8"   width="362" height="524"/>
+      <rect class="p" x="678" y="8"   width="274" height="220"/>
+      <rect class="p" x="678" y="236" width="274" height="296"/>
+
+      <!-- headers -->
+      <rect x="18" y="17" width="3" height="10" fill="#e0263c"/><text class="pt" x="27" y="26">CPU</text>
+      <rect x="18" y="229" width="3" height="10" fill="#e0263c"/><text class="pt" x="27" y="238">GPU</text>
+      <rect x="18" y="401" width="3" height="10" fill="#e0263c"/><text class="pt" x="27" y="410">NETWORK</text>
+      <rect x="318" y="17" width="3" height="10" fill="#e0263c"/><text class="pt" x="327" y="26">GLOBE</text>
+      <rect x="688" y="17" width="3" height="10" fill="#e0263c"/><text class="pt" x="697" y="26">MEMORY</text>
+      <rect x="688" y="245" width="3" height="10" fill="#e0263c"/><text class="pt" x="697" y="254">THERMAL</text>
+      <text class="tagv" x="942" y="254" text-anchor="end">MAX 62°C</text>
+
+      <!-- left column contents (unchanged) -->
+      <text class="tagv" x="228" y="26"><tspan fill="#ff4a5e">0</tspan> <tspan fill="#e0a026">1</tspan> <tspan fill="#a488c9">2</tspan> <tspan fill="#7dc98c">3</tspan></text>
+      <rect class="band" x="18" y="36" width="272" height="78"/>
+      <polyline class="s0" points="18,96 52,90 86,100 120,78 154,88 188,66 222,82 256,58 290,72"/>
+      <polyline class="s1" points="18,104 52,100 86,94 120,98 154,84 188,92 222,74 256,84 290,80"/>
+      <polyline class="s2" points="18,88 52,96 86,84 120,92 154,98 188,80 222,90 256,94 290,86"/>
+      <text class="tag" x="22" y="46">LOAD</text>
+      <rect class="band" x="18" y="122" width="272" height="80"/>
+      <polyline class="s0" points="18,176 52,172 86,178 120,168 154,172 188,160 222,168 256,156 290,162"/>
+      <text class="tag" x="22" y="132">TEMP</text>
+      <text class="tag" x="18" y="252">IRIS XE · 400 MHz</text>
+      <rect class="band" x="18" y="258" width="272" height="86"/>
+      <polyline class="s0" points="18,330 52,318 86,332 120,308 154,320 188,296 222,314 256,288 290,304"/>
+      <text class="tag" x="22" y="268">ENGINES</text>
+      <text class="tag" x="18" y="360">MX450 · DORMANT</text>
+      <text class="tag" x="18" y="424">▼ <tspan fill="#ff4a5e">1.2 MB/s</tspan>   ▲ <tspan fill="#a488c9">88 KB/s</tspan></text>
+      <rect class="band" x="18" y="432" width="272" height="66"/>
+      <polyline class="s0" points="18,488 52,478 86,490 120,464 154,480 188,452 222,472 256,444 290,462"/>
+      <polyline class="s2" points="18,492 52,490 86,486 120,490 154,482 188,488 222,478 256,486 290,482"/>
+      <text class="tag" x="18" y="512">wlan0  ▼ 1.2 MB/s  ▲ 88 KB/s</text>
+
+      <!-- MEMORY (unchanged) -->
+      <circle class="dim" cx="742" cy="120" r="42" stroke-width="7" opacity=".45"/>
+      <path d="M 742 78 A 42 42 0 1 1 704 141" fill="none" stroke="#ff4a5e" stroke-width="7"/>
+      <text class="tagv" x="742" y="124" text-anchor="middle">62%</text>
+      <text class="tag" x="800" y="96">RAM 9.9 / 16 GB</text>
+      <rect class="band" x="800" y="106" width="136" height="8"/>
+      <rect x="800" y="106" width="84" height="8" fill="#8f1e2d"/>
+      <text class="tag" x="800" y="134">SWAP 0.4 / 8 GB</text>
+      <rect class="band" x="800" y="144" width="136" height="8"/>
+      <rect x="800" y="144" width="12" height="8" fill="#8f1e2d"/>
+
+      <!-- GLOBE centre-stage (unchanged) -->
+      <circle class="dim" cx="489" cy="278" r="150"/>
+      <ellipse class="dim" cx="489" cy="278" rx="75" ry="150" opacity=".7"/>
+      <ellipse class="dim" cx="489" cy="278" rx="130" ry="150" opacity=".5"/>
+      <ellipse class="dim" cx="489" cy="278" rx="150" ry="55" opacity=".7"/>
+      <ellipse class="dim" cx="489" cy="278" rx="150" ry="110" opacity=".5"/>
+      <circle cx="437" cy="222" r="2.5" fill="#a488c9"/>
+      <circle cx="560" cy="306" r="2.5" fill="#a488c9"/>
+      <circle cx="470" cy="356" r="2.5" fill="#a488c9"/>
+      <path class="dim" d="M 437 222 Q 500 190 560 306" stroke="#a488c9" opacity=".9"/>
+
+      <!-- THERMAL: corner readouts -->
+      <rect class="band" x="686" y="262" width="76" height="40"/>
+      <polyline class="s0" points="689,292 703,286 717,294 731,282 745,288 759,278"/>
+      <text class="tag" x="689" y="271">CPU °C</text>
+      <rect class="band" x="868" y="262" width="76" height="40"/>
+      <polyline class="s2" points="871,294 885,292 899,296 913,290 927,293 941,288"/>
+      <text class="tag" x="871" y="271">WIFI °C</text>
+      <rect class="band" x="686" y="478" width="76" height="40"/>
+      <polyline class="s1" points="689,510 703,506 717,512 731,502 745,507 759,499"/>
+      <text class="tag" x="689" y="487">SSD °C</text>
+      <rect class="band" x="868" y="478" width="76" height="40"/>
+      <polyline class="s3" points="871,508 885,506 899,510 913,504 927,507 941,502"/>
+      <text class="tag" x="871" y="487">BOARD °C</text>
+
+      <!-- mini schematic (scale 0.605) -->
+      <circle cx="800" cy="342" r="29" fill="url(#hot)"/>
+      <circle cx="817" cy="352" r="33" fill="url(#cool)"/>
+      <circle cx="762" cy="376" r="18" fill="url(#warm)"/>
+      <circle cx="868" cy="359" r="14" fill="url(#cool)"/>
+      <rect class="dim" x="717" y="315" width="196" height="133" rx="6"/>
+      <rect class="dim" x="727" y="321" width="176" height="44" rx="3" opacity=".6"/>
+      <circle class="dim" cx="744" cy="342" r="18"/><circle class="dim" cx="744" cy="342" r="10" stroke-dasharray="5 4"/>
+      <circle class="dim" cx="886" cy="342" r="18"/><circle class="dim" cx="886" cy="342" r="10" stroke-dasharray="5 4"/>
+      <polyline class="dim" points="759,340 790,340 812,345 838,347 868,342" stroke-width="2.5" opacity=".8"/>
+      <rect class="cmp" x="795" y="336" width="13" height="13"/>
+      <rect class="cmp" x="828" y="340" width="10" height="10"/>
+      <rect class="cmp" x="738" y="372" width="48" height="7"/>
+      <rect class="cmp" x="863" y="355" width="10" height="8"/>
+      <rect class="dim" x="753" y="388" width="123" height="51" rx="4" opacity=".7"/>
+      <text class="tag" x="814" y="417" text-anchor="middle" font-size="7">BATTERY</text>
+
+      <!-- short leader lines -->
+      <polyline class="ld" points="762,296 780,318 793,334"/>
+      <circle class="ldd" cx="795" cy="336" r="2"/>
+      <polyline class="ld" points="880,302 872,330 869,352"/>
+      <circle class="ldd" cx="868" cy="354" r="2"/>
+      <polyline class="ld" points="740,478 748,420 758,381"/>
+      <circle class="ldd" cx="760" cy="379" r="2"/>
+      <polyline class="ld" points="884,478 848,430 824,364"/>
+      <circle class="ldd" cx="822" cy="360" r="2"/>
+    </svg>
+    </div>
+    <p class="caption">Page untouched outside THERMAL. Schematic shrinks to make room for four corner readouts; lines are short stubs. CPU / GPU / NET / MEM panels stay unwired — the readout concept only covers temperature sensors.</p>
+
+    <div class="spec">
+      <div class="card"><h3>Structure</h3><ul>
+        <li><strong>Only THERMAL changes</strong>: schematic centred, four trend readouts in the corners</li>
+        <li>Globe keeps centre-stage untouched</li>
+        <li>Heatmap, tags, MAX header all stay</li>
+      </ul></div>
+      <div class="card"><h3>Line plumbing</h3><ul>
+        <li>Everything inside one Canvas — lines, charts and board share a coordinate space</li>
+        <li>No page overlay, no anchor exports, no <code>mapToItem</code></li>
+      </ul></div>
+      <div class="card"><h3>Space @ 1920×1080</h3><ul>
+        <li>Schematic ≈ <strong>380×260</strong> — <strong>smaller than it is today</strong> (544×373), the corners take their cut</li>
+        <li>Readouts ≈ 150×80 each</li>
+        <li>Globe unchanged at ≈ 655 px</li>
+      </ul></div>
+      <div class="card"><h3>Trade-offs</h3><ul>
+        <li class="plus">One file (<code>TempsPanel.qml</code>), low risk, quick</li>
+        <li class="plus">Globe stays the hero</li>
+        <li class="minus">Schematic <strong>shrinks</strong> to fund the readouts</li>
+        <li class="minus">Leader lines are 60–120 px stubs — the concept barely registers</li>
+        <li class="minus">Other panels stay untied to the board</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- ============================= VERDICT ============================= -->
+  <section class="verdict">
+    <div class="sechead"><span class="notch"></span><h2>Verdict</h2></div>
+    <table>
+      <thead><tr><th></th><th>Option 1</th><th>Option 3</th></tr></thead>
+      <tbody>
+        <tr><td>Schematic area</td><td>660×450 (+46%)</td><td>380×260 (−51%)</td></tr>
+        <tr><td>Globe</td><td>right column, 82% diameter</td><td>unchanged</td></tr>
+        <tr><td>Leader-line payoff</td><td>page-wide, all subsystems</td><td>short stubs, temps only</td></tr>
+        <tr><td>Thermal history charts</td><td>strip under the board</td><td>corner readouts</td></tr>
+        <tr><td>Files touched</td><td>MonitorPage + overlay + panels</td><td>TempsPanel only</td></tr>
+        <tr><td>Risk / effort</td><td>medium</td><td>low</td></tr>
+      </tbody>
+    </table>
+    <p><strong>My take: option 1.</strong> "Front and centre" only pays for itself
+    with an actual centre — the lines need distance to travel to read as wiring
+    rather than decoration, and it's the version where the whole page becomes a
+    diagram of the machine. Option 3 spends its budget shrinking the schematic
+    you just approved. The globe survives option 1 at 82% of its diameter and
+    arguably gains: a spinning world next to a glowing motherboard is a very
+    eDEX pairing.</p>
+  </section>
+</div>
