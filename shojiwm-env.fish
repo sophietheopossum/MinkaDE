@@ -15,6 +15,7 @@ set -gx XWLS_LOGICAL_GEOMETRY 1
 # Run MinkaShell + MinkaFX from the repo checkouts. Without these the config
 # falls back to the tarball-install locations (/usr/share/minka, /usr/bin).
 set -gx MINKA_SHELL_DIR $HOME/Documents/src/MinkaDE/MinkaShell
+set -gx MINKA_SHOT_DIR $HOME/Documents/src/MinkaDE/MinkaShot
 set -gx MINKA_FX_BIN $HOME/Documents/src/MinkaDE/MinkaFX/target/release/MinkaFX
 
 # KDE apps (Dolphin's open-with, kickoff-style menus) build their service
