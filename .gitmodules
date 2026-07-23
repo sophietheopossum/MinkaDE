@@ -25,3 +25,6 @@
 [submodule "MinkaShot"]
 	path = MinkaShot
 	url = git@github.com:sophietheopossum/MinkaShot.git
+[submodule "Proustite"]
+	path = Proustite
+	url = git@github.com:sophietheopossum/Proustite.git
