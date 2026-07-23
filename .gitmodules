@@ -22,3 +22,6 @@
 [submodule "MinkaMon"]
 	path = MinkaMon
 	url = git@github.com:sophietheopossum/MinkaMon.git
+[submodule "MinkaShot"]
+	path = MinkaShot
+	url = git@github.com:sophietheopossum/MinkaShot.git
