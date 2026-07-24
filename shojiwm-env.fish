@@ -17,6 +17,7 @@ set -gx XWLS_LOGICAL_GEOMETRY 1
 set -gx MINKA_SHELL_DIR $HOME/Documents/src/MinkaDE/MinkaShell
 set -gx MINKA_SHOT_DIR $HOME/Documents/src/MinkaDE/MinkaShot
 set -gx MINKA_FX_BIN $HOME/Documents/src/MinkaDE/MinkaFX/target/release/MinkaFX
+set -gx MINKA_CAP_BIN $HOME/Documents/src/MinkaDE/MinkaCap/target/release/MinkaCap
 
 # KDE apps (Dolphin's open-with, kickoff-style menus) build their service
 # cache from ${XDG_MENU_PREFIX}applications.menu; only the plasma- one is
