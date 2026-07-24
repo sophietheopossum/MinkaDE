@@ -31,3 +31,6 @@
 [submodule "MinkaLink"]
 	path = MinkaLink
 	url = git@github.com:sophietheopossum/MinkaLink.git
+[submodule "MinkaCap"]
+	path = MinkaCap
+	url = git@github.com:sophietheopossum/MinkaCap.git
