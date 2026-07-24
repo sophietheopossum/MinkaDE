@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/MinkaCap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaConf" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaFX" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaIPC" vcs="Git" />
