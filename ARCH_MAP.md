@@ -32,6 +32,12 @@ X11 fractional-scaling rendering mode (baseline shipped 2026-07-10; X11 has one 
 Done 2026-07-10, but in the TS runtime rather than MinkaConf: MinkaConf's commitDrag already normalized the arrangement it saves (connected displays only), which still let a disconnect strand the live subset off-origin. `output.configure` in index.tsx now re-anchors the connected, explicitly-positioned outputs to a (0,0) bounding box on every output change
 — protects distro satellite < 33c344f and anything else assuming an origin-anchored screen.
 
+CUDA one-shot image work in MinkaShot (idea only, nothing built, 2026-07-29):
+* **Keep CUDA out of anything per-frame.** ShojiWM renders on the GPU that scans out (Intel), so a CUDA effect would round-trip Intel→NVIDIA→Intel every frame — ~2.8 ms for 1080p at gen 4 x4 plus sync — against blur/liquid-glass passes costing a fraction of a millisecond in GLES where the data already lives. That rules out the compositor, MinkaFX, and the Quickshell apps.
+* The economics invert for one-shot work on a captured image: transfer once, compute hard, return something small. **OCR on a captured region** is the strongest candidate; subject/background segmentation (cut a window cleanly out of a shot) and upscaling a low-res capture are the same shape and could share the plumbing.
+* Constraints: the MX450 has **2 GB VRAM**, so small models only — fine for OCR or segmentation, rules out anything general. No setup cost to prototype: the CUDA 13.3.1 toolkit is already installed and `__NV_PRIME_RENDER_OFFLOAD=1` is already system-wide in `/etc/environment`.
+* Open: which OCR engine, and whether it earns a CUDA dependency at all over a CPU path that is merely slower — a screenshot is not a latency-critical operation.
+
 ### Scope & Execution
 Focus entirely on the foundational architecture, the HDR shader pipeline, and the dual-screen display management code first. Skip generic utilities like text editors. You are fully empowered to choose the cleanest technical implementation for this desktop environment—if a specific shader approach or library works better than what I suggested, implement it and show me the results, this includes the window manager. 
 
