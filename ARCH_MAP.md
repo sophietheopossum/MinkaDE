@@ -16,6 +16,8 @@ HDR polish (working baseline shipped 2026-07: config `hdr: true` → PQ/BT.2020 
 * Promote `SHOJI_SDR_NITS` (SDR white level on the PQ signal, default 203) from env var into the runtime display config (`sdrNits` per output), same pattern as the `hdr` flag — env vars don't reach DM-launched sessions.
 * Consider decoding the SDR composite with pure gamma 2.2 instead of the piecewise sRGB EOTF in `output_encode.frag` (KWin does this; avoids raised shadows / grayish blacks on HDR outputs).
 * Send `image_description_changed`/`preferred_changed` to already-bound color-management clients on a live SDR↔HDR switch (needs per-object tracking in `protocols/color_management.rs`).
+* `create_windows_scrgb` is refused outright with `UnsupportedFeature` (`protocols/color_management.rs:440`), even though the scRGB space is already reachable the long way round — `TransferFunction::ExtLinear` and `Primaries::Srgb` are both advertised (`:202-208`) and accepted on the parametric path (`:657-691`). Should be a cheap win: map the convenience request onto the parameters we already honour.
+* No `frog-color-management-v1` support (zero references in-tree). Gamescope predates `wp_color_management_v1` and historically reached for the frog protocol, so this — rather than scRGB — is the likely reason HDR under Gamescope would come out washed out; the ArchWiki records the same gap for GNOME. Confirm which protocol current Gamescope actually prefers before spending anything on this.
 
 X11 fractional-scaling rendering mode (baseline shipped 2026-07-10; X11 has one global DPI, so mixed-scale layouts force a tradeoff):
 * Expose a user choice in MinkaConf between the two X11 bridge worlds:
