@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=MinkaMon
+GenericName=System Monitor
+Comment=Minka system monitor
+Exec=env QT_QPA_PLATFORM=wayland qs -p /usr/share/minka/MinkaMon
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Monitor;Qt;
+Keywords=system;monitor;cpu;gpu;memory;ram;network;wifi;disk;ssd;temperature;processes;minka;

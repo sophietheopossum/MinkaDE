@@ -47,6 +47,15 @@ npm --prefix "$RUNTIME" ci --silent
 echo ">> quickshell trees"
 rsync -a --exclude .git --exclude .idea MinkaShell/ "$STAGE/minka/MinkaShell/"
 rsync -a --exclude .git --exclude .idea MinkaConf/ "$STAGE/minka/MinkaConf/"
+rsync -a --exclude .git --exclude .idea MinkaMon/ "$STAGE/minka/MinkaMon/"
+
+# Shared singletons, as SIBLINGS of the app trees. Each app contains a
+# `Proustite`/`MinkaLink` symlink pointing at `../Proustite`, so they only
+# resolve if these ship alongside — both here and once installed under
+# /usr/share/minka. Without them the app trees carry dangling symlinks and
+# every theme token comes back undefined.
+rsync -a --exclude .git --exclude .idea Proustite/ "$STAGE/minka/Proustite/"
+rsync -a --exclude .git --exclude .idea MinkaLink/ "$STAGE/minka/MinkaLink/"
 
 echo ">> sources (for --from-source)"
 EXCLUDES=(--exclude .git --exclude .idea --exclude target --exclude node_modules)
@@ -58,6 +67,8 @@ rsync -a "${EXCLUDES[@]}" MinkaIPC/ "$STAGE/src/MinkaIPC/"
 echo ">> dist files"
 install -m755 packaging/minka-session "$STAGE/dist/"
 install -m644 packaging/minka.desktop "$STAGE/dist/"
+install -m644 packaging/MinkaConf.desktop "$STAGE/dist/"
+install -m644 packaging/MinkaMon.desktop "$STAGE/dist/"
 install -m644 ShojiWM/dist/shojiwm.portal "$STAGE/dist/"
 install -m644 ShojiWM/dist/org.freedesktop.impl.portal.desktop.shojiwm.service "$STAGE/dist/"
 install -m644 ShojiWM/dist/xdg-desktop-portal-shojiwm.service "$STAGE/dist/"

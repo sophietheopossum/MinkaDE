@@ -10,6 +10,8 @@ echo ">> removing system files (sudo)"
 sudo rm -f /usr/bin/shoji_wm /usr/bin/MinkaFX /usr/bin/minka-session \
     /usr/bin/xdg-desktop-portal-shojiwm \
     /usr/share/wayland-sessions/minka.desktop \
+    /usr/share/applications/MinkaConf.desktop \
+    /usr/share/applications/MinkaMon.desktop \
     /usr/share/xdg-desktop-portal/portals/shojiwm.portal \
     /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service \
     /usr/lib/systemd/user/xdg-desktop-portal-shojiwm.service

@@ -3,8 +3,10 @@
 #
 # Installs the Minka desktop environment: the ShojiWM compositor + TypeScript
 # runtime, the ScreenCast portal backend, the patched xwayland-satellite, the
-# MinkaFX overlay, and the MinkaShell / MinkaConf Quickshell trees, plus a
-# "Minka" Wayland session entry for your display manager.
+# MinkaFX overlay, and the MinkaShell / MinkaConf / MinkaMon Quickshell trees
+# (with their shared Proustite / MinkaLink singletons), plus a "Minka" Wayland
+# session entry for your display manager and launchers for the settings and
+# system-monitor apps.
 #
 # Usage:
 #   ./install.sh                 install the prebuilt x86_64 binaries (default)
@@ -40,7 +42,8 @@ done
 missing=()
 need() { command -v "$1" >/dev/null 2>&1 || missing+=("$1${2:+ ($2)}"); }
 need node "runs the TypeScript config runtime"
-need qs "quickshell - renders MinkaShell/MinkaConf"
+need qs "quickshell - renders MinkaShell/MinkaConf/MinkaMon"
+need python3 "MinkaMon's stats sampler (stdlib only, no pip packages)"
 need Xwayland "X11 application support"
 need kitty "default terminal (Super+T)"
 command -v pipewire >/dev/null 2>&1 || [ -S "${XDG_RUNTIME_DIR:-/run/user/$UID}/pipewire-0" ] || missing+=("pipewire (audio + screen sharing)")
@@ -109,10 +112,21 @@ sudo rm -rf /usr/share/shojiwm/default-config
 sudo mkdir -p /usr/share/shojiwm/default-config
 sudo cp -a "$RUNTIME_SRC/packages/config/." /usr/share/shojiwm/default-config/
 
-sudo rm -rf /usr/share/minka/MinkaShell /usr/share/minka/MinkaConf
+sudo rm -rf /usr/share/minka/MinkaShell /usr/share/minka/MinkaConf \
+    /usr/share/minka/MinkaMon /usr/share/minka/Proustite /usr/share/minka/MinkaLink
 sudo mkdir -p /usr/share/minka
 sudo cp -a minka/MinkaShell /usr/share/minka/
 sudo cp -a minka/MinkaConf /usr/share/minka/
+sudo cp -a minka/MinkaMon /usr/share/minka/
+# Shared singletons must land as siblings: each app tree carries a
+# `Proustite`/`MinkaLink` symlink to `../Proustite`, which only resolves from
+# /usr/share/minka/<app>/ if these sit next to it.
+sudo cp -a minka/Proustite /usr/share/minka/
+sudo cp -a minka/MinkaLink /usr/share/minka/
+
+# Application launchers (the session entry is separate, in wayland-sessions).
+sudo install -Dm644 dist/MinkaConf.desktop /usr/share/applications/MinkaConf.desktop
+sudo install -Dm644 dist/MinkaMon.desktop /usr/share/applications/MinkaMon.desktop
 
 if [[ $INSTALL_PORTAL -eq 1 ]]; then
     sudo install -Dm755 "$PORTAL_BIN" /usr/bin/xdg-desktop-portal-shojiwm
@@ -185,5 +199,6 @@ fi
 
 echo ""
 echo "done. log out and pick the \"Minka\" session in your display manager."
-echo "settings app: qs -p /usr/share/minka/MinkaConf   (or via the start menu)"
+echo "settings app:   qs -p /usr/share/minka/MinkaConf  (or via the start menu)"
+echo "system monitor: qs -p /usr/share/minka/MinkaMon   (or via the start menu)"
 echo "see README.md for the keybinding quickstart."
