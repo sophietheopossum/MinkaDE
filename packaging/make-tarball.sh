@@ -45,9 +45,13 @@ cp ShojiWM/tools/decoration-runtime.ts ShojiWM/tools/evaluate-decoration.ts "$RU
 npm --prefix "$RUNTIME" ci --silent
 
 echo ">> quickshell trees"
-rsync -a --exclude .git --exclude .idea MinkaShell/ "$STAGE/minka/MinkaShell/"
-rsync -a --exclude .git --exclude .idea MinkaConf/ "$STAGE/minka/MinkaConf/"
-rsync -a --exclude .git --exclude .idea MinkaMon/ "$STAGE/minka/MinkaMon/"
+# `dist` is excluded: each app owns its launcher there, but it is installed to
+# /usr/share/applications separately (see the dist files section below), so
+# copying it into the app tree as well would just duplicate it.
+QS_EXCLUDES=(--exclude .git --exclude .idea --exclude dist)
+rsync -a "${QS_EXCLUDES[@]}" MinkaShell/ "$STAGE/minka/MinkaShell/"
+rsync -a "${QS_EXCLUDES[@]}" MinkaConf/ "$STAGE/minka/MinkaConf/"
+rsync -a "${QS_EXCLUDES[@]}" MinkaMon/ "$STAGE/minka/MinkaMon/"
 
 # Shared singletons, as SIBLINGS of the app trees. Each app contains a
 # `Proustite`/`MinkaLink` symlink pointing at `../Proustite`, so they only
@@ -67,8 +71,8 @@ rsync -a "${EXCLUDES[@]}" MinkaIPC/ "$STAGE/src/MinkaIPC/"
 echo ">> dist files"
 install -m755 packaging/minka-session "$STAGE/dist/"
 install -m644 packaging/minka.desktop "$STAGE/dist/"
-install -m644 packaging/MinkaConf.desktop "$STAGE/dist/"
-install -m644 packaging/MinkaMon.desktop "$STAGE/dist/"
+install -m644 MinkaConf/dist/MinkaConf.desktop "$STAGE/dist/"
+install -m644 MinkaMon/dist/MinkaMon.desktop "$STAGE/dist/"
 install -m644 ShojiWM/dist/shojiwm.portal "$STAGE/dist/"
 install -m644 ShojiWM/dist/org.freedesktop.impl.portal.desktop.shojiwm.service "$STAGE/dist/"
 install -m644 ShojiWM/dist/xdg-desktop-portal-shojiwm.service "$STAGE/dist/"
