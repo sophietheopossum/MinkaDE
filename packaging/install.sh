@@ -127,6 +127,9 @@ sudo cp -a minka/MinkaLink /usr/share/minka/
 # Application launchers (the session entry is separate, in wayland-sessions).
 sudo install -Dm644 dist/MinkaConf.desktop /usr/share/applications/MinkaConf.desktop
 sudo install -Dm644 dist/MinkaMon.desktop /usr/share/applications/MinkaMon.desktop
+# MinkaMon.desktop execs this rather than qs directly, so its output reaches a
+# log file instead of /dev/null.
+sudo install -Dm755 dist/minkamon /usr/bin/minkamon
 
 if [[ $INSTALL_PORTAL -eq 1 ]]; then
     sudo install -Dm755 "$PORTAL_BIN" /usr/bin/xdg-desktop-portal-shojiwm
