@@ -10,12 +10,17 @@ set -gx SHOJI_CONFIG $HOME/Documents/src/MinkaDE/ShojiWM/packages/config/src/ind
 # distro package (fixes non-(0,0) layout origins; upstream 33c344f, > 0.8.1):
 set -gx SHOJI_XWAYLAND_SATELLITE_PATH $HOME/Documents/src/MinkaDE/xwayland-satellite/target/release/xwayland-satellite
 
-# Run MinkaShell + MinkaFX from the repo checkouts. Without these the config
-# falls back to the tarball-install locations (/usr/share/minka, /usr/bin).
+# Run the Minka apps from the repo checkouts. Without these the config falls
+# back to the tarball-install locations (/usr/share/minka, /usr/bin).
 set -gx MINKA_SHELL_DIR $HOME/Documents/src/MinkaDE/MinkaShell
 set -gx MINKA_SHOT_DIR $HOME/Documents/src/MinkaDE/MinkaShot
 set -gx MINKA_FX_BIN $HOME/Documents/src/MinkaDE/MinkaFX/target/release/MinkaFX
 set -gx MINKA_CAP_BIN $HOME/Documents/src/MinkaDE/MinkaCap/target/release/MinkaCap
+# MinkaMon needs both: the wrapper (which owns the logging) and the config dir
+# it passes to qs. Its wrapper is not installed to /usr/bin in this checkout,
+# so without MINKA_MON_BIN the autostart guard finds nothing and skips.
+set -gx MINKA_MON_BIN $HOME/Documents/src/MinkaDE/MinkaMon/dist/minkamon
+set -gx MINKA_MON_DIR $HOME/Documents/src/MinkaDE/MinkaMon
 
 # KDE apps (Dolphin's open-with, kickoff-style menus) build their service
 # cache from ${XDG_MENU_PREFIX}applications.menu; only the plasma- one is
