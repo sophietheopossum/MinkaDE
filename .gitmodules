@@ -34,3 +34,6 @@
 [submodule "MinkaCap"]
 	path = MinkaCap
 	url = git@github.com:sophietheopossum/MinkaCap.git
+[submodule "bartizan-lsp"]
+	path = bartizan-lsp
+	url = git@github.com:sophietheopossum/bartizan-lsp.git
