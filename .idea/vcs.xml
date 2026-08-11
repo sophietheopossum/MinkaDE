@@ -12,6 +12,7 @@
     <mapping directory="$PROJECT_DIR$/MinkaShot" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Proustite" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ShojiWM" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/bartizan-lsp" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/shoji-bar-2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/xwayland-satellite" vcs="Git" />
   </component>
