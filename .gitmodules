@@ -37,3 +37,6 @@
 [submodule "bartizan-lsp"]
 	path = bartizan-lsp
 	url = git@github.com:sophietheopossum/bartizan-lsp.git
+[submodule "MinkaPKG"]
+	path = MinkaPKG
+	url = git@github.com:sophietheopossum/MinkaPKG.git
