@@ -8,6 +8,7 @@
     <mapping directory="$PROJECT_DIR$/MinkaIPC" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaLink" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaMon" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/MinkaPKG" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaShell" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MinkaShot" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Proustite" vcs="Git" />
