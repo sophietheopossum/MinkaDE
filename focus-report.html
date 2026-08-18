@@ -1,0 +1,276 @@
+<title>Tarnished Focus</title>
+<style>
+  :root{
+    --ground:#F6F3F2; --surface:#FFFFFF; --surface-2:#EFEAE9;
+    --ink:#191313; --ink-2:#574C4A; --muted:#8A7C79; --rule:#DFD7D5;
+    --accent:#B01B1B; --accent-soft:#F5E5E4;
+    --ok:#2C6E52; --ok-soft:#E2F0EA;
+    --warn:#8E6009; --warn-soft:#F7EBD6;
+    --dead:#8A7C79; --dead-soft:#EBE6E5;
+    --serif: ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono: ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#131010; --surface:#1B1616; --surface-2:#241D1D;
+      --ink:#EFE7E5; --ink-2:#B5A8A5; --muted:#8A7C79; --rule:#332A29;
+      --accent:#FF4438; --accent-soft:#3A1A18;
+      --ok:#5FBF93; --ok-soft:#16281F;
+      --warn:#D9A340; --warn-soft:#2C2213;
+      --dead:#8A7C79; --dead-soft:#241D1D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#131010; --surface:#1B1616; --surface-2:#241D1D;
+    --ink:#EFE7E5; --ink-2:#B5A8A5; --muted:#8A7C79; --rule:#332A29;
+    --accent:#FF4438; --accent-soft:#3A1A18;
+    --ok:#5FBF93; --ok-soft:#16281F;
+    --warn:#D9A340; --warn-soft:#2C2213;
+    --dead:#8A7C79; --dead-soft:#241D1D;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--serif); font-size:17px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:47rem; margin:0 auto; padding:4rem 1.5rem 6rem; display:flex; flex-direction:column; gap:3rem}
+  header{display:flex; flex-direction:column; gap:1rem; padding-bottom:2rem; border-bottom:2px solid var(--accent)}
+  .eyebrow{
+    font-family:var(--sans); font-size:.7rem; font-weight:600; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--accent);
+  }
+  h1{font-size:clamp(2.1rem,6vw,3.1rem); line-height:1.06; margin:0; font-weight:600; letter-spacing:-.02em; text-wrap:balance}
+  .standfirst{font-size:1.13rem; color:var(--ink-2); margin:0; max-width:38rem}
+  .byline{font-family:var(--sans); font-size:.78rem; color:var(--muted); letter-spacing:.02em}
+
+  section{display:flex; flex-direction:column; gap:1.1rem}
+  h2{
+    font-size:1.6rem; margin:0; font-weight:600; letter-spacing:-.015em; line-height:1.2;
+    padding-bottom:.5rem; border-bottom:1px solid var(--rule); text-wrap:balance;
+  }
+  h3{font-size:1.06rem; margin:.6rem 0 0; font-weight:600; letter-spacing:-.005em}
+  p{margin:0; max-width:38rem}
+  ul{margin:0; padding-left:1.1rem; display:flex; flex-direction:column; gap:.5rem; max-width:38rem}
+  li::marker{color:var(--accent)}
+  strong{font-weight:600}
+  code{font-family:var(--mono); font-size:.85em; background:var(--surface-2); padding:.1em .35em; border-radius:3px}
+
+  pre{
+    font-family:var(--mono); font-size:.79rem; line-height:1.65; margin:0;
+    background:var(--surface); border:1px solid var(--rule); border-left:3px solid var(--accent);
+    padding:1rem 1.1rem; overflow-x:auto; color:var(--ink-2);
+  }
+  pre b{color:var(--accent); font-weight:600}
+  pre i{color:var(--muted); font-style:normal}
+
+  .board{display:flex; flex-direction:column; gap:.75rem}
+  .row{
+    display:grid; grid-template-columns:auto 1fr; gap:1rem; align-items:start;
+    background:var(--surface); border:1px solid var(--rule); padding:1rem 1.15rem;
+  }
+  .row .t{font-family:var(--sans); font-size:.95rem; font-weight:600; margin:0 0 .2rem}
+  .row .d{font-size:.93rem; color:var(--ink-2); margin:0}
+  .chip{
+    font-family:var(--sans); font-size:.66rem; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; padding:.34em .6em; white-space:nowrap; border-radius:2px;
+  }
+  .chip.ok{background:var(--ok-soft); color:var(--ok)}
+  .chip.warn{background:var(--warn-soft); color:var(--warn)}
+  .chip.dead{background:var(--dead-soft); color:var(--dead)}
+  .chip.hot{background:var(--accent-soft); color:var(--accent)}
+
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse; width:100%; font-family:var(--sans); font-size:.85rem; min-width:30rem}
+  th,td{text-align:left; padding:.6rem .75rem; border-bottom:1px solid var(--rule); vertical-align:top}
+  th{
+    font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); border-bottom:1px solid var(--ink-2);
+  }
+  td.num{font-variant-numeric:tabular-nums; font-family:var(--mono); font-size:.8rem; white-space:nowrap}
+
+  .note{
+    background:var(--surface-2); border-left:3px solid var(--muted);
+    padding:.9rem 1.1rem; font-size:.93rem; color:var(--ink-2);
+  }
+  .note.hot{border-left-color:var(--accent)}
+  .note .lbl{
+    display:block; font-family:var(--sans); font-size:.66rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-bottom:.35rem;
+  }
+  .note.plain .lbl{color:var(--muted)}
+
+  .dead-list{display:flex; flex-direction:column; gap:.65rem}
+  .dead-item{display:grid; grid-template-columns:auto 1fr; gap:.85rem; align-items:baseline; font-size:.93rem; color:var(--ink-2)}
+  .dead-item b{color:var(--ink); font-weight:600}
+
+  footer{border-top:1px solid var(--rule); padding-top:1.5rem; font-family:var(--sans); font-size:.8rem; color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">MinkaDE · ShojiWM · 18 August 2026</div>
+  <h1>Tarnished Focus</h1>
+  <p class="standfirst">Two focus defects behind Keeper's SSH prompt landing under a blank window — and why the obvious fix for each one doesn't work.</p>
+  <div class="byline">Investigated against HEAD <code>e8c6543</code> · live binary and runtime installed 10:09 · compositor started 10:12:43</div>
+</header>
+
+<section>
+  <h2>Where things stand</h2>
+  <div class="board">
+    <div class="row">
+      <span class="chip hot">Diagnosed</span>
+      <div>
+        <p class="t">A · The dialog opens beneath a blank sibling</p>
+        <p class="d">Mechanism confirmed against the live session. Three candidate patches produced; <strong>all three failed review</strong> for specific, named reasons.</p>
+      </div>
+    </div>
+    <div class="row">
+      <span class="chip hot">Diagnosed</span>
+      <div>
+        <p class="t">B · Focus jumps to the Vault after authorising</p>
+        <p class="d">Mechanism confirmed and deterministic. Competing cause eliminated from logs. The MRU fix is <strong>blocked by a poisoned signal</strong>.</p>
+      </div>
+    </div>
+    <div class="row">
+      <span class="chip warn">New, unfixed</span>
+      <div>
+        <p class="t">C · The dock's "most recently used" is wrong</p>
+        <p class="d">Pre-existing, found while investigating B. Not causing visible trouble yet.</p>
+      </div>
+    </div>
+  </div>
+  <p>The diagnoses are the durable part and they are solid. The patches need another pass — which is a better outcome than shipping one that looks right.</p>
+</section>
+
+<section>
+  <h2>A · The stacking race</h2>
+  <p>Keeper opens two toplevels from one process over <em>two separate</em> <code>wl_display</code> connections. The blank helper is created first; the real dialog 16 ms later, and only the dialog ever sends an activation request.</p>
+  <pre>09:17:10.255839  new xdg toplevel  <b>0xb</b>  keeper-password-manager   <i>blank helper, first</i>
+09:17:10.271885  new xdg toplevel  <b>0xc</b>  keeperpasswordmanager     <i>the dialog, +16 ms</i>
+09:17:10.275520  activate request  <b>0xc</b>  XdgActivation             <i>only the dialog</i></pre>
+  <p>Every rule in the config says the dialog should win: it's created later and <code>onOpen</code> adds at <code>"front"</code>; it's the only one activated; and <code>onFocus</code> raises unconditionally. It loses roughly four times in five.</p>
+
+  <h3>Why</h3>
+  <p>An <code>onOpen</code> focus isn't applied when it's issued. It's queued into <code>pending_initial_focus_window_ids</code> and replayed when the window first reaches a rendered frame. The replay is six lines with no staleness check, and it's drained last-write-wins:</p>
+  <pre>state.rs:3623   sorted_windows_top_to_bottom → right_z.cmp(&amp;left_z)   <i>DESCENDING z</i>
+tty.rs:5634     push onto the drain vector, inside that render walk
+tty.rs:6925     drain in push order → apply_pending_initial_focus_for_window
+input.rs:2730   remove from set, then focus_window — <b>unconditionally</b></pre>
+  <p>So whichever window is drained last takes the keyboard, and via the <code>isFocused</code> snapshot diff the config then raises it. Nothing in that chain asks which window the user needs.</p>
+
+  <div class="note hot">
+    <span class="lbl">The measurement that broke my first theory</span>
+    eDP-1 runs at 60049 mHz — a 16.65 ms frame — and the two toplevels are created 16.05 ms apart. Same-frame readiness is therefore only ~3.6% likely, so the z-descending order can't be the dominant path. What fits the observed ~20% success rate is that the blank helper usually reaches its first rendered frame <em>later</em> than the dialog despite being created earlier. Both routes hand the win to the helper; only the timing differs.
+  </div>
+
+  <h3>Measured live, three runs</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Run</th><th>Blank helper</th><th>Dialog</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td class="num">0x12 focused</td><td class="num">0x13</td><td>buried</td></tr>
+      <tr><td class="num">2</td><td class="num">0x14 focused</td><td class="num">0x15</td><td>buried</td></tr>
+      <tr><td class="num">3</td><td class="num">0x16</td><td class="num">0x17 focused</td><td>correct</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The window on top is always the one reporting <code>focused</code>. That is the diagnosis confirmed against the running compositor rather than inferred from source.</p>
+
+  <h3>Why all three patches failed</h3>
+  <ul>
+    <li><strong>Minimal Rust guard</strong> — replay the queued focus only if the window is still the focus owner. Compiles clean, anchors verified, elegantly time-free. But it makes the <em>other</em> observed variant strictly worse: when Keeper activates the helper 4.7 ms <em>after</em> the dialog, the owner legitimately is the helper, so the dialog's replay gets dropped and it never gets focus at all. It also removes the only self-heal for a stranded deferred hand-off.</li>
+    <li><strong>Config-only burst guard</strong> — refuse to raise a window above a sibling that opened after it. Typechecks, but corrects z-order only: the keyboard still goes to the helper. It also scans the global stack without filtering by workspace, so a window opening on the ScreenPad can act as a spurious blocker, and it fails the same 4.7 ms variant.</li>
+    <li><strong>Full focus-provenance system</strong> — priorities, generations, a real deferred queue. Rejected: a session-lock path lets a window behind the lock screen take keyboard focus, and any pointer click within the grace window suppresses a legitimately-opening dialog.</li>
+  </ul>
+  <p>The tension is real rather than an implementation slip. In one variant Keeper explicitly asks for the helper last; in the other it never asks at all. Honouring client intent gives the wrong answer in the first case, and ignoring it gives the wrong answer in the second. The rule that satisfies both is <em>prefer the later-created window of an open burst</em> — which no candidate implemented cleanly.</p>
+</section>
+
+<section>
+  <h2>B · The jump to the Vault</h2>
+  <p>Authorising closes both prompt windows and focus lands on the pre-existing maximised Keeper Vault instead of returning to rio. This one is not a race — it is deterministic, and worse than "arbitrary".</p>
+  <pre>window-manager.ts:3483   isTileableInCurrentMode = <b>!this.isTiled</b> || shouldTile(window)
+                         <i>floating short-circuits → every new window becomes activeWindowId</i>
+
+window-manager.ts:3601   nextFocus = tileableWindows()[ Math.min(index, len-1) ]
+                         <i>index is taken from the FULL windows array…</i>
+                         <i>…but used to index the FILTERED tileable array</i></pre>
+  <p>A just-opened dialog sits at the end of <code>this.windows</code>, and floating workspaces never reorder, so <code>index &gt;= tileableWindows().length</code> always holds, the clamp always fires, and the pick is always the newest surviving tileable window. Reliably wrong rather than randomly wrong.</p>
+
+  <div class="note plain">
+    <span class="lbl">Ruled out from the logs</span>
+    Keeper does not xdg-activate the Vault after the prompt closes. Across all three captured runs the only activation is for the dialog itself, so no part of this is the client's doing — the close-path pick is the whole cause.
+  </div>
+
+  <h3>Why the obvious fix doesn't work</h3>
+  <p>The config already keeps an MRU map, <code>lastFocusedAt</code>, written by <code>recordFocus</code>. Ranking survivors by it looks like a two-line fix. It isn't, because <code>onOpen</code> calls <code>window.focus()</code> unconditionally, and that round-trips through <code>onFocus</code> into <code>recordFocus</code>. The map records <em>most recently opened or focused</em>, not where you were working:</p>
+  <pre>09:33:40.70  rio 0x10 opens                        → recordFocus(rio)   = <b>09:33:40</b>
+09:33:59.40  0x11 opens "Keeper Password Manager"
+09:34:01.05  retitles "Keeper® Vault — …"           → recordFocus(vault) = <b>09:33:59</b></pre>
+  <p>The SSH request <em>launches</em> Keeper, so the Vault stamps itself seconds before the prompt appears and outranks rio. MRU would select the Vault — precisely the window being complained about — and each occurrence re-stamps it, so it never recovers on its own.</p>
+  <p>The fix therefore needs a signal that distinguishes <em>the user focused this</em> from <em>this window focused itself on open</em>: stash the pre-burst focus holder at <code>onOpen</code>, or suppress the MRU stamp for a window's own initial self-focus.</p>
+</section>
+
+<section>
+  <h2>C · The dock inherits the same poison</h2>
+  <p><code>lastFocusedAt</code> exists to let the dock pick "the most recently used window of an app" on left-click. Since every window stamps itself at open, that feature has the same defect: a newly-opened window of an app always outranks the one actually being used. Nothing has gone visibly wrong yet, but it is the same bug wearing different clothes, and whatever signal fixes B should fix the dock too.</p>
+</section>
+
+<section>
+  <h2>What KWin does instead</h2>
+  <p>Worth the comparison — it named the gap precisely. The difference isn't that KDE raises new windows harder; it's that KWin has arbitration where ShojiWM has none.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>KWin</th><th>ShojiWM</th></tr></thead>
+    <tbody>
+      <tr><td>Stacking constrained separately from focus</td><td><code>onFocus</code> raises unconditionally, so any stray focus edge rewrites the stack</td></tr>
+      <tr><td><code>mayActivate</code> validates the activation token against <code>lastInteractionSerial</code></td><td>Every activation request is obeyed; nothing is checked</td></tr>
+      <tr><td>Denied activation goes on the attention chain and the taskbar highlights it</td><td>No such channel — refusing would mean losing the window</td></tr>
+      <tr><td>On close: transient parent, then an MRU focus chain</td><td>Positional index into a filtered array</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The honest limit: KWin's transient-ancestry rules would not have saved us here either. The two Keeper toplevels are separate clients with no parent relationship, so <code>set_parent</code> is protocol-impossible and every parentage-based rule has nothing to work with. That attention-channel row is the load-bearing one — build the "denied but visible" path before any denial rule, or a refused activation just loses the window a different way.</p>
+</section>
+
+<section>
+  <h2>Dead ends</h2>
+  <p>Recorded so neither of us re-derives them.</p>
+  <div class="dead-list">
+    <div class="dead-item"><span class="chip dead">dead</span><div><b>The <code>at:"back"</code> fallback in <code>onFirstCommit</code></b> — unreachable; <code>onOpen</code> always precedes it. Ruled out by your observation that the dialog sits one level down, not at the bottom.</div></div>
+    <div class="dead-item"><span class="chip dead">dead</span><div><b>"The blank window is unmanaged and escapes the stack"</b> — an unmanaged z-index is 0, which sorts to the bottom, not the top.</div></div>
+    <div class="dead-item"><span class="chip dead">dead</span><div><b>A transient-above-parent rule</b> — the two toplevels are on different <code>wl_display</code> connections, so <code>isTransient</code> and <code>parentId</code> are empty for both.</div></div>
+    <div class="dead-item"><span class="chip dead">dead</span><div><b>"Keeper activates its helper last, so blame the client"</b> — true on the old build in 13 of 14 logged prompts, but the bug persists on the new build where that activation is absent entirely.</div></div>
+    <div class="dead-item"><span class="chip dead">dead</span><div><b>My first-rendered-frame framing</b> — built on the single log instance that turned out to be the outlier. Your "occasionally it works" is what exposed it.</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>For bea4dev</h2>
+  <div class="note plain">
+    <span class="lbl">Draft issue text</span>
+    <p style="margin-bottom:.7rem">A window focus queued from the config's <code>onOpen</code> is recorded in <code>pending_initial_focus_window_ids</code> and replayed later, when the window first reaches a rendered frame. <code>apply_pending_initial_focus_for_window</code> (<code>input.rs</code>) applies that replay unconditionally — it removes the id from the set and calls <code>focus_window</code> with no check that the request is still current. The drain vector is filled inside the z-descending render walk and consumed last-write-wins, so the winner is decided by client paint latency rather than by focus intent.</p>
+    <p>An application that maps a blank host toplevel and then its real window a frame later will therefore have the host steal focus back from the window that was activated after it, including from an explicit xdg-activation. Separately, a focus request aimed at a not-yet-ready window is discarded rather than replayed (<code>should_defer_initial_keyboard_focus</code>), so the explicit activation buys nothing.</p>
+  </div>
+  <p>Worth raising even without a patch attached — the two behaviours are independently defensible on their own and only combine badly. A fix needs a policy call that is properly his to make.</p>
+</section>
+
+<section>
+  <h2>Next</h2>
+  <ul>
+    <li><strong>B first.</strong> Deterministic, config-only, and the competing cause is already eliminated. Needs the pre-burst focus holder stashed rather than leaning on the poisoned map.</li>
+    <li><strong>Then A</strong>, with the burst rule stated as "prefer the later-created window of an open burst" so it covers both observed variants.</li>
+    <li><strong>C rides along</strong> with whatever signal fixes B.</li>
+    <li><strong>Attention channel before any denial rule</strong>, per KWin — otherwise refusing an activation just loses the window differently.</li>
+  </ul>
+</section>
+
+<footer>
+  Line references are HEAD <code>e8c6543</code>, working tree clean. Behavioural claims are read from source and corroborated against <code>~/shoji_wm/logs</code> and the live <code>workspaces.get</code> IPC; nothing here has been compiled or run against a patched build.
+</footer>
+
+</div>
