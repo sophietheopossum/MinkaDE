@@ -40,3 +40,6 @@
 [submodule "MinkaPKG"]
 	path = MinkaPKG
 	url = git@github.com:sophietheopossum/MinkaPKG.git
+[submodule "MinkaTrace"]
+	path = MinkaTrace
+	url = git@github.com:sophietheopossum/MinkaTrace.git
