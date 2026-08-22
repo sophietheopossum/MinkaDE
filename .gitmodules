@@ -43,3 +43,6 @@
 [submodule "MinkaTrace"]
 	path = MinkaTrace
 	url = git@github.com:sophietheopossum/MinkaTrace.git
+[submodule "HyperCat-Agent"]
+	path = HyperCat-Agent
+	url = git@github.com:sophietheopossum/HyperCat-Agent.git
