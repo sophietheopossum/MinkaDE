@@ -28,3 +28,6 @@ set -gx MINKA_MON_DIR $HOME/Documents/src/MinkaDE/MinkaMon
 # with no application tree.
 set -gx XDG_MENU_PREFIX plasma-
 
+#prevents duplicate hypercat work
+set -gx HC_SHARED_WORKSPACE 1
+
