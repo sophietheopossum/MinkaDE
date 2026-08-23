@@ -46,3 +46,6 @@
 [submodule "HyperCat-Agent"]
 	path = HyperCat-Agent
 	url = git@github.com:sophietheopossum/HyperCat-Agent.git
+[submodule "HyperCat-WebResearch"]
+	path = HyperCat-WebResearch
+	url = git@github.com:sophietheopossum/HyperCat-WebResearch.git
