@@ -49,3 +49,6 @@
 [submodule "HyperCat-WebResearch"]
 	path = HyperCat-WebResearch
 	url = git@github.com:sophietheopossum/HyperCat-WebResearch.git
+[submodule "MinkaLedger"]
+	path = MinkaLedger
+	url = git@github.com:sophietheopossum/MinkaLedger.git
