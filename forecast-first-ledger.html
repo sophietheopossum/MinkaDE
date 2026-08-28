@@ -1,0 +1,760 @@
+<title>Forecast-First Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+
+<style>
+  :root {
+    --paper:      #FAFBF9;
+    --raised:     #F2F5F1;
+    --ink:        #151A16;
+    --muted:      #5F6B62;
+    --rule:       #DCE4DD;
+    --ledger:     #2E6A4E;
+    --ledger-dim: #EAF2EC;
+    --flag:       #A8412F;
+    --flag-dim:   #F7ECE9;
+
+    --display: "Newsreader", Georgia, "Times New Roman", serif;
+    --body:    "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --measure: 68ch;
+    --gutter:  clamp(1.25rem, 5vw, 3.5rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #101410;
+      --raised:     #171D18;
+      --ink:        #E6EBE5;
+      --muted:      #94A199;
+      --rule:       #29332C;
+      --ledger:     #74C395;
+      --ledger-dim: #17271E;
+      --flag:       #E39177;
+      --flag-dim:   #2A1A16;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #101410;
+    --raised:     #171D18;
+    --ink:        #E6EBE5;
+    --muted:      #94A199;
+    --rule:       #29332C;
+    --ledger:     #74C395;
+    --ledger-dim: #17271E;
+    --flag:       #E39177;
+    --flag-dim:   #2A1A16;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 1rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0 var(--gutter) 6rem;
+  }
+
+  .wrap {
+    max-width: 82rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5rem;
+  }
+
+  .col { max-width: var(--measure); }
+
+  p, li { text-wrap: pretty; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+  a {
+    color: var(--ledger);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  a:focus-visible {
+    outline: 2px solid var(--ledger);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding: 3.5rem 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ledger);
+    margin: 0;
+  }
+
+  .masthead h1 {
+    font-family: var(--display);
+    font-size: clamp(2.6rem, 7vw, 4.5rem);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+  }
+
+  .standfirst {
+    font-family: var(--display);
+    font-size: clamp(1.1rem, 2.2vw, 1.3rem);
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 58ch;
+    margin: 0;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 0.5rem;
+  }
+  .meta b { color: var(--ink); font-weight: 500; }
+
+  /* ---------- sections ---------- */
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    scroll-margin-top: 2rem;
+  }
+
+  section > h2 {
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 3.4vw, 2.1rem);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  section h3 {
+    font-family: var(--body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+  }
+
+  .lede {
+    font-size: 1.06rem;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  p { margin: 0; }
+
+  .stack { display: flex; flex-direction: column; gap: 1rem; }
+
+  ul.plain {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  ul.plain li::marker { color: var(--ledger); }
+
+  /* ---------- pull quote ---------- */
+
+  .thesis {
+    border-left: 3px solid var(--ledger);
+    background: var(--ledger-dim);
+    padding: 1.5rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: var(--measure);
+  }
+  .thesis p {
+    font-family: var(--display);
+    font-size: clamp(1.15rem, 2.4vw, 1.4rem);
+    line-height: 1.4;
+  }
+  .thesis .attrib {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---------- tables ---------- */
+
+  .scroller {
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 44rem;
+    font-size: 0.88rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  thead th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--ink);
+    white-space: nowrap;
+    background: var(--paper);
+  }
+
+  tbody td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:nth-child(odd) { background: var(--ledger-dim); }
+
+  td.num {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--ledger);
+    width: 2.5rem;
+  }
+  td.what { font-weight: 500; min-width: 13rem; }
+  td.art { color: var(--muted); }
+
+  .cost {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .cost.trivial,
+  .cost.low { color: var(--ledger); }
+  .cost.med { color: var(--muted); }
+  .cost.high { color: var(--flag); }
+
+  tbody tr.hot:nth-child(odd),
+  tbody tr.hot:nth-child(even) { background: var(--flag-dim); }
+
+  /* ---------- prior art ---------- */
+
+  .art-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .card {
+    background: var(--paper);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .card .tag {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ledger);
+  }
+
+  .card h3 {
+    font-family: var(--display);
+    font-size: 1.35rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  .card p { font-size: 0.9rem; line-height: 1.55; }
+
+  .steal {
+    font-size: 0.86rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 0.7rem;
+    margin-top: auto;
+    color: var(--muted);
+  }
+  .steal b {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+  }
+
+  /* ---------- code ---------- */
+
+  pre {
+    margin: 0;
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--ledger);
+    padding: 1.25rem 1.4rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.7;
+    tab-size: 2;
+  }
+  pre .c { color: var(--muted); font-style: italic; }
+  pre .k { color: var(--ledger); font-weight: 500; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    padding: 0.08em 0.34em;
+  }
+  pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+
+  /* ---------- decisions ---------- */
+
+  .decisions {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--rule);
+  }
+  .decision {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: 0.35rem 2.5rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .decision dt {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+  .decision dd {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--muted);
+    max-width: 58ch;
+  }
+  @media (max-width: 34rem) {
+    .decision { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- questions ---------- */
+
+  .questions {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  .q {
+    background: var(--paper);
+    padding: 1.15rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .q b {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .q span {
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+
+  footer {
+    border-top: 2px solid var(--ink);
+    padding-top: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    max-width: var(--measure);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  footer a { color: var(--ledger); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Build brief · personal finance</p>
+    <h1>Forecast-First Ledger</h1>
+    <p class="standfirst">Eight requirements, a double-entry core, and the prior art worth stealing from. The stated features are the cheap half — this brief is mostly about the half that isn't stated.</p>
+    <div class="meta">
+      <span>Prepared <b>28 Aug 2026</b></span>
+      <span>Status <b>Pre-decision</b></span>
+      <span>Benchmark <b>PocketSmith, $120/yr</b></span>
+    </div>
+  </header>
+
+  <section class="col stack">
+    <h2>Where this came from</h2>
+    <p class="lede">A survey of existing tools against eight requirements. PocketSmith was the only product that met all eight; Firefly III fails on forecasting as an explicit design decision, and Actual Budget has no scenario modelling to build on.</p>
+    <p>The question that produced this document was whether to build instead. The short answer is that it's more viable than it first looks, for a non-obvious reason: the eight requirements below happen to be the part that's <em>expensive to buy and cheap to build</em>. The genuinely hard parts of a finance app aren't in the list, because they're invisible until you're in it.</p>
+  </section>
+
+  <section class="stack">
+    <h2>The eight requirements</h2>
+    <p class="col">Build cost assumes a double-entry core and a pure-function forecast. Criteria 2, 4 and 8 are the ones no free tool does well — and, not coincidentally, the ones with the best published prior art.</p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Requirement</th>
+            <th>Cost</th>
+            <th>Prior art to lift</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">1</td>
+            <td class="what">Recurring payments, in and out</td>
+            <td><span class="cost low">Low</span></td>
+            <td class="art">RFC 5545 <code>RRULE</code>; hledger periodic rules</td>
+          </tr>
+          <tr>
+            <td class="num">2</td>
+            <td class="what">Forecast those recurrences</td>
+            <td><span class="cost med">Medium</span></td>
+            <td class="art">hledger <code>--forecast</code> generated transactions</td>
+          </tr>
+          <tr>
+            <td class="num">3</td>
+            <td class="what">Sudden one-off payments</td>
+            <td><span class="cost trivial">Trivial</span></td>
+            <td class="art">Falls out of the schema — a txn with no series</td>
+          </tr>
+          <tr>
+            <td class="num">4</td>
+            <td class="what">Alter one occurrence's date and amount</td>
+            <td><span class="cost med">Medium</span></td>
+            <td class="art">RFC 5545 <code>RECURRENCE-ID</code> / <code>EXDATE</code>; GnuCash Since Last Run</td>
+          </tr>
+          <tr>
+            <td class="num">5</td>
+            <td class="what">Trace money across accounts and services</td>
+            <td><span class="cost low">Low</span></td>
+            <td class="art">Firefly III bidirectional transaction links</td>
+          </tr>
+          <tr>
+            <td class="num">6</td>
+            <td class="what">Store payment history</td>
+            <td><span class="cost trivial">Trivial</span></td>
+            <td class="art">It's the table. Nothing to design.</td>
+          </tr>
+          <tr>
+            <td class="num">7</td>
+            <td class="what">Export for analysis by an LLM</td>
+            <td><span class="cost trivial">Trivial</span></td>
+            <td class="art">SQLite file + <code>SELECT</code>; Beancount's query layer</td>
+          </tr>
+          <tr>
+            <td class="num">8</td>
+            <td class="what">Simulate a new recurring payment</td>
+            <td><span class="cost low">Low</span></td>
+            <td class="art">PocketSmith secondary scenarios</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="thesis">
+    <p>If the forecast is a pure function over rules, a what-if scenario is an extra rule set passed in and toggled. The expensive commercial feature becomes a boolean parameter.</p>
+    <span class="attrib">The core architectural bet</span>
+  </div>
+
+  <section class="stack">
+    <h2>What actually costs you</h2>
+    <p class="col">None of this was in the requirements. All of it is where the real effort goes, and the reason most self-built finance tools are abandoned around month three.</p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th>Concern</th>
+            <th>Cost</th>
+            <th>Why it bites</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="hot">
+            <td class="what">Bank feeds / ingestion</td>
+            <td><span class="cost high">High + ongoing</span></td>
+            <td class="art">Plaid, TrueLayer, GoCardless Bank Account Data, Salt Edge, Akahu. PSD2 forces consent re-authentication roughly every 90 days, so even a working feed needs a re-auth flow you build and maintain. Viable-to-free under UK/EU open banking; materially worse in the US.</td>
+          </tr>
+          <tr class="hot">
+            <td class="what">Transaction matching</td>
+            <td><span class="cost high">High</span></td>
+            <td class="art">Reconciling an imported real transaction against the occurrence you forecast. Fuzzy and endless. Actual Budget's "within 2 days before or after" window is a heuristic born of pain — expect to rediscover all of it.</td>
+          </tr>
+          <tr>
+            <td class="what">Durability over years</td>
+            <td><span class="cost high">Ongoing</span></td>
+            <td class="art">The stated goal was something <em>dependable</em>. Backups, migrations that don't eat history, and — the actual risk — still caring in month 30. A finance tool only pays off across years of sustained entry.</td>
+          </tr>
+          <tr>
+            <td class="what">Multi-currency</td>
+            <td><span class="cost high">High, if needed</span></td>
+            <td class="art">Historical rates, realised vs unrealised gain, which rate applies at posting time. Nasty to retrofit. Decide before the schema is written, not after.</td>
+          </tr>
+          <tr>
+            <td class="what">Entry on a phone</td>
+            <td><span class="cost med">Medium</span></td>
+            <td class="art">Logging a payment while standing in a shop. Most often the thing that quietly kills adoption of a self-built tool.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="stack">
+    <h2>Prior art worth reading</h2>
+    <p class="col">Ordered by how directly each one solves a stated requirement. The first two are the highest-leverage: both are specifications or implementations of exactly the problems that looked hardest.</p>
+
+    <div class="art-grid">
+
+      <article class="card">
+        <span class="tag">Criteria 1 &amp; 4 · specification</span>
+        <h3>RFC 5545 (iCalendar)</h3>
+        <p>The recurrence problem was solved and standardised in 2009. <code>RRULE</code> defines the pattern, <code>RDATE</code> adds one-off occurrences, <code>EXDATE</code> removes them, and <code>RECURRENCE-ID</code> exists specifically to identify and override a <em>single</em> occurrence within a series.</p>
+        <p class="steal"><b>Steal</b>Requirement 4 is <code>RECURRENCE-ID</code> under another name. Don't invent an override model — implement this one. Use <code>python-dateutil</code>'s <code>rrule</code> or <code>rrule.js</code> rather than hand-rolled date maths.</p>
+      </article>
+
+      <article class="card">
+        <span class="tag">Criteria 1, 2 &amp; 8 · implementation</span>
+        <h3>hledger forecasting</h3>
+        <p>Periodic transaction rules live in the journal; the <code>--forecast</code> flag activates them to generate temporary transactions that are <em>never written back</em> but appear in every report. Inspect them with <code>hledger print --forecast tag:generated</code>.</p>
+        <p class="steal"><b>Steal</b>The whole architecture. Forecast output is derived and disposable, not persisted rows. That single decision is what makes scenarios cheap and keeps projections from corrupting the ledger.</p>
+      </article>
+
+      <article class="card">
+        <span class="tag">Criterion 8 · interaction model</span>
+        <h3>PocketSmith scenarios</h3>
+        <p>Each account has a <em>primary</em> scenario — the real forecast — and optional <em>secondary</em> scenarios that are additive/subtractive overlays. Tick and untick them on the calendar to recompute projected daily balances with and without.</p>
+        <p class="steal"><b>Steal</b>The overlay-plus-toggle model, and the comparison against a live baseline rather than a separate throwaway budget. Also its occurrence editing: <em>this event only / this and future / all</em>.</p>
+      </article>
+
+      <article class="card">
+        <span class="tag">Criterion 5 · data model</span>
+        <h3>Firefly III</h3>
+        <p>Open source, mature double-entry schema, and the best answer anywhere to tracing money across services: explicit typed links between transactions that work in both directions, configurable under Administration.</p>
+        <p class="steal"><b>Steal</b>The link table and its typed, bidirectional relations. Also read its <em>Missing features</em> page — a rare, explicit statement of what a finance tool deliberately refuses to do, and why forecasting was ruled out.</p>
+      </article>
+
+      <article class="card">
+        <span class="tag">Reference implementation</span>
+        <h3>Actual Budget</h3>
+        <p>The most readable open-source codebase of the group, and the budget file is plain SQLite. Its schedules implementation covers requirement 1 directly, and its local-first sync layer is worth a look even if you never need it.</p>
+        <p class="steal"><b>Steal</b>The schema, and the matching heuristics as a cautionary tale. Its two-day matching window shows how much fuzziness reconciliation actually needs.</p>
+      </article>
+
+      <article class="card">
+        <span class="tag">Criterion 4 · interaction model</span>
+        <h3>GnuCash "Since Last Run"</h3>
+        <p>The canonical UX for scheduled transactions: on opening the file, you're shown every occurrence that came due and can review, edit or skip each one <em>before</em> it posts to the ledger. Amounts can be variables it prompts you for.</p>
+        <p class="steal"><b>Steal</b>The review-before-commit step. It resolves requirement 4 without any editing-history complexity, because nothing has been written yet.</p>
+      </article>
+
+      <article class="card">
+        <span class="tag">Criteria 5 &amp; 7 · data model</span>
+        <h3>Beancount &amp; Fava</h3>
+        <p>Plain-text double-entry with a rigorously designed data model and a real query language. Fava is its web frontend. The whole system treats the ledger as queryable data first and a UI second.</p>
+        <p class="steal"><b>Steal</b>The posting model and the discipline of a text-first, queryable ledger. This is the shape that makes requirement 7 — handing clean data to an LLM — free rather than a feature.</p>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="stack">
+    <h2>Architecture decisions</h2>
+    <p class="col">Five calls that are cheap now and expensive to reverse. The first is the one that matters most.</p>
+    <dl class="decisions">
+      <div class="decision">
+        <dt>Double-entry, day one</dt>
+        <dd>Every transaction is a set of postings summing to zero. Retrofitting this is a rewrite. It's also what makes requirement 5 fall out for free — and it removes PocketSmith's two-accounts-per-transfer limit, so a multi-hop journey is genuinely representable.</dd>
+      </div>
+      <div class="decision">
+        <dt>SQLite, single file</dt>
+        <dd>Hands you requirement 7 and a backup story in the same decision. One file to copy, and any LLM pipeline can read it directly.</dd>
+      </div>
+      <div class="decision">
+        <dt>Integer minor units</dt>
+        <dd>Amounts as signed integers in pence/cents. Never floats. Non-negotiable and unglamorous.</dd>
+      </div>
+      <div class="decision">
+        <dt>Forecast as a pure function</dt>
+        <dd>No I/O, no writes, no persisted projection rows. Testable, and it's what collapses requirement 8 into a parameter.</dd>
+      </div>
+      <div class="decision">
+        <dt>CSV import before any bank API</dt>
+        <dd>Prove the model against real history first. Feeds are a separate project with a separate maintenance burden, and may never be worth starting.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="stack">
+    <h2>Schema sketch</h2>
+    <p class="col">Enough to argue with. The <code>UNIQUE (series_id, occurrence_on)</code> constraint is doing quiet but important work — it's what stops a forecast occurrence and its real imported counterpart from both landing in the ledger.</p>
+    <pre><code><span class="c">-- Core. A txn is a set of postings summing to zero.</span>
+<span class="k">CREATE TABLE</span> account (
+  id            INTEGER PRIMARY KEY,
+  name          TEXT NOT NULL,
+  kind          TEXT NOT NULL,   <span class="c">-- asset|liability|income|expense|equity</span>
+  currency      TEXT NOT NULL
+);
+
+<span class="k">CREATE TABLE</span> txn (
+  id            INTEGER PRIMARY KEY,
+  occurred_on   TEXT NOT NULL,            <span class="c">-- ISO date</span>
+  description   TEXT NOT NULL,
+  series_id     INTEGER REFERENCES series(id),   <span class="c">-- null = one-off (req 3)</span>
+  occurrence_on TEXT,                     <span class="c">-- RECURRENCE-ID: the slot filled</span>
+  journey_id    INTEGER REFERENCES journey(id),  <span class="c">-- req 5</span>
+  source        TEXT NOT NULL,            <span class="c">-- manual|import</span>
+  <span class="k">UNIQUE</span> (series_id, occurrence_on)
+);
+
+<span class="k">CREATE TABLE</span> posting (
+  id            INTEGER PRIMARY KEY,
+  txn_id        INTEGER NOT NULL REFERENCES txn(id) ON DELETE CASCADE,
+  account_id    INTEGER NOT NULL REFERENCES account(id),
+  amount_minor  INTEGER NOT NULL,         <span class="c">-- signed. integers only.</span>
+  currency      TEXT NOT NULL
+);
+<span class="c">-- invariant: SUM(amount_minor) = 0 per txn, per currency</span>
+
+<span class="c">-- Req 1: store the rule, never the instances.</span>
+<span class="k">CREATE TABLE</span> series (
+  id            INTEGER PRIMARY KEY,
+  description   TEXT NOT NULL,
+  rrule         TEXT NOT NULL,            <span class="c">-- RFC 5545 RRULE string</span>
+  dtstart       TEXT NOT NULL,
+  until_on      TEXT,
+  template      TEXT NOT NULL,            <span class="c">-- JSON: default postings</span>
+  scenario_id   INTEGER REFERENCES scenario(id)  <span class="c">-- null = baseline (req 8)</span>
+);
+
+<span class="c">-- Req 4: per-occurrence override. RECURRENCE-ID by another name.</span>
+<span class="k">CREATE TABLE</span> series_override (
+  series_id     INTEGER NOT NULL REFERENCES series(id) ON DELETE CASCADE,
+  occurrence_on TEXT NOT NULL,            <span class="c">-- the slot being overridden</span>
+  moved_to      TEXT,                     <span class="c">-- new date, or null to keep</span>
+  amount_minor  INTEGER,                  <span class="c">-- new amount, or null to keep</span>
+  skipped       INTEGER NOT NULL DEFAULT 0,     <span class="c">-- EXDATE</span>
+  <span class="k">PRIMARY KEY</span> (series_id, occurrence_on)
+);
+
+<span class="c">-- Req 8: a scenario is just a named bag of extra series.</span>
+<span class="k">CREATE TABLE</span> scenario (
+  id            INTEGER PRIMARY KEY,
+  name          TEXT NOT NULL,
+  active        INTEGER NOT NULL DEFAULT 0
+);
+
+<span class="c">-- Req 5: one movement of money, many hops.</span>
+<span class="k">CREATE TABLE</span> journey (
+  id            INTEGER PRIMARY KEY,
+  label         TEXT NOT NULL
+);</code></pre>
+
+    <h3>The forecast function</h3>
+    <pre><code>forecast(as_of, horizon, active_scenarios[])
+    -> [{ account, date, balance }]
+
+  1. seed balances from real postings up to as_of
+  2. for each series where
+       scenario_id IS NULL OR scenario_id IN active_scenarios:
+         expand rrule from as_of to horizon
+         apply overrides  (skip / move / re-amount)
+         drop occurrences already matched by a real txn
+  3. accumulate forward by date, per account</code></pre>
+    <p class="col">Generated occurrences are never written back. Requirement 2 is step 3; requirement 8 is the third argument.</p>
+  </section>
+
+  <section class="stack">
+    <h2>Open questions</h2>
+    <p class="col">Four answers that change the build materially. The first one decides most of it.</p>
+    <div class="questions">
+      <div class="q">
+        <b>Which country do the accounts sit in?</b>
+        <span>Decides whether automatic bank feeds are free, expensive, or unavailable — and therefore whether building is a weekend project or an ongoing integration commitment. UK/EU open banking makes DIY feeds viable; elsewhere, plan for manual CSV indefinitely.</span>
+      </div>
+      <div class="q">
+        <b>Is multi-currency actually needed?</b>
+        <span>PayPal and Wise in the money path usually means yes. It has to be settled before the schema is written — historical rates and gain/loss are miserable to retrofit.</span>
+      </div>
+      <div class="q">
+        <b>Does entry need to work on a phone?</b>
+        <span>If yes, that's a hosting, auth and mobile-UI project sitting on top of the ledger, and it should be scoped as one.</span>
+      </div>
+      <div class="q">
+        <b>A working system, or a project?</b>
+        <span>Both are legitimate, and they have different answers. Building purely to avoid $120/yr doesn't survive the arithmetic once maintenance is counted; wanting to own the tool does. Worth being honest about which is driving it before committing six months.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="col stack">
+    <h2>The middle path</h2>
+    <p>Worth putting on the table explicitly, because it's likely the best value for effort: <strong>don't build ingestion, build the analysis.</strong></p>
+    <p>Let an existing tool be the system of record and own bank feeds, matching and durability — Actual Budget's SQLite file, Firefly III's REST API, or PocketSmith's own API and CSV export. Then build the forecast-and-scenario layer on top as a script against that data.</p>
+    <p>That gets requirements 2 and 8 shaped exactly as wanted without ever owning bank connectivity. And because the forecast code reads a table of transactions — which every one of these exports — it survives a migration if the tool underneath disappoints.</p>
+  </section>
+
+  <footer>
+    <p><strong>Sources.</strong> <a href="https://datatracker.ietf.org/doc/html/rfc5545">RFC 5545</a> · <a href="https://hledger.org/forecasting.html">hledger forecasting</a> · <a href="https://learn.pocketsmith.com/article/1248-everything-you-need-to-know-about-scenarios-in-pocketsmith">PocketSmith scenarios</a> · <a href="https://learn.pocketsmith.com/article/203-creating-a-transfer-budget">PocketSmith transfer budgets</a> · <a href="https://docs.firefly-iii.org/explanation/more-information/what-its-not/">Firefly III missing features</a> · <a href="https://actualbudget.org/docs/schedules/">Actual Budget schedules</a> · <a href="https://github.com/actualbudget/actual">Actual source</a> · <a href="https://beancount.github.io/docs/">Beancount</a> · <a href="https://dateutil.readthedocs.io/en/stable/rrule.html">dateutil rrule</a></p>
+    <p>Build costs are estimates for a competent solo developer, and assume the architecture decisions above. A v1 covering all eight requirements is realistically 20–40 focused hours; ingestion and durability are the open-ended commitments.</p>
+  </footer>
+
+</div>
