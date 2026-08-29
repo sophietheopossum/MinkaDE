@@ -41,8 +41,11 @@ XWayland bridge.
 ## Build / lint / run
 
 ```sh
-# Lint QML (from app's dir; uses system qmllint)
-qmllint shell.qml services/*.qml modules/*.qml
+# Lint QML (from the app's dir — MinkaLedger's is ui/). ABSOLUTE path: qt5-declarative
+# owned /usr/bin/qmllint and was removed 29/8/2026, so there is no qmllint on PATH at
+# all now. Never pipe this: like cargo below, `| head` makes $? report head, and the
+# Qt5 binary that used to be first on PATH failed with a BARE 255 and no message.
+/usr/lib/qt6/bin/qmllint -I . shell.qml services/*.qml modules/*.qml
 
 # Type-check ShojiWM config (from ShojiWM/) — currently exits 0 clean
 ./node_modules/.bin/tsc --noEmit -p packages/config
