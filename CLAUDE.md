@@ -59,6 +59,22 @@ python3 -m py_compile MinkaMon/scripts/sampler.py
 
 # Run a Quickshell app — ALWAYS use an ABSOLUTE path (relative `.` breaks from other cwds)
 qs -p /home/seirra/Documents/src/MinkaDE/MinkaShell
+
+# Test MinkaLedger against a THROWAWAY book, never the default one. The default
+# (~/.local/share/minka-ledger/book.db) is Sophie's real finances; a probe that
+# writes there leaves accounts and imported statements mixed into her data.
+env MINKA_LEDGER_BIN=$PWD/MinkaLedger/target/debug/minka-ledger \
+    MINKA_LEDGER_DB=$HOME/.cache/minka-ledger/test.db \
+    qs -p /home/seirra/Documents/src/MinkaDE/MinkaLedger/ui
+# and for the core alone:
+./target/debug/minka-ledger --db ~/.cache/minka-ledger/test.db
+
+# MinkaLedger ships a NEW CORE METHOD? cargo build --release, or her app will not have it.
+# Her launcher runs target/release/minka-ledger; `cargo build` and `cargo test` only touch
+# the debug binary, so a method added and tested against debug answers
+# "no such method: <name>" in her window. She must then RESTART MinkaLedger: the running
+# core holds the old inode (readlink /proc/<pid>/exe shows a trailing "(deleted)").
+cargo build --release
 ```
 
 - **The running compositor is not the worktree.** `/usr/bin/shoji_wm` is whatever was
