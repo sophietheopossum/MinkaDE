@@ -1,2 +1,4 @@
 minkade-*.tar.gz
 .idea/workspace.xml
+
+tools/__pycache__/
