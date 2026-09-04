@@ -31,3 +31,9 @@ set -gx XDG_MENU_PREFIX plasma-
 #prevents duplicate hypercat work
 set -gx HC_SHARED_WORKSPACE 1
 
+# The satellite at HEAD only supersamples X11 apps (render at the largest output's scale, let
+# the compositor downscale) when this is set; unset it picks the SMALLEST scale instead.
+set -gx XWAYLAND_SATELLITE_COMPOSITOR_SCALING 1
+# ShojiWM sends the satellite's stdout/stderr to /dev/null unless this is set; with it they go
+# to ~/shoji_wm/logs/ (path override: SHOJI_XWAYLAND_SATELLITE_LOG_PATH).
+set -gx SHOJI_XWAYLAND_SATELLITE_LOG 1
