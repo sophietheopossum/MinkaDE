@@ -1,0 +1,77 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "shojiwm: install (dev)",
+      "detail": "dist/install.sh --dev --no-config, the RustRover install action. Builds release-fast, then asks for sudo. Takes effect at the next session start.",
+      "type": "shell",
+      "command": "dist/install.sh --dev --no-config",
+      "options": { "cwd": "${workspaceFolder}/ShojiWM" },
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "xwayland-satellite: build release",
+      "detail": "The compositor spawns target/release/xwayland-satellite via SHOJI_XWAYLAND_SATELLITE_PATH, so the build is the install. Takes effect at the next session start.",
+      "type": "shell",
+      "command": "cargo build --release",
+      "options": { "cwd": "${workspaceFolder}/xwayland-satellite" },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "minkafx: build release",
+      "detail": "MINKA_FX_BIN points at target/release/MinkaFX. Restart MinkaFX (or the session) to pick it up.",
+      "type": "shell",
+      "command": "cargo build --release",
+      "options": { "cwd": "${workspaceFolder}/MinkaFX" },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "minkacap: build release",
+      "detail": "MINKA_CAP_BIN points at target/release/MinkaCap. MinkaShot runs it per capture, so the next capture uses it.",
+      "type": "shell",
+      "command": "cargo build --release",
+      "options": { "cwd": "${workspaceFolder}/MinkaCap" },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "minkaledger: build core release",
+      "detail": "The launcher runs target/release/minka-ledger. Restart MinkaLedger afterwards: the running core keeps the old inode.",
+      "type": "shell",
+      "command": "cargo build --release",
+      "options": { "cwd": "${workspaceFolder}/MinkaLedger" },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "bartizan-lsp: build release",
+      "detail": "The editor launches target/release/bartizan-lsp directly. Restart the LSP afterwards.",
+      "type": "shell",
+      "command": "cargo build --release",
+      "options": { "cwd": "${workspaceFolder}/bartizan-lsp" },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "session: rebuild everything the next session runs",
+      "detail": "Satellite, MinkaFX and MinkaCap release builds, then the ShojiWM install (sudo prompt comes last).",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "xwayland-satellite: build release",
+        "minkafx: build release",
+        "minkacap: build release",
+        "shojiwm: install (dev)"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
