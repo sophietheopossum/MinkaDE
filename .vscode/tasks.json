@@ -3,10 +3,13 @@
   "tasks": [
     {
       "label": "shojiwm: install (dev)",
-      "detail": "dist/install.sh --dev --no-config, the RustRover install action. Builds release-fast, then asks for sudo. Takes effect at the next session start.",
+      "detail": "dist/install.sh --dev --no-config, the RustRover install action. Builds release-fast, then asks for sudo. Takes effect at the next session start. Runs in a memory-bounded transient scope (see 'build limits' below).",
       "type": "shell",
-      "command": "dist/install.sh --dev --no-config",
-      "options": { "cwd": "${workspaceFolder}/ShojiWM" },
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -- dist/install.sh --dev --no-config",
+      "options": {
+        "cwd": "${workspaceFolder}/ShojiWM",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
       "group": { "kind": "build", "isDefault": true },
       "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "clear": true },
       "problemMatcher": []
@@ -15,8 +18,11 @@
       "label": "xwayland-satellite: build release",
       "detail": "The compositor spawns target/release/xwayland-satellite via SHOJI_XWAYLAND_SATELLITE_PATH, so the build is the install. Takes effect at the next session start.",
       "type": "shell",
-      "command": "cargo build --release",
-      "options": { "cwd": "${workspaceFolder}/xwayland-satellite" },
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -- cargo build --release",
+      "options": {
+        "cwd": "${workspaceFolder}/xwayland-satellite",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
       "group": "build",
       "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
       "problemMatcher": ["$rustc"]
@@ -25,8 +31,11 @@
       "label": "minkafx: build release",
       "detail": "MINKA_FX_BIN points at target/release/MinkaFX. Restart MinkaFX (or the session) to pick it up.",
       "type": "shell",
-      "command": "cargo build --release",
-      "options": { "cwd": "${workspaceFolder}/MinkaFX" },
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -- cargo build --release",
+      "options": {
+        "cwd": "${workspaceFolder}/MinkaFX",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
       "group": "build",
       "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
       "problemMatcher": ["$rustc"]
@@ -35,8 +44,11 @@
       "label": "minkacap: build release",
       "detail": "MINKA_CAP_BIN points at target/release/MinkaCap. MinkaShot runs it per capture, so the next capture uses it.",
       "type": "shell",
-      "command": "cargo build --release",
-      "options": { "cwd": "${workspaceFolder}/MinkaCap" },
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -- cargo build --release",
+      "options": {
+        "cwd": "${workspaceFolder}/MinkaCap",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
       "group": "build",
       "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
       "problemMatcher": ["$rustc"]
@@ -45,8 +57,11 @@
       "label": "minkaledger: build core release",
       "detail": "The launcher runs target/release/minka-ledger. Restart MinkaLedger afterwards: the running core keeps the old inode.",
       "type": "shell",
-      "command": "cargo build --release",
-      "options": { "cwd": "${workspaceFolder}/MinkaLedger" },
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -- cargo build --release",
+      "options": {
+        "cwd": "${workspaceFolder}/MinkaLedger",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
       "group": "build",
       "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
       "problemMatcher": ["$rustc"]
@@ -55,15 +70,26 @@
       "label": "bartizan-lsp: build release",
       "detail": "The editor launches target/release/bartizan-lsp directly. Restart the LSP afterwards.",
       "type": "shell",
-      "command": "cargo build --release",
-      "options": { "cwd": "${workspaceFolder}/bartizan-lsp" },
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -- cargo build --release",
+      "options": {
+        "cwd": "${workspaceFolder}/bartizan-lsp",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
       "group": "build",
       "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
       "problemMatcher": ["$rustc"]
     },
     {
+      "label": "build limits (reference, does nothing)",
+      "detail": "Every build task above runs as `systemd-run --user --scope -p MemoryHigh=6G -p MemoryMax=10G` with CARGO_BUILD_JOBS=6. MemoryHigh throttles by reclaim (the build slows, it does not die); MemoryMax is the backstop and DOES kill inside the scope, so a build that dies with a bare 'signal: 9, SIGKILL' hit 10G — raise it here, do not raise it globally. 6 of 8 jobs leaves the desktop two cores and cuts peak RSS, which scales with concurrent rustc. Rationale: 6/9/2026, a release-fast build on top of an 8G lspmux/rust-analyzer set off a four-minute kernel OOM storm (13 kills, none of them the build) that took out Code, GitKraken and the portals. Bounding the build keeps the kill inside the build's own cgroup.",
+      "type": "shell",
+      "command": "echo 'Reference task — see the detail field. Nothing to run.'",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
       "label": "session: rebuild everything the next session runs",
-      "detail": "Satellite, MinkaFX and MinkaCap release builds, then the ShojiWM install (sudo prompt comes last).",
+      "detail": "Satellite, MinkaFX and MinkaCap release builds, then the ShojiWM install (sudo prompt comes last). Sequential, so only one bounded scope is live at a time.",
       "dependsOrder": "sequence",
       "dependsOn": [
         "xwayland-satellite: build release",
