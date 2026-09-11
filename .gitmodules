@@ -52,3 +52,6 @@
 [submodule "MinkaLedger"]
 	path = MinkaLedger
 	url = git@github.com:sophietheopossum/MinkaLedger.git
+[submodule "smithay"]
+	path = smithay
+	url = git@github.com:sophietheopossum/smithay.git
