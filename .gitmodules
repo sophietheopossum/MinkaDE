@@ -55,3 +55,6 @@
 [submodule "smithay"]
 	path = smithay
 	url = git@github.com:sophietheopossum/smithay.git
+[submodule "GitComet"]
+	path = GitComet
+	url = git@github.com:sophietheopossum/GitComet.git
