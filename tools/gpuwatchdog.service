@@ -30,9 +30,16 @@ Nice=-5
 # bug in the watchdog, and being killed for it is the right outcome.
 MemoryMax=192M
 
-# CAP_KILL to signal the target, CAP_DAC_READ_SEARCH to read every process's
-# fdinfo, CAP_SETUID/SETGID only to raise the desktop notification as the user.
-CapabilityBoundingSet=CAP_KILL CAP_DAC_READ_SEARCH CAP_SETUID CAP_SETGID
+# CAP_KILL to signal the target, CAP_DAC_READ_SEARCH + CAP_SYS_PTRACE to read
+# another user's /proc/<pid>/fdinfo, CAP_SETUID/SETGID only to raise the
+# desktop notification as the user.
+#
+# CAP_SYS_PTRACE is not optional and not obvious: fdinfo is gated by
+# ptrace_may_access(), so without it a root watchdog still reads GPUActive but
+# attributes nothing -- it would reach the critical stage, find "no target",
+# and signal nobody. Verified 21/9: the service logged held=none while the same
+# scan as the owning user found 474 MB.
+CapabilityBoundingSet=CAP_KILL CAP_DAC_READ_SEARCH CAP_SYS_PTRACE CAP_SETUID CAP_SETGID
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=read-only

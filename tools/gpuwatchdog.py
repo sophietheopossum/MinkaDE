@@ -263,6 +263,10 @@ def main():
                     help="seconds after acting before acting again")
     ap.add_argument("--target", action="append", default=None,
                     help="comm allowed to be signalled (repeatable)")
+    ap.add_argument("--heartbeat", type=float, default=1800.0,
+                    help="seconds between liveness lines; 0 disables. A watchdog "
+                         "that is silent when healthy cannot be told from a dead "
+                         "one, and the line doubles as a GPUActive trace")
     ap.add_argument("--uid", type=int, default=1000, help="uid to notify")
     ap.add_argument("--capture-dir", default=DEFAULT_CAPTURE_DIR)
     ap.add_argument("--dry-run", action="store_true",
@@ -288,6 +292,17 @@ def main():
     if not args.dry_run and os.geteuid() != 0:
         log("warning: not root; signalling will fail. Use --dry-run or run as root.")
 
+    # A watchdog that cannot see any DRM client cannot attribute a runaway to
+    # anyone, and would reach the critical stage only to find no target. That
+    # is a silent failure worth one loud line at startup: the usual cause is a
+    # missing CAP_SYS_PTRACE, because fdinfo is gated by ptrace_may_access().
+    visible = gpu_clients()
+    if not visible:
+        log("WARNING: no DRM clients visible -- cannot attribute GPU memory to "
+            "any process. If running as a service, CAP_SYS_PTRACE is missing.")
+    else:
+        log(f"attribution ok: {len(visible)} DRM clients visible")
+
     log(f"armed: warn {args.warn_gib} GiB/{args.warn_hold}s, "
         f"critical {args.crit_gib} GiB + avail<={args.crit_avail_gib} GiB/{args.crit_hold}s, "
         f"targets={sorted(targets)}, dry_run={args.dry_run}")
@@ -296,6 +311,7 @@ def main():
     above_crit_since = None
     warned = False
     acted_at = 0.0
+    last_beat = 0.0
 
     while True:
         time.sleep(args.interval)
@@ -305,6 +321,13 @@ def main():
         if gpu is None:
             continue
         avail = mem.get("MemAvailable", 0)
+
+        if args.heartbeat and now - last_beat >= args.heartbeat:
+            last_beat = now
+            best = pick_target(targets)
+            held = f"{best[1] / 1048576:.2f} GiB by {best[2]}" if best else "none"
+            log(f"alive: GPUActive={gpu / 1048576:.2f} GiB "
+                f"MemAvailable={avail / 1048576:.2f} GiB held={held}")
 
         if gpu < warn_kib:
             # One reading below the line clears the state: the runaway we care
