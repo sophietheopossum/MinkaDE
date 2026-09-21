@@ -290,7 +290,8 @@ def main():
         return 0
 
     if not args.dry_run and os.geteuid() != 0:
-        log("warning: not root; signalling will fail. Use --dry-run or run as root.")
+        log("note: not root -- it can only signal processes this user owns, "
+            "which is enough for a rehearsal but not for the service")
 
     # A watchdog that cannot see any DRM client cannot attribute a runaway to
     # anyone, and would reach the critical stage only to find no target. That
