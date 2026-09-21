@@ -1,0 +1,45 @@
+[Unit]
+Description=Minka: stop a GPU memory runaway before the kernel picks the victim
+Documentation=file:/usr/local/bin/gpuwatchdog
+# GPU pages are not charged to any memcg and oom_badness() ignores them, so in
+# a GPU runaway the kernel kills everything except the process responsible. On
+# 11/9/2026 that was ~40 processes over 6.7 minutes, user@1000's systemd
+# manager among them -- which is also why this cannot be a user unit: it would
+# die in the storm it exists to stop.
+After=multi-user.target
+# ConditionPathExists rather than a hard failure: GPUActive only exists on a
+# kernel with the DRM memory accounting, and without it there is no trigger.
+ConditionPathExists=/proc/meminfo
+
+[Service]
+Type=simple
+# Trial mode: append --dry-run for the first few days. It still captures and
+# notifies, it just never signals, so the thresholds can be judged against
+# real behaviour before anything is allowed to kill a browser.
+ExecStart=/usr/local/bin/gpuwatchdog
+Restart=always
+RestartSec=5
+
+# The whole point is to still be running, and still be responsive, in the
+# minutes when the machine is thrashing and the OOM killer is walking the
+# process list.
+OOMScoreAdjust=-1000
+MemorySwapMax=0
+Nice=-5
+# It reads /proc and sends at most one signal; anything larger than this is a
+# bug in the watchdog, and being killed for it is the right outcome.
+MemoryMax=192M
+
+# CAP_KILL to signal the target, CAP_DAC_READ_SEARCH to read every process's
+# fdinfo, CAP_SETUID/SETGID only to raise the desktop notification as the user.
+CapabilityBoundingSet=CAP_KILL CAP_DAC_READ_SEARCH CAP_SETUID CAP_SETGID
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log/gpuwatchdog
+PrivateTmp=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target
