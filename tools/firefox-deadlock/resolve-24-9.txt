@@ -1,0 +1,66 @@
+##### HOLDER (IndexedDB IO #147) new middle frames
+
+=== 0x41cf0a2 -> fn 0x41ceec0 (+0x1e2, size 0x1f0) ===
+    str: 'Unavailable'
+    str: './../../../dom/quota/FileStreams.cpp'
+    str: 'MOZ_RELEASE_ASSERT(XRE_IsParentProcess())'
+    str: 'MOZ_RELEASE_ASSERT(!mDeserialized)'
+    via 0x41cf260: './../../../dom/quota/ActorsParent.cpp'
+    via 0x49d267a: 'MOZ_RELEASE_ASSERT(aLength <= kMax) (string is too large)'
+
+=== 0x41cf714 -> fn 0x41cf5c0 (+0x154, size 0x1b0) ===
+    str: 'Unavailable'
+    str: './../../../dom/quota/FileStreams.cpp'
+    via 0x32a8da0: 'MOZ_RELEASE_ASSERT(aLength <= kMax) (string is too large)'
+    via 0x49d267a: 'MOZ_RELEASE_ASSERT(aLength <= kMax) (string is too large)'
+
+=== 0x418768e -> fn 0x41862f0 (+0x139e, size 0x35b0) ===
+    str: 'ObjectStoreAddOrPutRequestOp::DoDatabaseWork'
+    str: 'SELECT index_data_values FROM object_data WHERE object_store_id = :'
+    str: ' AND key = :'
+    str: 'query'
+    str: 'OR REPLACE '
+    str: 'INSERT '
+    str: 'INTO object_data (object_store_id, key, file_ids, data) VALUES (:'
+    str: 'DatabaseOperationBase::IndexDataValuesFromUpdateInfos'
+    via 0x4185d80: '/home/plz/firebuild/dom/indexedDB/ActorsParent.cpp'
+    via 0x32a8da0: 'MOZ_RELEASE_ASSERT(aLength <= kMax) (string is too large)'
+    via 0x4183c70: 'MOZ_RELEASE_ASSERT(aLength <= kMax) (string is too large)'
+    via 0x37c7700: './../../../dom/quota/CachingDatabaseConnection.cpp'
+    via 0x32ad960: 'MOZ_RELEASE_ASSERT(aLength <= kMax) (string is too large)'
+    via 0x37c7bf0: './../../../dom/quota/CachingDatabaseConnection.cpp'
+    via 0x4189cd0: 'MOZ_RELEASE_ASSERT(mData < mDataEnd)'
+    via 0x4189cd0: 'MOZ_RELEASE_ASSERT(segment.Start() <= mData)'
+
+##### IPDL Background new path
+
+=== 0x76febe1 -> fn 0x76feba0 (+0x41, size 0xb0) ===
+    via 0x76f9040: 'MOZ_RELEASE_ASSERT(isSome())'
+
+=== 0x7b157f4 -> fn 0x7b156b0 (+0x144, size 0x160) ===
+    via 0x7b15810: 'Connection::FlushTimerCallback'
+    via 0x7b15810: 'MOZ_CRASH(Bad type!)'
+    via 0x32e9390: 'MOZ_RELEASE_ASSERT(mContentList->mInHashtable)'
+
+=== 0x7b14be5 -> fn 0x7b14bc0 (+0x25, size 0x30) ===
+    str: 'RecvAsyncFinish'
+    str: 'Already finished'
+
+=== 0x7b276ae -> fn 0x7b27480 (+0x22e, size 0x510) ===
+    str: 'PBackgroundLSSnapshot::Msg_DeleteMe'
+    str: 'PBackgroundLSSnapshot::Msg_Loaded'
+    str: 'PBackgroundLSSnapshot::Msg_AsyncFinish'
+    str: 'Handler returned error code!'
+    str: 'PBackgroundLSSnapshot::Msg_AsyncCheckpoint'
+    str: 'PBackgroundLSSnapshot::Msg_AsyncCheckpointAndNotify'
+    str: "Error deserializing 'LSWriteInfo[]'"
+    str: "Error deserializing 'LSWriteAndNotifyInfo[]'"
+    via 0x3814800: 'MOZ_RELEASE_ASSERT(mData < mDataEnd)'
+    via 0x3814800: 'MOZ_RELEASE_ASSERT(segment.Start() <= mData)'
+    via 0x7b282b0: 'failed to read byte length in ReadSequenceParam'
+    via 0x7b28370: 'failed to read byte length in ReadSequenceParam'
+
+=== 0x7b139d2 -> fn 0x7b138a0 (+0x132, size 0x1b0) ===
+    str: 'PBackgroundLSDatabase::Msg_AllowToClose'
+    str: 'Handler returned error code!'
+exit 0

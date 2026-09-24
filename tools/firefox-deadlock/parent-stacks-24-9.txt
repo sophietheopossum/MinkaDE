@@ -1,0 +1,2244 @@
+PID 4020 - process
+TID 4020:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73e282 __poll - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13e281
+#2  0x00007fba8abb7802 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x7bb7801
+#3  0x00007fba91de1094 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f093
+#4  0x00007fba91de1162 g_main_context_iteration - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f161
+#5  0x00007fba86b120cf - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b120ce
+#6  0x00007fba86b106f7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b106f6
+#7  0x00007fba881d44af - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x51d44ae
+#8  0x00007fba881d425c - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x51d425b
+#9  0x00007fba88325af1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x5325af0
+#10 0x00007fba88324514 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x5324513
+#11 0x00007fba87ce6a2d - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4ce6a2c
+#12 0x00007fba88294e75 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x5294e74
+#13 0x00005613d8cb504f - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x5804e
+#14 0x00007fba9c627cce - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x27ccd
+#15 0x00007fba9c627e0b __libc_start_main - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x27e0a
+#16 0x00005613d8cba865 _start - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x5d864
+TID 4034:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73eb6f read - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13eb6e
+#2  0x00007fba87bd82e6 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd82e5
+#3  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#4  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4035:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba91e19d45 g_cond_wait - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0xa7d44
+#2  0x00007fba91d9a3dd g_async_queue_pop_unlocked - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x283dc
+#3  0x00007fba91e22c29 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0xb0c28
+#4  0x00007fba91e226e3 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0xb06e2
+#5  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#6  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4036:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73ea83 ppoll - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13ea82
+#2  0x00007fba91de1071 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f070
+#3  0x00007fba91de1162 g_main_context_iteration - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f161
+#4  0x00007fba91de11b2 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f1b1
+#5  0x00007fba91e226e3 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0xb06e2
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4038:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73ea83 ppoll - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13ea82
+#2  0x00007fba91de1071 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f070
+#3  0x00007fba91de131f g_main_loop_run - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f31e
+#4  0x00007fba91ca89ec - /usr/lib/libgio-2.0.so.0.8800.3
+    [a4a66fdbd3dd4ea1dd3cce73e8f37333c4fe63f3]@0x7fba91b74000+0x1349eb
+#5  0x00007fba91e226e3 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0xb06e2
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4039:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba91e19d45 g_cond_wait - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0xa7d44
+#2  0x00007fba91d9a2fd g_async_queue_pop - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x282fc
+#3  0x00007fba93303851 - /usr/lib/libpangoft2-1.0.so.0.5800.2
+    [43b82a6478dee3416f6e89d3cec335b8ac0a01d8]@0x7fba932f7000+0xc850
+#4  0x00007fba91e226e3 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0xb06e2
+#5  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#6  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4040:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73e282 __poll - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13e281
+#2  0x00007fba883292e6 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x53292e5
+#3  0x00007fba883296d4 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x53296d3
+#4  0x00007fba8832964f - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x532964e
+#5  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#6  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4041:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73ea83 ppoll - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13ea82
+#2  0x00007fba91de1071 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f070
+#3  0x00007fba91de1162 g_main_context_iteration - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0x6f161
+#4  0x00007fba8ffb48de - /usr/lib/gio/modules/libdconfsettings.so
+    [a88d2036f8f9878e21c712a7d69e84cdd601230e]@0x7fba8ffad000+0x78dd
+#5  0x00007fba91e226e3 - /usr/lib/libglib-2.0.so.0.8800.3
+    [f6e5e800f0a4daea7d170379321a24faad9ced2e]@0x7fba91d72000+0xb06e2
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4046:
+#0  0x00007fba9c7afd46 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x1afd46
+#1  0x00007fba8d06f214 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa06f213
+#2  0x00007fba8d028463 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa028462
+#3  0x00007fba8d009b0d - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa009b0c
+#4  0x00007fba8d034b73 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa034b72
+#5  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4048:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba86db248d - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3db248c
+#2  0x00007fba86db1814 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3db1813
+#3  0x00007fba87bd8fce - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8fcd
+#4  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#5  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#6  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4050:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac5aa pthread_cond_timedwait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac5a9
+#3  0x00005613d8cf320a mozilla::detail::ConditionVariableImpl::wait_for(mozilla::detail::MutexImpl&, mozilla::BaseTimeDuration<mozilla::TimeDurationValueCalculator> const&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x96209
+#4  0x00007fba8774338e - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x474338d
+#5  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#6  0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#7  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#8  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#9  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#10 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4051:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73e282 __poll - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13e281
+#2  0x00007fba87fef018 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4fef017
+#3  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#4  0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#5  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#6  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4052:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73e282 __poll - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13e281
+#2  0x00007fba9cd4a62e PR_Poll - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1462d
+#3  0x00007fba873fd850 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x43fd84f
+#4  0x00007fba873fcd4a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x43fcd49
+#5  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#6  0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#7  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#8  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#9  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#10 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4053:
+#0  0x00007fba9c6a993e - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa993e
+#1  0x00007fba9c6b0c81 pthread_mutex_lock - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb0c80
+#2  0x00005613d8cf3a57 mozilla::detail::MutexImpl::lock() - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x96a56
+#3  0x00007fba8a6febe2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x76febe1
+#4  0x00007fba8a6fe880 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x76fe87f
+#5  0x00007fba8ab157f5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x7b157f4
+#6  0x00007fba8ab14be6 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x7b14be5
+#7  0x00007fba8ab276af - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x7b276ae
+#8  0x00007fba8ab139d3 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x7b139d2
+#9  0x00007fba86b199b8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b199b7
+#10 0x00007fba86b139e2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b139e1
+#11 0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#12 0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#13 0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#14 0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#15 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4064:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4065:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4066:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4067:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4068:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4069:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4074:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba9cd4db6d PR_WaitCondVar - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x17b6c
+#4  0x00007fba87bd7692 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd7691
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4076:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8685e6ec - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x385e6eb
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4077:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8685e6ec - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x385e6eb
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4078:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8685e6ec - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x385e6eb
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4079:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8685e6ec - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x385e6eb
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4080:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8685e6ec - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x385e6eb
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4081:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8685e6ec - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x385e6eb
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4082:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8685e6ec - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x385e6eb
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4083:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8685e6ec - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x385e6eb
+#5  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4085:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4086:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4090:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac5aa pthread_cond_timedwait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac5a9
+#3  0x00005613d8cf320a mozilla::detail::ConditionVariableImpl::wait_for(mozilla::detail::MutexImpl&, mozilla::BaseTimeDuration<mozilla::TimeDurationValueCalculator> const&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x96209
+#4  0x00007fba86db3581 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3db3580
+#5  0x00007fba86db3e56 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3db3e55
+#6  0x00007fba87bd8fce - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8fcd
+#7  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4091:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4092:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4093:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4094:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4095:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4096:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4097:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4098:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4099:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4100:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4101:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4102:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4103:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c1545 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c1544
+#2  0x00007fba8d745756 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa745755
+#3  0x00007fba8d744843 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa744842
+#4  0x00007fba8c2422f8 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92422f7
+#5  0x00007fba8c2450aa - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x92450a9
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4104:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885d5827 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55d5826
+#2  0x00007fba8c243b82 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9243b81
+#3  0x00007fba8c240575 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9240574
+#4  0x00007fba8c244fdf - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9244fde
+#5  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4105:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885d5827 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55d5826
+#2  0x00007fba8c243b82 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9243b81
+#3  0x00007fba8c5e47c3 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x95e47c2
+#4  0x00007fba8c504880 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x950487f
+#5  0x00007fba8c29ef59 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x929ef58
+#6  0x00007fba8c4ed9c2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x94ed9c1
+#7  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4106:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885d5827 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55d5826
+#2  0x00007fba8c243b82 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9243b81
+#3  0x00007fba8c5e47c3 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x95e47c2
+#4  0x00007fba8c29da2b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x929da2a
+#5  0x00007fba8c4ed762 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x94ed761
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4107:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885d5827 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55d5826
+#2  0x00007fba8c243b82 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9243b81
+#3  0x00007fba8c5e32a3 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x95e32a2
+#4  0x00007fba8c29e3b5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x929e3b4
+#5  0x00007fba8c4ed84d - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x94ed84c
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4108:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885d5827 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55d5826
+#2  0x00007fba8c243b82 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9243b81
+#3  0x00007fba8c5e47c3 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x95e47c2
+#4  0x00007fba8c504880 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x950487f
+#5  0x00007fba8c29ef59 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x929ef58
+#6  0x00007fba8c4ed9c2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x94ed9c1
+#7  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4109:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885d5827 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55d5826
+#2  0x00007fba8c243b82 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9243b81
+#3  0x00007fba8c5e47c3 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x95e47c2
+#4  0x00007fba8c29da2b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x929da2a
+#5  0x00007fba8c4ed762 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x94ed761
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4110:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885d5827 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55d5826
+#2  0x00007fba8c243b82 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x9243b81
+#3  0x00007fba8c5e32a3 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x95e32a2
+#4  0x00007fba8c29e3b5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x929e3b4
+#5  0x00007fba8c4ed84d - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x94ed84c
+#6  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4111:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4112:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4113:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4114:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4115:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4119:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4120:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4121:
+#0  0x00007fba909ca7e7 - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x1ca7e7
+#1  0x00007fba909c25be - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x1c25bd
+#2  0x00007fba909c0a06 - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x1c0a05
+#3  0x00007fba909c0915 - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x1c0914
+#4  0x00007fba90b0dee4 - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x30dee3
+#5  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#6  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4122:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba90ae3dc6 - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x2e3dc5
+#2  0x00007fba909ca01c - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x1ca01b
+#3  0x00007fba909c9c41 - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x1c9c40
+#4  0x00007fba90b0dee4 - /usr/lib/libglycin-2.so.0
+    [56d898be4ef3cb0cd95c8b6f8d77d696f1278798]@0x7fba90800000+0x30dee3
+#5  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#6  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4174:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4175:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b05c19 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b05c18
+#5  0x00007fba87bdfa78 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdfa77
+#6  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#7  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#8  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4176:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4181:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4182:
+#0  0x00007fba9c6a993e - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa993e
+#1  0x00007fba9c6b0c81 pthread_mutex_lock - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb0c80
+#2  0x00005613d8cf3a57 mozilla::detail::MutexImpl::lock() - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x96a56
+#3  0x00007fba8a6f8f10 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x76f8f0f
+#4  0x00007fba8a6f9646 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x76f9645
+#5  0x00007fba8a71af44 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x771af43
+#6  0x00007fba879d1c2f - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x49d1c2e
+#7  0x00007fba87556a80 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4556a7f
+#8  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#9  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#10 0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#11 0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#12 0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#13 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4185:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4186:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4188:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87be0151 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4be0150
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4197:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4218:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4220:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4221:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4253:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba8d299925 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa299924
+#2  0x00007fba8d29631c - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa29631b
+#3  0x00007fba8d27a1ac - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa27a1ab
+#4  0x00007fba8d27a809 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa27a808
+#5  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4254:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba8d299925 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa299924
+#2  0x00007fba8d29631c - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa29631b
+#3  0x00007fba8d27a288 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa27a287
+#4  0x00007fba8d27a9a9 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa27a9a8
+#5  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4255:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba8d299925 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa299924
+#2  0x00007fba8d29631c - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa29631b
+#3  0x00007fba8d27a17d - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa27a17c
+#4  0x00007fba8d27a809 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa27a808
+#5  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4256:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4335:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4337:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4338:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4340:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4341:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4344:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4345:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4348:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4395:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4405:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4406:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4416:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4423:
+#0  0x00007fba9c74b3ed syscall - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14b3ed
+#1  0x00007fba885c147b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55c147a
+#2  0x00007fba8d00708d - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa00708c
+#3  0x00007fba8d034966 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0xa034965
+#4  0x00007fba885da9ef - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x55da9ee
+#5  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#6  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4433:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4434:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4548:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8740532f - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x440532e
+#5  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#6  0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#7  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#8  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#9  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#10 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4574:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4598:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4701:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4753:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4820:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8740532f - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x440532e
+#5  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#6  0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#7  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#8  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#9  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#10 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4871:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4877:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4963:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 4978:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8740532f - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x440532e
+#5  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#6  0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#7  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#8  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#9  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#10 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 5180:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 5235:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 5241:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 5514:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 5518:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 5704:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 6089:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba86b134b1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b134b0
+#5  0x00007fba86b117b7 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b117b6
+#6  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#7  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 6110:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c750455 recvmsg - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x150454
+#2  0x00007fba87cf378a - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4cf3789
+#3  0x00007fba87bd8e47 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bd8e46
+#4  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#5  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 6125:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 6129:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 6150:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba0075643e - /usr/lib/libvulkan_intel.so
+    [57893e32d645f1eca4ded646e9c96263ac34c079]@0x7fba00200000+0x55643d
+#4  0x00007fba0073880d - /usr/lib/libvulkan_intel.so
+    [57893e32d645f1eca4ded646e9c96263ac34c079]@0x7fba00200000+0x53880c
+#5  0x00007fba007563ac - /usr/lib/libvulkan_intel.so
+    [57893e32d645f1eca4ded646e9c96263ac34c079]@0x7fba00200000+0x5563ab
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 35638:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 35642:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00007fba6963722e - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63722d
+#4  0x00007fba695eb11d - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x5eb11c
+#5  0x00007fba6963716c - /usr/lib/libgallium-26.2.3-arch3.1.so
+    [2e359c89230f4df903597e14a04d3823e7240c32]@0x7fba69000000+0x63716b
+#6  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#7  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 36761:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c73e282 __poll - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x13e281
+#2  0x00007fba4a1ccca7 - /usr/lib/libpulse.so.0.24.3
+    [dd959b38d21d3e58f0a6c0431ced11d3c2a17975]@0x7fba4a198000+0x34ca6
+#3  0x00007fba4a1b5439 pa_mainloop_poll - /usr/lib/libpulse.so.0.24.3
+    [dd959b38d21d3e58f0a6c0431ced11d3c2a17975]@0x7fba4a198000+0x1d438
+#4  0x00007fba4a1c089e pa_mainloop_iterate - /usr/lib/libpulse.so.0.24.3
+    [dd959b38d21d3e58f0a6c0431ced11d3c2a17975]@0x7fba4a198000+0x2889d
+#5  0x00007fba4a1c0961 pa_mainloop_run - /usr/lib/libpulse.so.0.24.3
+    [dd959b38d21d3e58f0a6c0431ced11d3c2a17975]@0x7fba4a198000+0x28960
+#6  0x00007fba4a1d1fad - /usr/lib/libpulse.so.0.24.3
+    [dd959b38d21d3e58f0a6c0431ced11d3c2a17975]@0x7fba4a198000+0x39fac
+#7  0x00007fba4a16e4e7 - /usr/lib/pulseaudio/libpulsecommon-17.0.so
+    [14f65c61ac6e9ba3bb138fb8ec7126d2fe219355]@0x7fba4a10c000+0x624e6
+#8  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#9  0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 36800:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac2f0 pthread_cond_wait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac2ef
+#3  0x00005613d8cf30d7 mozilla::detail::ConditionVariableImpl::wait(mozilla::detail::MutexImpl&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x960d6
+#4  0x00007fba8a6f9291 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x76f9290
+#5  0x00007fba8a6f918e - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x76f918d
+#6  0x00007fba8a6fec45 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x76fec44
+#7  0x00007fba8a6fe880 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x76fe87f
+#8  0x00007fba871cf0a3 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x41cf0a2
+#9  0x00007fba871cf715 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x41cf714
+#10 0x00007fba8718768f - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x418768e
+#11 0x00007fba8683ac9e - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x383ac9d
+#12 0x00007fba86e4c2fc - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3e4c2fb
+#13 0x00007fba86da88f1 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3da88f0
+#14 0x00007fba86da77bf - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3da77be
+#15 0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#16 0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#17 0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#18 0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#19 0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#20 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 527591:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac5aa pthread_cond_timedwait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac5a9
+#3  0x00005613d8cf320a mozilla::detail::ConditionVariableImpl::wait_for(mozilla::detail::MutexImpl&, mozilla::BaseTimeDuration<mozilla::TimeDurationValueCalculator> const&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x96209
+#4  0x00007fba86da75fe - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3da75fd
+#5  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#6  0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#7  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#8  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#9  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#10 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
+TID 527592:
+#0  0x00007fba9c6b60c2 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xb60c2
+#1  0x00007fba9c6a9738 - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xa9737
+#2  0x00007fba9c6ac5aa pthread_cond_timedwait - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xac5a9
+#3  0x00005613d8cf320a mozilla::detail::ConditionVariableImpl::wait_for(mozilla::detail::MutexImpl&, mozilla::BaseTimeDuration<mozilla::TimeDurationValueCalculator> const&) - /opt/hellfire/firefox
+    [2018712b708dc7143cdde26c9a66438378d97b34]@0x5613d8c5d000+0x96209
+#4  0x00007fba86da75fe - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3da75fd
+#5  0x00007fba86b1368b - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b1368a
+#6  0x00007fba86b116d5 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x3b116d4
+#7  0x00007fba87bdade2 - /opt/hellfire/libxul.so
+    [20aaa76ca9491fc3f640714b599c33ec5a705665]@0x7fba83000000+0x4bdade1
+#8  0x00007fba9cd53bcf - /opt/hellfire/libnspr4.so
+    [813e7eadba054f88073faf03d594c7d12409b082]@0x7fba9cd36000+0x1dbce
+#9  0x00007fba9c6acf9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0xacf9b
+#10 0x00007fba9c74df9c - /usr/lib/libc.so.6
+    [8c9adedfc90d91b54c1edbdf911c83fbfbd16763]@0x7fba9c600000+0x14df9b
