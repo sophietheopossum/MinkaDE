@@ -58,3 +58,6 @@
 [submodule "GitComet"]
 	path = GitComet
 	url = git@github.com:sophietheopossum/GitComet.git
+[submodule "tools/keysend"]
+	path = tools/keysend
+	url = git@github.com:sophietheopossum/keysend.git
