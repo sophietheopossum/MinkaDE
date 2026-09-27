@@ -105,6 +105,22 @@ At the exact second of the wedge (the last write to `storage/storage.sqlite`), t
 
 That matches the holder stack: an `ObjectStoreAddOrPutRequestOp` blocked in the quota file-stream path before writing anything. The lock owner on this capture is that IndexedDB thread; its database is not read directly from the thread, but this is the only external-file write left unfinished anywhere in the profile.
 
+## Third capture
+
+The same build wedged again, about three days later. The pattern is the same:
+- **The trigger.** At the wedge second (the last write to `storage/storage.sqlite`), Consent-O-Matic was again storing its value as an external file in the same `browser.storage.local` database:
+  - `…eengsairo.files/20244`: **0 bytes**, created at the wedge second;
+  - `…eengsairo.files/journals/20244`: its journal, created the same second, and again the **only** orphaned IndexedDB file journal in the profile;
+  - `…eengsairo.files/20243`: 154,265 bytes, written successfully 21 minutes earlier. That is the same size as `19066` in the second capture, so the extension rewrites the same value periodically, and one of those rewrites wedges.
+- **What else happened that second.** A cross-site frame on the page being loaded created its partitioned storage (`https+++mobile2.gameassists.co.uk^partitionKey=(https,daznbet.com)`). The page's consent banner is the likely reason the extension wrote.
+- **The lock owner.** `find-lock-owner.py` shows IPDL Background and QuotaManager IO both blocked on the same mutex, held by an **IndexedDB IO** thread. That thread is in an untimed `pthread_cond_wait` (the mutex word reads `__lock=2`, and `__owner` is the IndexedDB IO thread's TID).
+
+**The stacks, compared with the second capture** (same libxul build-id; the parent's stacks are in `parent-stacks-27-9.txt`):
+- The **holder** (IndexedDB IO) stack is **byte-identical**: `ObjectStoreAddOrPutRequestOp::DoDatabaseWork` → the `dom/quota/FileStreams.cpp` functions at `0x41cf5c0` and `0x41ceec0` → the lock-guard constructor `0x76feba0` → `ConditionVariableImpl::wait`.
+- **QuotaManager IO**'s stack is byte-identical.
+- The **LS Thread** is idle, as before.
+- **IPDL Background** reaches the same mutex by a different route: `quota::DirectoryLockImpl::AcquireInternal` (fn `0x4554cf0`) ← `OpenClientDirectory` / `Acquire` (fn `0x4550990`) ← an IndexedDB factory request for a `moz-extension:` origin (fn `0x4b794a0`, `dom/indexedDB/ActorsParent.cpp`, `PrincipalUtils.cpp`). The resolution is in `resolve-27-9.txt`. The second capture reached it through `PBackgroundLSSnapshot::Msg_AsyncFinish` instead. So once the IndexedDB IO thread holds this mutex across its wait, any PBackground-side quota operation queues behind it, not just localStorage.
+
 ## What the wait is for — open
 
 Not established from the binary. Both threads that could plausibly be expected to signal it — PBackground (for example if this is the eviction path, where origins for eviction are collected on the owning thread) and QuotaManager IO — are themselves blocked on the mutex the waiter holds, which would make this a cycle rather than a lost wakeup. With symbols this should be quick to confirm.
@@ -113,10 +129,15 @@ Environment that may matter for an eviction path: the profile lives on a 9.8 GB 
 
 ## Reproduction
 
-Not reproduced on demand. Observed with long-running sessions and many origins; the second occurrence followed an extension writing a ~150 KB value to `browser.storage.local`, which the same extension had written successfully an hour earlier — so the write is necessary but not sufficient.
+Not reproduced on demand. It has been observed with long-running sessions and many origins.
+- The second occurrence followed an extension writing a ~150 KB value to `browser.storage.local`. The same extension had written that value successfully an hour earlier, so the write is necessary but not sufficient.
+- The third occurrence followed the same extension writing the same 154,265-byte value to the same database. Its previous write of that value, 21 minutes earlier, had also succeeded.
+- A plausible way to reproduce it: keep a long-running profile with many origins and Consent-O-Matic installed, and load sites with consent banners.
 
 ## Attachments
 
 - `parent-stacks-24-9.txt` — `eu-stack -b -m` of every parent thread at the second capture
+- `parent-stacks-27-9.txt` — the same, at the third capture
+- `resolve-24-9.txt`, `resolve-27-9.txt` — the resolved frames for the second and third captures
 - `find-lock-owner.py` — reads the contended mutex's owner from `/proc` (root required; the parent is non-dumpable)
 - `fde.py`, `resolve.py` — the offset-to-source resolution for a stripped libxul

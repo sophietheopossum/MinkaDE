@@ -1,0 +1,50 @@
+
+=== 0x4555280 -> fn 0x4555210 (+0x70, size 0x160) ===
+    via 0x37ca3c0: 'MOZ_RELEASE_ASSERT(SizeOfEntryStore(CapacityFromHashShift(), mEntrySize, &nbytes))'
+
+=== 0x4554d96 -> fn 0x4554cf0 (+0xa6, size 0x520) ===
+    str: 'quota::DirectoryLockImpl::AcquireInternal'
+    str: 'MOZ_RELEASE_ASSERT(is<T>())'
+    via 0x37ca3c0: 'MOZ_RELEASE_ASSERT(SizeOfEntryStore(CapacityFromHashShift(), mEntrySize, &nbytes))'
+    via 0x51a8f40: 'MOZ_RELEASE_ASSERT(isSome())'
+
+=== 0x4550d1e -> fn 0x4550990 (+0x38e, size 0x25b0) ===
+    str: 'Acquire'
+    str: 'OpenClientDirectoryImpl'
+    str: '<completion promise>'
+    str: 'MozPromise'
+    str: '%s creating MozPromise (%p)'
+    via 0x4553060: 'Acquire'
+    via 0x45535e0: 'MOZ_RELEASE_ASSERT(is<N>())'
+
+=== 0x4b79e2d -> fn 0x4b794a0 (+0x98d, size 0x1830) ===
+    str: 'Unavailable'
+    str: '/home/plz/firebuild/dom/indexedDB/ActorsParent.cpp'
+    str: 'MOZ_CRASH(Bad state!)'
+    str: 'UnknownErr in %s'
+    str: './../../../dom/quota/ActorsParent.cpp'
+    str: 'moz-extension:'
+    str: 'MOZ_CRASH(Allocation or other failure while appending integers)'
+    str: 'MOZ_RELEASE_ASSERT(isSome())'
+    via 0x4b764e0: './../../../dom/quota/ActorsParent.cpp'
+    via 0x4b766a0: './../../../dom/quota/PrincipalUtils.cpp'
+    via 0x32ad960: 'MOZ_RELEASE_ASSERT(aLength <= kMax) (string is too large)'
+
+=== 0x3b1368a -> fn 0x3b11ba0 (+0x1aea, size 0x5770) ===
+    str: '@mozilla.org/observer-service;1'
+    str: 'nsThread'
+    str: 'MOZ_RELEASE_ASSERT(!isSome())'
+    str: 'ThreadEventQueue::GetEvent::Wait'
+    str: 'INTERRUPTED %p'
+    str: 'DONE %p'
+    str: 'Perform microtasks'
+    str: 'MemoryTelemetry::GatherReports'
+    via 0x3aa4140: 'Perform microtasks'
+    via 0x3aa4140: 'Called PerformMicroTaskCheckpoint'
+    via 0x3b1f530: 'PIdleScheduler::Msg_RequestIdleTime'
+    via 0x3b1f530: 'MOZ_RELEASE_ASSERT(idx < storage_.size())'
+    via 0x4420250: 'GetServiceByContractID'
+    via 0x4420250: "Can't call GetServiceByContractID during shutdown. ContractID: %s; IID: %s"
+    via 0x382dcc0: 'MOZ_RELEASE_ASSERT(!HasEntry())'
+    via 0x3b17610: 'events'
+    via 0x3b17610: 'EXEC %p %p [%s]'
