@@ -16,7 +16,7 @@ Type=simple
 # Trial mode: append --dry-run for the first few days. It still captures and
 # notifies, it just never signals, so the thresholds can be judged against
 # real behaviour before anything is allowed to kill a browser.
-ExecStart=/usr/local/bin/gpuwatchdog
+ExecStart=/usr/local/bin/gpuwatchdog --target floorp --target hellfire
 Restart=always
 RestartSec=5
 
