@@ -1,0 +1,59 @@
+#!/bin/sh
+# Restore the Intel MMIO RAPL package power limits: long-term PL1 and
+# short-term PL2.
+#
+# Why this exists: on 7/9/2026 PL1 was found sitting at 10 W on a 28 W-capable
+# part. Nothing in userspace owned that value -- intel_pstate, ppd, the ASUS
+# platform profile and the MSR RAPL domain all read wide open, and the MSR
+# domain advertised a misleading 60 W. The MMIO domain is the one the platform
+# actually enforces. The effect was every core pinned at 1.3-1.7 GHz against a
+# 2.8 GHz base at 56 C, with the thermal throttle counters flat -- power-starved,
+# not heat-limited, and invisible from every knob you would normally check.
+#
+# PL2 (28/9/2026): the firmware leaves the short-term limit at 25 W over a 2 ms
+# window, BELOW PL1, so the package could never draw its full 28 W even briefly.
+# 35 W lets short bursts through; PL1 still governs anything longer than its
+# ~28 s window, and this chassis is heat-limited before either anyway.
+#
+# Edit WATTS / PL2_WATTS below to change them. PL1 is clamped to what the
+# hardware reports as its own maximum, so it can never ask for something out of
+# spec. PL2 has no reported maximum, so it is only kept at or above PL1.
+WATTS=${WATTS:-28}
+PL2_WATTS=${PL2_WATTS:-35}
+
+d=/sys/class/powercap/intel-rapl-mmio:0
+f="$d/constraint_0_power_limit_uw"
+f2="$d/constraint_1_power_limit_uw"
+
+[ -w "$f" ] || { echo "no writable $f" >&2; exit 1; }
+[ -w "$f2" ] || { echo "no writable $f2" >&2; exit 1; }
+
+want=$((WATTS * 1000000))
+max=$(cat "$d/constraint_0_max_power_uw" 2>/dev/null || echo 0)
+case "$max" in
+  ''|*[!0-9]*) max=0 ;;
+esac
+if [ "$max" -gt 0 ] && [ "$want" -gt "$max" ]; then
+    echo "clamping ${WATTS}W to hardware maximum $((max / 1000000))W"
+    want=$max
+fi
+
+echo "$want" > "$f" || { echo "write to $f failed" >&2; exit 1; }
+
+got=$(cat "$f")
+echo "PL1 now $((got / 1000000))W (${got} uW)"
+
+want2=$((PL2_WATTS * 1000000))
+if [ "$want2" -lt "$want" ]; then
+    echo "raising PL2 ${PL2_WATTS}W to PL1 $((want / 1000000))W"
+    want2=$want
+fi
+
+echo "$want2" > "$f2" || { echo "write to $f2 failed" >&2; exit 1; }
+
+got2=$(cat "$f2")
+echo "PL2 now $((got2 / 1000000))W (${got2} uW)"
+
+# Fail loudly rather than silently: if the platform claws a value back
+# immediately, that is itself the answer to who owns it.
+[ "$got" = "$want" ] && [ "$got2" = "$want2" ]

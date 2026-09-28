@@ -1,0 +1,17 @@
+[Unit]
+Description=Minka: restore Intel MMIO RAPL package power limits (PL1 and PL2)
+Documentation=file:/usr/local/bin/minka-cpu-power-limit
+ConditionPathExists=/sys/class/powercap/intel-rapl-mmio:0/constraint_0_power_limit_uw
+# Listed After= the sleep targets as well as multi-user: units wanted by a sleep
+# target and ordered After= it run on the way back out, i.e. post-resume. The
+# 10 W value this replaces had no identified owner, so nothing guarantees
+# something will not re-impose it across a suspend. Measured evidence says it
+# survives sleep untouched; this is belt and braces until the owner is known.
+After=multi-user.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/minka-cpu-power-limit
+
+[Install]
+WantedBy=multi-user.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
