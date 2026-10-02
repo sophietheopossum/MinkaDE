@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
+# Not /usr/bin/env: coreutils-hybrid's env forks python3 as a child instead of
+# exec'ing it, so the service's main PID was env and the watchdog ran as two
+# processes. A direct shebang also keeps the comm (and journal tag) gpuwatchdog.
 """gpuwatchdog - stop a GPU memory runaway before the kernel picks the victim.
 
 Why this exists: GPU pages are not charged to any memcg and `oom_badness()`

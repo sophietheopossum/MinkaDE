@@ -7,16 +7,21 @@ Documentation=file:/usr/local/bin/gpuwatchdog
 # manager among them -- which is also why this cannot be a user unit: it would
 # die in the storm it exists to stop.
 After=multi-user.target
-# ConditionPathExists rather than a hard failure: GPUActive only exists on a
-# kernel with the DRM memory accounting, and without it there is no trigger.
-ConditionPathExists=/proc/meminfo
 
 [Service]
 Type=simple
-# Trial mode: append --dry-run for the first few days. It still captures and
-# notifies, it just never signals, so the thresholds can be judged against
-# real behaviour before anything is allowed to kill a browser.
-ExecStart=/usr/local/bin/gpuwatchdog --target floorp --target hellfire
+# GPUActive only exists on a kernel with the DRM memory accounting; without it
+# there is no trigger, and the watchdog would poll forever while looking
+# healthy. A Condition*= can only test that /proc/meminfo exists, which is
+# always true, so test the field itself: a non-zero exit skips the unit
+# ("condition unmet") rather than failing it, and Restart= does not loop on it.
+ExecCondition=/usr/bin/grep -qs ^GPUActive: /proc/meminfo
+# Trial mode is the dryrun.conf drop-in, which sets this to --dry-run: it still
+# captures and notifies, it just never signals. Only the mode lives in the
+# variable, so the drop-in never restates the targets and the armed and trial
+# command lines cannot drift apart. An empty $VAR word expands to no argument.
+Environment=GPUWATCHDOG_MODE=
+ExecStart=/usr/local/bin/gpuwatchdog $GPUWATCHDOG_MODE --target floorp --target hellfire
 Restart=always
 RestartSec=5
 
@@ -43,7 +48,9 @@ CapabilityBoundingSet=CAP_KILL CAP_DAC_READ_SEARCH CAP_SYS_PTRACE CAP_SETUID CAP
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/var/log/gpuwatchdog
+# Creates /var/log/gpuwatchdog (root, 0755) and keeps it writable under
+# ProtectSystem=strict; it is the script's default --capture-dir.
+LogsDirectory=gpuwatchdog
 PrivateTmp=yes
 RestrictSUIDSGID=yes
 LockPersonality=yes
