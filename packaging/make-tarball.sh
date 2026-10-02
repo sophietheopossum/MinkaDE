@@ -43,8 +43,10 @@ QS_APPS=(MinkaShell MinkaConf MinkaMon)
 # every theme token comes back undefined.
 QS_SHARED=(Proustite MinkaLink)
 
-# -> src/, for install.sh --from-source
-SOURCES=(ShojiWM xwayland-satellite MinkaFX MinkaIPC)
+# -> src/, for install.sh --from-source. MinkaIPC and smithay are path
+# dependencies (MinkaFX's, and ShojiWM's `[patch]` on ../smithay), so they
+# have to sit next to their dependents or cargo cannot resolve the build.
+SOURCES=(ShojiWM xwayland-satellite MinkaFX MinkaIPC smithay)
 
 # -> dist/
 DIST_EXEC=(

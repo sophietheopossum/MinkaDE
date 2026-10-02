@@ -80,7 +80,7 @@ if [[ $FROM_SOURCE -eq 1 ]]; then
     cp src/ShojiWM/package.json src/ShojiWM/package-lock.json src/ShojiWM/tsconfig.json "$RUNTIME_SRC/"
     cp -a src/ShojiWM/packages/shoji_wm "$RUNTIME_SRC/packages/"
     cp -a src/ShojiWM/packages/config "$RUNTIME_SRC/packages/"
-    cp src/ShojiWM/tools/decoration-runtime.ts src/ShojiWM/tools/evaluate-decoration.ts "$RUNTIME_SRC/tools/"
+    cp src/ShojiWM/tools/decoration-runtime.ts "$RUNTIME_SRC/tools/"
     npm --prefix "$RUNTIME_SRC" ci
 else
     for f in bin/shoji_wm bin/xdg-desktop-portal-shojiwm bin/xwayland-satellite bin/MinkaFX runtime/package.json; do
