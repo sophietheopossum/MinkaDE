@@ -147,6 +147,24 @@ def gpu_clients():
     return per_pid
 
 
+def fdinfo_denied():
+    """PIDs whose fdinfo this process may not open. The kernel gates the
+    directory itself with ptrace_may_access(), so for root any entry means
+    CAP_SYS_PTRACE is missing -- and unlike a DRM client count, that holds at
+    boot, before any client exists."""
+    denied = []
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        try:
+            os.listdir(f"/proc/{entry}/fdinfo")
+        except PermissionError:
+            denied.append(int(entry))
+        except OSError:
+            continue
+    return denied
+
+
 def pick_target(targets):
     """The biggest private-GTT holder whose comm is in the allowlist."""
     best = None
@@ -296,16 +314,26 @@ def main():
         log("note: not root -- it can only signal processes this user owns, "
             "which is enough for a rehearsal but not for the service")
 
-    # A watchdog that cannot see any DRM client cannot attribute a runaway to
-    # anyone, and would reach the critical stage only to find no target. That
-    # is a silent failure worth one loud line at startup: the usual cause is a
+    # A watchdog that cannot read fdinfo cannot attribute a runaway to anyone,
+    # and would reach the critical stage only to find no target. That is a
+    # silent failure worth one loud line at startup: the usual cause is a
     # missing CAP_SYS_PTRACE, because fdinfo is gated by ptrace_may_access().
+    # Test the permission, not the client count: the service starts at boot
+    # before any DRM client exists, and on 1/10 "none visible" was reported as
+    # a missing capability when nothing was wrong.
     visible = gpu_clients()
-    if not visible:
-        log("WARNING: no DRM clients visible -- cannot attribute GPU memory to "
-            "any process. If running as a service, CAP_SYS_PTRACE is missing.")
-    else:
+    denied = fdinfo_denied() if os.geteuid() == 0 else []
+    if denied:
+        log(f"WARNING: fdinfo unreadable for {len(denied)} processes "
+            f"(e.g. {_comm(denied[0])}({denied[0]})) -- their GPU memory cannot "
+            "be attributed. CAP_SYS_PTRACE is missing.")
+    elif visible:
         log(f"attribution ok: {len(visible)} DRM clients visible")
+    elif os.geteuid() == 0:
+        log("attribution ok: fdinfo readable, no DRM clients yet")
+    else:
+        log("WARNING: no DRM clients visible -- not root, so only this user's "
+            "processes can be attributed")
 
     log(f"armed: warn {args.warn_gib} GiB/{args.warn_hold}s, "
         f"critical {args.crit_gib} GiB + avail<={args.crit_avail_gib} GiB/{args.crit_hold}s, "
