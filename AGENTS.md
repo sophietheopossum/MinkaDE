@@ -109,7 +109,9 @@ cargo build --release
   `maximized` and `minimized` flags — the only way to observe focus from outside, since
   the compositor logs focus changes at `debug!` only. Read in a loop: the server drops a
   half-closed connection, so a bare `socat` often returns nothing. Methods are registered
-  in `packages/config/src/index.tsx` (`WORKSPACE_IPC.handle`); there is no `windows.list`.
+  in `packages/config/src/minka/workspace-ipc.ts` (`server.handle`; `settings.*` in
+  `minka/settings.ts`); there is no `windows.list`. `index.tsx` only wires the `minka/`
+  modules together, and the order of its calls is significant.
 - **Session logs in `~/shoji_wm/logs` are UTC**, while `journalctl` and `ls` show local
   time. Comparing them without converting has produced hours of phantom timeline.
 
