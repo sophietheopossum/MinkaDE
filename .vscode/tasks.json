@@ -15,6 +15,19 @@
       "problemMatcher": []
     },
     {
+      "label": "shojiwm: install rust config",
+      "detail": "dist/install-rust-config.sh: builds the Minka Rust config (release-fast) and installs it over /usr/bin/shoji_wm, keeping a TypeScript binary it replaces as /usr/lib/shojiwm/shoji_wm.typescript. Asks for sudo. Takes effect at the next session start. 'shojiwm: install (dev)' puts the TypeScript build back.",
+      "type": "shell",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install-rust-config.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/ShojiWM",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
+      "group": "build",
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
       "label": "xwayland-satellite: build release",
       "detail": "The compositor spawns target/release/xwayland-satellite via SHOJI_XWAYLAND_SATELLITE_PATH, so the build is the install. Takes effect at the next session start.",
       "type": "shell",
