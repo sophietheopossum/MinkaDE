@@ -2,28 +2,28 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "shojiwm: install (dev)",
-      "detail": "dist/install.sh --dev --no-config, the RustRover install action. Builds release-fast, then asks for sudo. Takes effect at the next session start. Runs in a memory-bounded transient scope (see 'build limits' below).",
+      "label": "shojiwm: install typescript (rollback)",
+      "detail": "dist/install.sh --dev --no-config without --rust-config: puts the TypeScript-config build back in place of the Rust config. Builds release-fast, then asks for sudo. Takes effect at the next session start; uncomment SHOJI_CONFIG in shojiwm-env.fish first. Runs in a memory-bounded transient scope (see 'build limits' below).",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install.sh --dev --no-config",
       "options": {
         "cwd": "${workspaceFolder}/ShojiWM",
         "env": { "CARGO_BUILD_JOBS": "6" }
       },
-      "group": { "kind": "build", "isDefault": true },
+      "group": "build",
       "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "clear": true },
       "problemMatcher": []
     },
     {
-      "label": "shojiwm: install rust config",
-      "detail": "dist/install-rust-config.sh: builds the Minka Rust config (release-fast) and installs it over /usr/bin/shoji_wm, keeping a TypeScript binary it replaces as /usr/lib/shojiwm/shoji_wm.typescript. Asks for sudo. Takes effect at the next session start. 'shojiwm: install (dev)' puts the TypeScript build back.",
+      "label": "shojiwm: install",
+      "detail": "dist/install.sh --dev --no-config --no-portal --rust-config: builds the compositor with the Minka Rust config (release-fast) and installs it with its runtime files and session entry. The compositor the running session booted is kept as /usr/lib/shojiwm/shoji_wm.previous. --no-portal because the portal runs from target/release through ~/.config/systemd/user/xdg-desktop-portal-shojiwm.service.d/override.conf, and restarting it would end any screen share. Asks for sudo. Takes effect at the next session start. 'shojiwm: install typescript (rollback)' puts the TypeScript build back.",
       "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install-rust-config.sh",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install.sh --dev --no-config --no-portal --rust-config",
       "options": {
         "cwd": "${workspaceFolder}/ShojiWM",
         "env": { "CARGO_BUILD_JOBS": "6" }
       },
-      "group": "build",
+      "group": { "kind": "build", "isDefault": true },
       "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "clear": true },
       "problemMatcher": []
     },
@@ -102,13 +102,13 @@
     },
     {
       "label": "session: rebuild everything the next session runs",
-      "detail": "Satellite, MinkaFX and MinkaCap release builds, then the ShojiWM install (sudo prompt comes last). Sequential, so only one bounded scope is live at a time.",
+      "detail": "Satellite, MinkaFX and MinkaCap release builds, then the ShojiWM install with the Rust config (sudo prompt comes last). Sequential, so only one bounded scope is live at a time.",
       "dependsOrder": "sequence",
       "dependsOn": [
         "xwayland-satellite: build release",
         "minkafx: build release",
         "minkacap: build release",
-        "shojiwm: install (dev)"
+        "shojiwm: install"
       ],
       "problemMatcher": []
     }
