@@ -3,7 +3,7 @@
   "tasks": [
     {
       "label": "shojiwm: install typescript (rollback)",
-      "detail": "dist/install.sh --dev --no-config without --rust-config: puts the TypeScript-config build back in place of the Rust config. Builds release-fast, then asks for sudo. Takes effect at the next session start; uncomment SHOJI_CONFIG in shojiwm-env.fish first. Runs in a memory-bounded transient scope (see 'build limits' below).",
+      "detail": "dist/install.sh --dev --no-config without --rust-config: puts the TypeScript-config build back in place of the Rust config. It replaces all of /usr/lib/shojiwm, so the fallbacks there (shoji_wm.previous, shoji_wm.typescript) are removed. Builds release-fast, then asks for sudo. Takes effect at the next session start; uncomment SHOJI_CONFIG in shojiwm-env.fish first. Runs in a memory-bounded transient scope (see 'build limits' below).",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install.sh --dev --no-config",
       "options": {
@@ -16,7 +16,7 @@
     },
     {
       "label": "shojiwm: install",
-      "detail": "dist/install.sh --dev --no-config --no-portal --rust-config: builds the compositor with the Minka Rust config (release-fast) and installs it with its runtime files and session entry. The compositor the running session booted is kept as /usr/lib/shojiwm/shoji_wm.previous. --no-portal because the portal runs from target/release through ~/.config/systemd/user/xdg-desktop-portal-shojiwm.service.d/override.conf, and restarting it would end any screen share. Asks for sudo. Takes effect at the next session start. 'shojiwm: install typescript (rollback)' puts the TypeScript build back.",
+      "detail": "dist/install.sh --dev --no-config --no-portal --rust-config: builds the compositor with the Minka Rust config (release-fast) and installs it with the session entry; the TypeScript runtime files under /usr/lib/shojiwm are left alone. The compositor serving the session you run this from is kept as /usr/lib/shojiwm/shoji_wm.previous (from a tty, the existing one is kept). --no-portal because the portal runs from target/release through ~/.config/systemd/user/xdg-desktop-portal-shojiwm.service.d/override.conf, and restarting it would end any screen share. Asks for sudo. Takes effect at the next session start. 'shojiwm: install typescript (rollback)' puts the TypeScript build back.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install.sh --dev --no-config --no-portal --rust-config",
       "options": {
