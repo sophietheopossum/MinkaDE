@@ -9,7 +9,7 @@ dual-screen "Duo" mode).
 
 | Submodule      | Lang                       | Role                                                                                                                                                                                                                 |
 |----------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **ShojiWM**    | Rust (smithay) + TS config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
+| **ShojiWM**    | Rust (smithay) + Rust config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
 | **MinkaShell** | Quickshell/QML             | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications.                                                                                                                               |
 | **MinkaMon**   | Quickshell/QML + Python    | System monitor. `scripts/sampler.py` streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows.                                                                      |
 | **MinkaShot**  | Quickshell/QML             | Freeze-frame screenshot tool. Print → frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. Uses MinkaCap for occlusion-free per-window capture.                                      |
@@ -47,12 +47,23 @@ XWayland bridge.
 # Qt5 binary that used to be first on PATH failed with a BARE 255 and no message.
 /usr/lib/qt6/bin/qmllint -I . shell.qml services/*.qml modules/*.qml
 
-# Type-check ShojiWM config (from ShojiWM/) — currently exits 0 clean
-./node_modules/.bin/tsc --noEmit -p packages/config
+# Check the live Rust config, its tests included, without building (from ShojiWM/)
+cargo check -p shojiwm_rs --example default_config --profile test
 
-# Test the compositor. shoji_wm is a BINARY crate: `--lib` fails with
-# "no library targets found", and a piped `| tail` masks cargo's exit code.
-cargo test -p shoji_wm --bins ssd::evaluator
+# Test the Rust config and the compositor core (from ShojiWM/). Hide the live session
+# first (mkdir the dir once): a config runtime under test binds the IPC socket named
+# after $WAYLAND_DISPLAY and can replace the session's own (15/9/2026). A piped
+# `| tail` masks cargo's exit code.
+env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
+    cargo test -p shojiwm_rs --lib --tests --example default_config
+env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
+    cargo test -p shojiwm_lib --lib
+
+# The TypeScript config is the rollback (see "Config paths" below). Type-check it, and
+# test its runtime crate, with:
+./node_modules/.bin/tsc --noEmit -p packages/config
+env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
+    cargo test -p shoji_wm --lib evaluator
 
 # Syntax-check the sampler
 python3 -m py_compile MinkaMon/scripts/sampler.py
@@ -78,7 +89,8 @@ cargo build --release
 ```
 
 - **The running compositor is not the worktree.** `/usr/bin/shoji_wm` is whatever was
-  last installed, and the session holds that inode for its whole life — so HEAD can be
+  last installed (`/usr/bin/shoji_wm --version` ends in `(minka)` for the Rust config
+  build), and the session holds that inode for its whole life — so HEAD can be
   days ahead of what is actually running. Check before drawing conclusions from source:
   `ls -l /usr/bin/shoji_wm`, `ps -o lstart= -p $(pgrep -x shoji_wm)`, and
   `readlink /proc/<pid>/exe` — a trailing `(deleted)` means a rebuild has replaced the
@@ -86,11 +98,14 @@ cargo build --release
   editor launches straight out of `target/release/` with no copy on `PATH`: every change
   needs `cargo build --release` **and** an LSP restart. `cargo test` alone builds only
   the test binary and changes nothing that is running.
-- **ShojiWM config reload is manual: Super+Shift+R.** There is no IPC reload path; a
-  config edit does not take effect until Sophie reloads. `packages/config/**` is live
-  from the repo, but `packages/shoji_wm/**` and `tools/decoration-runtime.ts` are
-  consumed from the *installed* `/usr/lib/shojiwm` — those need a reinstall, and the
-  binary and runtime should be installed together.
+- **The Rust config cannot reload in place: there is no Super+Shift+R.** An edit under
+  `ShojiWM/src/shojiwm_rs/examples/default_config/` takes effect only after
+  `dist/install-rust-config.sh` (VS Code task "shojiwm: install rust config") and a new
+  session. Its shaders and icons are read at runtime from `ShojiWM/packages/config`
+  (an asset root compiled in from the build path), so keep the checkout where it is.
+  `dist/install.sh --dev` puts the TypeScript build back. That build hot-reloads on
+  Super+Shift+R from `packages/config/**`, while `packages/shoji_wm/**` and
+  `tools/decoration-runtime.ts` come from the *installed* `/usr/lib/shojiwm`.
 - Quickshell **live-reloads on every file save.** A broken intermediate QML save wedges
   the running instance (dead clicks) until restart — keep every save-point valid.
 - Component-*file* edits (new/renamed QML components) may need a full restart, not just
@@ -98,10 +113,14 @@ cargo build --release
 
 ## Config paths & environment
 
-- **Live ShojiWM config = `ShojiWM/packages/config/src/index.tsx`** via `$SHOJI_CONFIG`.
-- `shojiwm-env.fish` (symlinked to fish conf.d) exports the repo-checkout overrides:
-  `SHOJI_CONFIG`, `MINKA_SHELL_DIR`, `MINKA_SHOT_DIR`, `MINKA_FX_BIN`,
-  `SHOJI_XWAYLAND_SATELLITE_PATH`, `XWLS_LOGICAL_GEOMETRY`.
+- **Live ShojiWM config = the Rust port in `ShojiWM/src/shojiwm_rs/examples/default_config/`**
+  (`main.rs` plus `minka/*.rs`), compiled into `/usr/bin/shoji_wm` since 6/10/2026.
+  `ShojiWM/packages/config/src` (TypeScript) is the rollback config: only the TypeScript
+  build reads it, through `$SHOJI_CONFIG`, and the Rust build ignores that variable.
+- `shojiwm-env.fish` (symlinked to fish conf.d as `shojiwm.fish`) exports the
+  repo-checkout overrides: `MINKA_SHELL_DIR`, `MINKA_SHOT_DIR`, `MINKA_FX_BIN`,
+  `MINKA_CAP_BIN`, `MINKA_MON_BIN`, `MINKA_MON_DIR`, `SHOJI_XWAYLAND_SATELLITE_PATH`.
+  Its `SHOJI_CONFIG` line is commented out, for a TypeScript rollback.
 - The ShojiWM IPC is an NDJSON Unix socket at
   `$XDG_RUNTIME_DIR/shojiwm-$WAYLAND_DISPLAY.sock`. Query it live with `wayland-info`
   for protocol support (ask the running compositor, don't grep source).
@@ -109,9 +128,10 @@ cargo build --release
   `maximized` and `minimized` flags — the only way to observe focus from outside, since
   the compositor logs focus changes at `debug!` only. Read in a loop: the server drops a
   half-closed connection, so a bare `socat` often returns nothing. Methods are registered
-  in `packages/config/src/minka/workspace-ipc.ts` (`server.handle`; `settings.*` in
-  `minka/settings.ts`); there is no `windows.list`. `index.tsx` only wires the `minka/`
-  modules together, and the order of its calls is significant.
+  in the Rust config's `minka/workspace_ipc.rs` (`server.handle_with_client` and
+  `ipc.command`; `settings.*` in `minka/settings.rs`); there is no `windows.list`.
+  `main.rs` only wires the `minka/` modules together, and the order of its `configure_*`
+  calls is significant.
 - **Session logs in `~/shoji_wm/logs` are UTC**, while `journalctl` and `ls` show local
   time. Comparing them without converting has produced hours of phantom timeline.
 

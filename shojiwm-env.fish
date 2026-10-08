@@ -2,9 +2,12 @@
 # ly's setup.sh runs a fish login shell and imports its exports into the
 # session, so everything here reaches the compositor at startup.
 
-# Load the ShojiWM TypeScript config straight from the repo checkout instead
-# of the installed copy in ~/.config/shojiwm (super+shift+r reloads from here).
-set -gx SHOJI_CONFIG $HOME/Documents/src/MinkaDE/ShojiWM/packages/config/src/index.tsx
+# The session runs the Rust config (dist/install-rust-config.sh), which is
+# compiled into /usr/bin/shoji_wm and ignores SHOJI_CONFIG. Uncomment this when
+# rolling back to the TypeScript build (dist/install.sh --dev), so it loads the
+# repo checkout instead of the installed copy in ~/.config/shojiwm
+# (super+shift+r reloads from here).
+# set -gx SHOJI_CONFIG $HOME/Documents/src/MinkaDE/ShojiWM/packages/config/src/index.tsx
 
 # Uncomment to run the submodule build of xwayland-satellite instead of the
 # distro package (fixes non-(0,0) layout origins; upstream 33c344f, > 0.8.1):
