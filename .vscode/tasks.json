@@ -16,9 +16,9 @@
     },
     {
       "label": "shojiwm: install",
-      "detail": "dist/install.sh --dev --no-config --no-portal --rust-config: builds the compositor with the Minka Rust config (release-fast) and installs it with the session entry; the TypeScript runtime files under /usr/lib/shojiwm are left alone. The compositor serving the session you run this from is kept as /usr/lib/shojiwm/shoji_wm.previous (from a tty, the existing one is kept). --no-portal because the portal runs from target/release through ~/.config/systemd/user/xdg-desktop-portal-shojiwm.service.d/override.conf, and restarting it would end any screen share. Asks for sudo. Takes effect at the next session start. 'shojiwm: install typescript (rollback)' puts the TypeScript build back.",
+      "detail": "dist/install.sh --dev --no-config --no-portal --rust-config --expect-runtime=minka: builds the compositor with the Minka Rust config (release-fast) and installs it with the session entry, refusing any other branch's build of the example. The TypeScript runtime files under /usr/lib/shojiwm are only installed when missing. The compositor serving the session you run this from is kept as /usr/lib/shojiwm/shoji_wm.previous (from a tty, the existing one is kept). --no-portal because the portal runs from target/release through ~/.config/systemd/user/xdg-desktop-portal-shojiwm.service.d/override.conf, and restarting it would end any screen share. Asks for sudo. Takes effect at the next session start. 'shojiwm: install typescript (rollback)' puts the TypeScript build back.",
       "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install.sh --dev --no-config --no-portal --rust-config",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install.sh --dev --no-config --no-portal --rust-config --expect-runtime=minka",
       "options": {
         "cwd": "${workspaceFolder}/ShojiWM",
         "env": { "CARGO_BUILD_JOBS": "6" }

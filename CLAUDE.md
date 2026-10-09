@@ -100,8 +100,8 @@ cargo build --release
   the test binary and changes nothing that is running.
 - **The Rust config cannot reload in place: there is no Super+Shift+R.** An edit under
   `ShojiWM/src/shojiwm_rs/examples/default_config/` takes effect only after
-  `dist/install.sh --dev --no-config --no-portal --rust-config` (VS Code task
-  "shojiwm: install") and a new session. The compositor serving the session it runs from
+  `dist/install.sh --dev --no-config --no-portal --rust-config --expect-runtime=minka`
+  (VS Code task "shojiwm: install") and a new session. The compositor serving the session it runs from
   is kept as `/usr/lib/shojiwm/shoji_wm.previous` (from a tty, the existing one is kept). The portal is not part of it: it runs
   from `ShojiWM/target/release` through a systemd user `override.conf`. Its shaders and icons are read at runtime from
   `ShojiWM/packages/config` (an asset root compiled in from the build path), so keep the
