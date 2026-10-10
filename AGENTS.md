@@ -45,7 +45,15 @@ XWayland bridge.
 # owned /usr/bin/qmllint and was removed 29/8/2026, so there is no qmllint on PATH at
 # all now. Never pipe this: like cargo below, `| head` makes $? report head, and the
 # Qt5 binary that used to be first on PATH failed with a BARE 255 and no message.
-/usr/lib/qt6/bin/qmllint -I . shell.qml services/*.qml modules/*.qml
+# `find`, not globs: MinkaShell keeps its modules in modules/<sub>/, so `modules/*.qml`
+# matches nothing there (fish refuses to run it; bash lints 6 of 26 files, exits 255).
+# `--absolute-path` is hidden from --help but real: without it Qt 6.12 prints a FALSE
+# "not declared as singleton in qmldir" for most `pragma Singleton` files (10/10/2026).
+# Qt 6.12's TEXT output also drops every warning a file logged before a function or
+# binding with a loop in it (MinkaShell prints 17 of its 28): add `--json -` after
+# `-I .` for the complete list. Warnings alone exit 0; a syntax error exits 1.
+find shell.qml services modules -name '*.qml' \
+    -exec /usr/lib/qt6/bin/qmllint --absolute-path -I . {} +
 
 # Check the live Rust config, its tests included, without building (from ShojiWM/)
 cargo check -p shojiwm_rs --example default_config --profile test
