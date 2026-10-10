@@ -359,7 +359,7 @@ def report(path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").partition("\n")[0])
     ap.add_argument("--log", default=DEFAULT_LOG)
     ap.add_argument("--interval", type=float, default=15.0,
                     help="seconds between samples when memory is comfortable")

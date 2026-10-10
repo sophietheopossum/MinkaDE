@@ -33,7 +33,9 @@ def harvest(fn):
         if m: calls.append(int(m.group(1), 16))
     return strs, calls
 for a in sys.argv[1:]:
-    addr = int(a, 16); fn = func_start(addr); strs, calls = harvest(fn)
+    addr = int(a, 16); fn = func_start(addr)
+    if fn is None: print(f"\n=== 0x{addr:x} -> below the first function start ==="); continue
+    strs, calls = harvest(fn)
     print(f"\n=== 0x{addr:x} -> fn 0x{fn:x} (+0x{addr-fn:x}, size 0x{fend(fn)-fn:x}) ===")
     for s in strs[:8]: print(f"    str: {s!r}")
     seen = set()
