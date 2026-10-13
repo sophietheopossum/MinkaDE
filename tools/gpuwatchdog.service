@@ -1,15 +1,23 @@
-[Unit]
-Description=Minka: stop a GPU memory runaway before the kernel picks the victim
-Documentation=file:/usr/local/bin/gpuwatchdog
+# gpuwatchdog.service -- runs gpuwatchdog.py as root, from boot.
+#
 # GPU pages are not charged to any memcg and oom_badness() ignores them, so in
 # a GPU runaway the kernel kills everything except the process responsible. On
 # 11/9/2026 that was ~40 processes over 6.7 minutes, user@1000's systemd
 # manager among them -- which is also why this cannot be a user unit: it would
 # die in the storm it exists to stop.
+#
+# Install as /etc/systemd/system/gpuwatchdog.service, with gpuwatchdog.py as
+# /usr/local/bin/gpuwatchdog. gpuwatchdog-dryrun.conf is the trial drop-in.
+
+[Unit]
+Description=Minka: stop a GPU memory runaway before the kernel picks the victim
+Documentation=file:/usr/local/bin/gpuwatchdog
+# Not a cycle with WantedBy= below: a target leaves out its implied After= on
+# a unit that orders itself the other way, so this only starts the watchdog
+# once the rest of multi-user.target is up.
 After=multi-user.target
 
 [Service]
-Type=simple
 # GPUActive only exists on a kernel with the DRM memory accounting; without it
 # there is no trigger, and the watchdog would poll forever while looking
 # healthy. A Condition*= can only test that /proc/meminfo exists, which is
@@ -22,13 +30,22 @@ ExecCondition=/usr/bin/grep -qs ^GPUActive: /proc/meminfo
 # command lines cannot drift apart. An empty $VAR word expands to no argument.
 Environment=GPUWATCHDOG_MODE=
 ExecStart=/usr/local/bin/gpuwatchdog $GPUWATCHDOG_MODE --target floorp --target hellfire
-Restart=always
-RestartSec=5
 
 # The whole point is to still be running, and still be responsive, in the
 # minutes when the machine is thrashing and the OOM killer is walking the
 # process list.
-OOMScoreAdjust=-1000
+Restart=always
+# Also what stops systemd ever giving up on it: the default start limit is 5
+# starts in 10 s, which a 5 s delay cannot reach.
+RestartSec=5
+# -999, not -1000. At -1000 a task is exempt from every OOM kill, the memcg one
+# behind MemoryMax= included: at the cap its allocations would fail and be
+# retried for ever, leaving a watchdog that spins in place and never exits for
+# Restart= to act on. At -999 it still ranks below every unprotected process.
+OOMScoreAdjust=-999
+# systemd-oomd is a second killer and takes no notice of oom_score_adj. It
+# monitors system.slice here (see oomctl), so opt this cgroup out by name.
+ManagedOOMPreference=omit
 MemorySwapMax=0
 Nice=-5
 # It reads /proc and sends at most one signal; anything larger than this is a
@@ -47,10 +64,12 @@ MemoryMax=192M
 CapabilityBoundingSet=CAP_KILL CAP_DAC_READ_SEARCH CAP_SYS_PTRACE CAP_SETUID CAP_SETGID
 NoNewPrivileges=yes
 ProtectSystem=strict
-ProtectHome=read-only
 # Creates /var/log/gpuwatchdog (root, 0755) and keeps it writable under
 # ProtectSystem=strict; it is the script's default --capture-dir.
 LogsDirectory=gpuwatchdog
+# read-only, not yes: yes also empties /run/user, and the notification is
+# skipped without a word when the session bus is not there to be found.
+ProtectHome=read-only
 PrivateTmp=yes
 RestrictSUIDSGID=yes
 LockPersonality=yes
