@@ -16,6 +16,12 @@ memory is unattributable - the fdinfo that would have named the culprit dies
 with the process. This samples that fdinfo continuously so the next occurrence
 is attributable.
 
+The fd walk runs on a thread of its own (see Walker): it can stand still in
+the kernel for minutes, and the memory figures must go on being logged while
+it does. A row whose walk came back carries `drm` and `walk_ms`; one logged
+while the walk was still out carries `walk` instead: how long it has been out,
+the fd it is reading and what its thread is waiting on.
+
 Read-only. No root. No signals to other processes. Bounded on disk.
 
   gpumemwatch.py --once                 one sample, pretty, to stdout
@@ -28,6 +34,7 @@ import json
 import os
 import signal
 import sys
+import threading
 import time
 
 DEFAULT_LOG = os.path.expanduser("~/.cache/gpumemwatch/gpumem.ndjson")
@@ -127,13 +134,16 @@ def _comm(pid):
         return "?"
 
 
-def scan_fds(want_dmabuf):
+def scan_fds(want_dmabuf, at=None):
     """One pass over /proc/*/fd. Returns (drm_clients, dmabuf_summary).
 
     DRM clients are deduplicated by (pdev, drm-client-id) so a process holding
     several fds to the same device - shoji_wm holds 5 - is counted once.
     dma-bufs are deduplicated by inode, so a buffer shared between the browser
     and the compositor is counted once system-wide.
+
+    `at`, when given, is told each process and then each fd before it is
+    read, so that a walk which stands still can be found where it stands.
     """
     clients = {}
     dmabuf_ino = {}          # ino -> size bytes
@@ -143,6 +153,8 @@ def scan_fds(want_dmabuf):
     except OSError:
         return [], {}
     for pid in pids:
+        if at:
+            at(pid, None)
         fddir = f"/proc/{pid}/fd"
         try:
             fds = os.listdir(fddir)
@@ -158,6 +170,8 @@ def scan_fds(want_dmabuf):
             is_dma = want_dmabuf and target.startswith("/dmabuf")
             if not (is_drm or is_dma):
                 continue
+            if at:
+                at(pid, fd)
             try:
                 with open(f"/proc/{pid}/fdinfo/{fd}") as fh:
                     body = fh.read()
@@ -212,22 +226,138 @@ def scan_fds(want_dmabuf):
     return list(clients.values()), dsum
 
 
-def sample(want_dmabuf):
-    mem = read_meminfo()
-    vm = read_vmstat()
-    clients, dbuf = scan_fds(want_dmabuf)
-    clients.sort(key=lambda c: -(c.get("tgtt", 0) + c.get("tsys", 0) + c.get("tvram", 0)))
+def read_levels():
+    """The system-wide figures: a few small reads that wait on no GPU driver.
+
+    Stamped before they are read, so `t` and `mono` say when the figures were
+    true whatever the fd walk goes on to cost. They used to be stamped after
+    it: on 13/10/2026 the row marked 05:43:07 held the memory of 05:41:17.
+    """
     rec = {
         "t": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "mono": round(time.monotonic(), 2),
-        "mem": mem,
-        "zspages_kib": vm.get("nr_zspages", 0) * 4,
-        "zram": read_zram(),
-        "drm": clients,
+        "mem": read_meminfo(),
     }
+    rec["zspages_kib"] = read_vmstat().get("nr_zspages", 0) * 4
+    rec["zram"] = read_zram()
+    return rec
+
+
+def add_walk(rec, walk, want_dmabuf, late=False):
+    """Put a finished fd walk, as Walker.take() returns it, into a record.
+
+    `late` is a walk that began before the record's own figures were read: the
+    record then says when, in `walk_mono`.
+    """
+    began, took, clients, dbuf = walk
+    clients.sort(key=lambda c: -(c.get("tgtt", 0) + c.get("tsys", 0) + c.get("tvram", 0)))
+    rec["drm"] = clients
     if want_dmabuf:
         rec["dmabuf"] = dbuf
+    rec["walk_ms"] = round(took * 1000)
+    if late:
+        rec["walk_mono"] = round(began, 2)
     return rec
+
+
+def sample(want_dmabuf):
+    """One whole sample, its walk waited for however long it takes: --once."""
+    rec = read_levels()
+    began = time.monotonic()
+    clients, dbuf = scan_fds(want_dmabuf)
+    return add_walk(rec, (began, time.monotonic() - began, clients, dbuf), want_dmabuf)
+
+
+class Walker:
+    """scan_fds() on a thread of its own, one walk at a time.
+
+    Reading a DRM client's fdinfo can stand still in the kernel for as long as
+    the driver is busy with that client's buffers. On 13/10/2026, with xe
+    evicting GPU memory, this sampler logged nothing for up to 140 s at a
+    time, 19 times in three hours: the stretches its log exists for. So the
+    walk is kept off the thread that reads /proc/meminfo, which goes on
+    sampling and says in each row how long the walk has been out.
+
+    A thread covers a walk that is blocked in a system call. One stalled with
+    the interpreter lock held, in a page fault on its own memory, would still
+    stop the sampling; where() records which of the two it was.
+    """
+
+    def __init__(self, want_dmabuf):
+        self.want_dmabuf = want_dmabuf
+        self.out = False            # whether a walk is out
+        self.began = 0.0            # when it, or the last one, began
+        self.at = (None, None)      # the (pid, fd) it is reading
+        self.tid = None             # its kernel thread id
+        self._done = threading.Event()
+        self._took = 0.0
+        self._clients = []
+        self._dmabuf = {}
+        self._error = None
+
+    def start(self):
+        """Begin a walk, unless one is still out."""
+        if self.out:
+            return
+        self.out = True
+        self.began = time.monotonic()
+        self._done.clear()
+        try:
+            self._spawn()
+        except RuntimeError:        # no thread to be had: walk here, as before
+            self._walk()
+
+    def _spawn(self):
+        threading.Thread(target=self._walk, name="walk", daemon=True).start()
+
+    def _walk(self):
+        self.tid = threading.get_native_id()
+        self._error = None
+        try:
+            self._clients, self._dmabuf = scan_fds(self.want_dmabuf, self._at)
+        except BaseException as error:      # raised again by take()
+            self._error = error
+        self._took = time.monotonic() - self.began
+        self._done.set()
+
+    def _at(self, pid, fd):
+        self.at = (pid, fd)
+
+    def take(self, wait=0.0):
+        """The walk that is out, as (began, seconds, clients, dmabuf), once it
+        has finished; None while it has not, or when none is out. Waits for it
+        until `wait` seconds after it began, so one already overdue costs
+        nothing more."""
+        if not self.out:
+            return None
+        if not self._done.wait(max(0.0, self.began + wait - time.monotonic())):
+            return None
+        self.out = False
+        if self._error is not None:
+            raise self._error
+        return self.began, self._took, self._clients, self._dmabuf
+
+    def where(self):
+        """Where the walk that is still out stands: how long it has been out,
+        the process and fd it is reading, and its thread's state and wait
+        channel (D in a lock is the driver; D in a page wait is this process's
+        own memory)."""
+        out = {}
+        out["late_s"] = round(time.monotonic() - self.began, 1)
+        pid, fd = self.at
+        if pid is not None:
+            out["pid"] = int(pid)
+            out["comm"] = _comm(pid)
+            if fd is not None:
+                out["fd"] = int(fd)
+        try:
+            with open(f"/proc/self/task/{self.tid}/stat") as fh:
+                out["state"] = fh.read().rpartition(")")[2].split()[0]
+            with open(f"/proc/self/task/{self.tid}/wchan") as fh:
+                out["wchan"] = fh.read().strip()
+        except (OSError, IndexError):
+            pass
+        return out
 
 
 def fmt(rec):
@@ -240,6 +370,16 @@ def fmt(rec):
         f"{m.get('MemAvailable',0)/1048576:6.3f} GiB   "
         f"zram-store {zr/1048576:.3f} GiB   SwapFree {m.get('SwapFree',0)/1048576:.2f} GiB"
     ]
+    walk = rec.get("walk")
+    if walk is not None:
+        where = f", reading {walk['comm']}[{walk['pid']}]" if "pid" in walk else ""
+        if "fd" in walk:
+            where += f" fd {walk['fd']}"
+        if "state" in walk:
+            where += f", thread {walk['state']} in {walk.get('wchan') or '-'}"
+        out.append(f"    no attribution: the fd walk had been out for "
+                   f"{walk.get('late_s', 0):.1f} s{where}")
+        return "\n".join(out)
     acc = 0
     for c in rec["drm"]:
         if c.get("no_accounting"):
@@ -308,6 +448,7 @@ class Log:
 
 def report(path):
     peak = None
+    named = None             # the highest sample that has attribution
     n = 0
     first = last = None
     seen_cids = set()
@@ -330,6 +471,9 @@ def report(path):
                 g = r["mem"].get("GPUActive", 0)
                 if peak is None or g > peak["mem"].get("GPUActive", 0):
                     peak = r
+                if "drm" in r and (named is None
+                                   or g > named["mem"].get("GPUActive", 0)):
+                    named = r
                 for c in r.get("drm", ()):
                     if c.get("cid") is not None:
                         try:
@@ -341,6 +485,9 @@ def report(path):
         return 1
     print(f"{n} samples, {first} .. {last}\npeak GPUActive sample:\n")
     print(fmt(peak))
+    if "drm" not in peak and named is not None:
+        print("\nhighest sample that has attribution:\n")
+        print(fmt(named))
     if seen_cids:
         lo, hi = min(seen_cids), max(seen_cids)
         missed = sorted(set(range(lo, hi + 1)) - seen_cids)
@@ -367,6 +514,9 @@ def main():
                     help="seconds between samples once pressure is detected")
     ap.add_argument("--pressure-gib", type=float, default=2.5,
                     help="MemAvailable below this GiB switches to fast sampling")
+    ap.add_argument("--walk-wait", type=float, default=1.0,
+                    help="seconds a sample waits for its fd walk before it is "
+                         "logged without one")
     ap.add_argument("--cap-mib", type=float, default=32.0,
                     help="size cap per log generation; 2 generations are kept")
     ap.add_argument("--min-free-mib", type=float, default=512.0,
@@ -392,9 +542,17 @@ def main():
                "pid": os.getpid(), "argv": sys.argv[1:]})
     n = 0
     thresh = a.pressure_gib * 1048576
+    walker = Walker(a.dmabuf)
     try:
         while not stop:
-            rec = sample(a.dmabuf)
+            rec = read_levels()
+            late = walker.out       # an earlier sample's walk is still out
+            walker.start()
+            walk = walker.take(a.walk_wait)
+            if walk:
+                add_walk(rec, walk, a.dmabuf, late)
+            else:
+                rec["walk"] = walker.where()
             log.write(rec)
             n += 1
             if a.count and n >= a.count:
@@ -408,6 +566,10 @@ def main():
             end = time.monotonic() + delay
             while not stop and time.monotonic() < end:
                 time.sleep(min(0.5, end - time.monotonic()))
+                walk = walker.take()
+                if walk:    # overdue and now back: log it here, not a sample later
+                    log.write(add_walk(read_levels(), walk, a.dmabuf, late=True))
+                    n += 1
     finally:
         log.write({"t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "ev": "exit",
                    "samples": n})

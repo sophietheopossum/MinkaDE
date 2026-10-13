@@ -7,6 +7,10 @@ under a temp dir, fds whose device numbers are made up and a clock that only
 counts; os.kill and subprocess.run are recorders; every PID is above the
 kernel's PID_MAX_LIMIT. So no test can signal a process, raise a desktop
 notification or write to /var/log/gpuwatchdog.
+
+The fd walk runs where it was asked for, not on a thread, so that a run is the
+same every time; self.stalled makes it stand still instead, as it does when a
+GPU driver holds it. Only the Threaded tests start a real one.
 """
 
 import contextlib
@@ -136,6 +140,8 @@ class WatchdogCase(unittest.TestCase):
         self.on_term = None     # what the target does on SIGTERM; None ignores it
         self.kill_error = None  # raised by os.kill once the signal is recorded
         self.journal = []       # (seconds since the run began, message)
+        self.stalled = False    # whether a walk that begins now stands still
+        self.out = []           # the walkers whose walk has not come back
         self.meminfo(gpu=1.9, avail=6)
 
         def patch(*args, **kwargs):
@@ -152,6 +158,25 @@ class WatchdogCase(unittest.TestCase):
         self.spawned = patch(subprocess, "run",
                              return_value=subprocess.CompletedProcess([], 0, "", ""))
         self.notify = patch(gpuwatchdog, "notify")
+        if self.inline_walks:
+            patch(gpuwatchdog.Walker, "_spawn", lambda walker: self._spawn(walker))
+
+    inline_walks = True
+
+    def _spawn(self, walker):
+        if self.stalled:
+            self.out.append(walker)
+        else:
+            walker._walk()
+
+    def stall(self):
+        self.stalled = True
+
+    def release(self):
+        """The driver lets go: every walk that stood still comes back."""
+        self.stalled = False
+        while self.out:
+            self.out.pop()._walk()
 
     def _path(self, path):
         if isinstance(path, str) and (path + "/").startswith("/proc/"):
@@ -406,10 +431,95 @@ class Escalation(WatchdogCase):
         self.meminfo(gpu=8, avail=1)
         with mock.patch.object(gpuwatchdog, "gpu_clients",
                                wraps=gpuwatchdog.gpu_clients) as walk:
-            self.watch("--dry-run", "--heartbeat", "0", seconds=70)
+            self.watch("--dry-run", "--heartbeat", "0", "--walk-every", "0",
+                       seconds=70)
         self.assertEqual(self.captured(), ["reason: critical", "reason: warn"])
         # ...and the third is the self-check at startup.
         self.assertEqual(walk.call_count, 3)
+
+    # Above the warn line a walk every 10 s keeps the attribution recent, for
+    # the stage whose own walk does not come back. Below it there is none.
+    def test_attribution_is_kept_recent_only_above_the_warn_line(self):
+        with mock.patch.object(gpuwatchdog, "gpu_clients",
+                               wraps=gpuwatchdog.gpu_clients) as walk:
+            self.watch("--heartbeat", "0", seconds=300)
+            self.assertEqual(walk.call_count, 1)
+            self.meminfo(gpu=5, avail=6)
+            self.watch("--heartbeat", "0", seconds=55)
+        self.assertEqual(walk.call_count, 1 + 1 + 5)
+
+    # What 13/10/2026 would have cost with the watchdog armed: the driver
+    # holds every fdinfo read for a minute or two, and the stage that waited
+    # for its walk sent the SIGTERM that much late.
+    def test_stalled_walk_does_not_hold_the_sigterm_back(self):
+        self.meminfo(gpu=8, avail=1)
+        self.at(12, self.stall)
+        self.on_term = self.quits
+        self.watch("--walk-wait", "0", seconds=120)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertAlmostEqual(self.sent_at[0], 15, delta=1)
+        (critical,) = self.logged("CRITICAL")
+        # The walk of 10 s is the newest that came back; the one of 15 s is out.
+        self.assertIn("hellfire(5000001) holding 7.00 GiB", critical)
+        self.assertIn("(attribution 5s old: the fd walk has been out 0s)", critical)
+        (capture,) = _listdir(self.capture_dir)
+        self.assertIn("(attribution 5s old", read(os.path.join(self.capture_dir, capture)))
+
+    def test_stalled_walk_does_not_stop_the_readings(self):
+        self.meminfo(gpu=5, avail=6)
+        self.at(12, self.stall)
+        self.at(70, lambda: self.meminfo(gpu=8, avail=1))
+        self.on_term = self.quits
+        self.watch("--walk-wait", "0", seconds=120)
+        (warning,) = self.logged_at("WARN ")
+        self.assertAlmostEqual(warning, 60, delta=1)
+        self.assertAlmostEqual(self.sent_at[0], 85, delta=1)
+
+    # The start time is pinned by the walk, with the PID. Read at the stage,
+    # it vouched for whatever held the PID by then.
+    def test_pid_recycled_since_the_walk_is_not_signalled(self):
+        self.meminfo(gpu=8, avail=1)
+        self.at(12, self.stall)
+        self.at(13, lambda: self.spawn(BROWSER, "hellfire", drm(29, "204800 KiB"),
+                                       start=2))
+        self.watch("--walk-wait", "0", seconds=20)
+        self.assertTrue(self.logged("CRITICAL"))
+        self.assertTrue(self.logged(f"target {BROWSER} changed identity"))
+        self.assertEqual(self.signals, [])
+
+    # Nothing was walked while GPUActive was low, and no walk has come back
+    # since it rose: the start-up attribution is too old to pick a victim by.
+    def test_attribution_too_old_waits_for_a_walk_and_then_acts(self):
+        self.at(1, self.stall)
+        self.at(400, lambda: self.meminfo(gpu=8, avail=1))
+        self.at(450, self.release)
+        self.on_term = self.quits
+        self.watch("--heartbeat", "0", "--walk-wait", "0", seconds=500)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertAlmostEqual(self.sent_at[0], 450, delta=1)
+        blind, acted = self.logged("CRITICAL")
+        self.assertIn("but no attribution newer than 300s (attribution 415s old: "
+                      "the fd walk has been out 15s); signalling once a walk is back",
+                      blind)
+        self.assertIn("hellfire(5000001) holding 7.00 GiB", acted)
+
+    def test_walk_out_since_startup_is_announced(self):
+        self.stall()
+        self.watch("--walk-wait", "0", seconds=1)
+        (warning,) = self.logged("WARNING")
+        self.assertIn("the first fd walk is not back", warning)
+        self.assertEqual(self.logged("attribution ok"), [])
+
+    def test_walk_that_fails_ends_the_watchdog_as_it_did(self):
+        self.meminfo(gpu=5, avail=6)
+        self.at(30, lambda: write(f"{self.root}/proc/{BROWSER}/fdinfo/0",
+                                  drm(28, "many KiB")))
+        self.clock.stop_at = self.clock.now + 120
+        with mock.patch.object(sys, "argv", ["gpuwatchdog", "--capture-dir",
+                                             self.capture_dir]), \
+                self.assertRaises(ValueError):
+            gpuwatchdog.main()
+        self.assertLess(self.clock.elapsed, 60)
 
     def test_no_allowlisted_holder_means_no_signal(self):
         self.exit(BROWSER)
@@ -542,6 +652,51 @@ class Capture(WatchdogCase):
         write(blocker, "")
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertIsNone(self.capture(os.path.join(blocker, "captures")))
+
+
+class Threaded(WatchdogCase):
+    """The walk on the thread it really runs on, held where a driver holds
+    it: inside the read of one fdinfo."""
+
+    inline_walks = False
+
+    def test_walk_held_in_a_read_is_not_waited_out(self):
+        self.spawn(BROWSER, "hellfire", drm(28, "1000 KiB"))
+        walker = gpuwatchdog.Walker({"hellfire"})
+        first = walker.fresh(30)
+        if first is None:
+            self.fail("the first walk never came back")
+        self.assertEqual((first.target, first.started),
+                         ((BROWSER, 1000, "hellfire"), "1"))
+        self.assertEqual(walker.caveat(), "")
+
+        self.spawn(BROWSER, "hellfire", drm(28, "2000 KiB"))
+        reached, let_go = threading.Event(), threading.Event()
+        opener = self._open
+
+        def holding(path, *args, **kwargs):
+            if path == f"/proc/{BROWSER}/fdinfo/0":
+                reached.set()
+                let_go.wait(30)
+            return opener(path, *args, **kwargs)
+
+        with mock.patch.object(gpuwatchdog, "open", holding):
+            began = time.monotonic()
+            self.assertIs(walker.fresh(0.05), first)
+            self.assertLess(time.monotonic() - began, 10)
+            self.assertTrue(reached.wait(30))
+            self.assertIn("attribution 0s old", walker.caveat())
+            # A second request does not start a second walk behind the first.
+            self.assertIs(walker.fresh(0), first)
+            let_go.set()
+            # Inside the patches: a walk that outlived them would read the
+            # real /proc.
+            latest = walker.collect(30)
+        if latest is None:
+            self.fail("the held walk never came back")
+        self.assertEqual(latest.target, (BROWSER, 2000, "hellfire"))
+        self.assertEqual(walker.caveat(), "")
+        self.assertEqual(self.opened.count(f"/proc/{BROWSER}/fdinfo/0"), 2)
 
 
 class Notify(unittest.TestCase):

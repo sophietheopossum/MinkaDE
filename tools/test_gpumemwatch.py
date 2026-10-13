@@ -8,6 +8,10 @@ recorded instead of installed, and its default log path points into the temp
 dir too. So no test can append to ~/.cache/gpumemwatch/gpumem.ndjson, which the
 live gpumemwatch.service is writing while these run.
 
+The fd walk runs where it was asked for, not on a thread, so that a run is the
+same every time; self.stalled makes it stand still instead, as it does when a
+GPU driver holds it. Only the Threaded tests start a real one.
+
 The expected failure is a defect this found in the script, not a flaky test:
 its comment says what is wrong. Fixing the script turns it into an "unexpected
 success", which is the cue to delete the decorator.
@@ -21,6 +25,7 @@ import os
 import signal
 import sys
 import tempfile
+import threading
 import time
 import types
 import unittest
@@ -111,6 +116,8 @@ class SamplerCase(unittest.TestCase):
         self.clock = Clock()
         self.denied = set()     # directories that answer EACCES
         self.handlers = {}      # signal number -> handler the sampler asked for
+        self.stalled = False    # whether a walk that begins now stands still
+        self.out = []           # the walkers whose walk has not come back
         self.meminfo(gpu=1.2, avail=6.5)
         write(f"{self.root}/proc/vmstat", "nr_free_pages 825317\nnr_zspages 510515\n")
         self.zram("zram0", "7348269056 2044176021 2091069440 0 2396168192 24569")
@@ -125,6 +132,22 @@ class SamplerCase(unittest.TestCase):
         patch(os, "listdir", self._listdir)
         patch(os, "readlink", lambda path: _readlink(self._path(path)))
         patch(signal, "signal", self.handlers.__setitem__)
+        if self.inline_walks:
+            patch(gpumemwatch.Walker, "_spawn", lambda walker: self._spawn(walker))
+
+    inline_walks = True
+
+    def _spawn(self, walker):
+        if self.stalled:
+            self.out.append(walker)
+        else:
+            walker._walk()
+
+    def release(self):
+        """The driver lets go: every walk that stood still comes back."""
+        self.stalled = False
+        while self.out:
+            self.out.pop()._walk()
 
     def _path(self, path):
         if isinstance(path, str) and path.startswith(("/proc/", "/sys/")):
@@ -277,6 +300,21 @@ class Sweep(SamplerCase):
         self.assertEqual(record["mem"]["MemAvailable"], 6815744)
         self.assertEqual(json.loads(json.dumps(record)), record)
 
+    # The figures are read before the walk and used to be stamped after it.
+    # On 13/10/2026 a walk stood still for 110 s, and the row marked 05:43:07
+    # held the memory of 05:41:17.
+    def test_sample_is_stamped_when_its_memory_was_read(self):
+        def slow_walk(*_):
+            self.clock.sleep(90)
+            self.meminfo(gpu=6.9, avail=2.0)
+            return [], {}
+
+        with mock.patch.object(gpumemwatch, "scan_fds", slow_walk):
+            record = gpumemwatch.sample(True)
+        self.assertEqual(record["mono"], self.clock.start)
+        self.assertEqual(record["mem"]["GPUActive"], int(1.2 * GIB))
+        self.assertEqual(record["walk_ms"], 90000)
+
     def test_once_names_every_client_and_brackets_the_truth(self):
         self.desktop()
         text = self.main("--once")
@@ -364,6 +402,22 @@ class Report(SamplerCase):
         self.assertIn("saw 3 of ids 7..12", text)
         self.assertIn("NEVER SAMPLED: 3 client id(s) [8, 10, 11]", text)
 
+    # In a storm the highest reading is likely to be one whose walk was out.
+    def test_report_of_a_peak_without_attribution_shows_the_next_that_has_it(self):
+        blind = json.dumps({
+            "t": "2026-10-13T05:42:09+0100", "mono": 2.0,
+            "mem": {"GPUActive": int(8.9 * GIB)}, "zram": {},
+            "walk": {"late_s": 52.0, "pid": 1529, "comm": "shoji_wm", "fd": 41,
+                     "state": "D", "wchan": "ww_mutex_lock"}}) + "\n"
+        text = self.report(None, self.sample("2026-10-13T05:41:02+0100", 6.8, 7)
+                           + blind)
+        self.assertEqual(self.status, 0)
+        self.assertRegex(text, r"05:42:09\+0100 +GPUActive +8\.900 GiB")
+        self.assertIn("no attribution: the fd walk had been out for 52.0 s, "
+                      "reading shoji_wm[1529] fd 41, thread D in ww_mutex_lock", text)
+        self.assertIn("highest sample that has attribution:", text)
+        self.assertRegex(text, r"05:41:02\+0100 +GPUActive +6\.800 GiB")
+
     def test_report_of_a_log_without_samples_fails(self):
         text = self.report(None, '{"t":"2026-10-10T07:09:25+0100","ev":"start"}\n')
         self.assertEqual(self.status, 1)
@@ -417,6 +471,41 @@ class Daemon(SamplerCase):
         self.assertEqual(self.kinds(), ["start", "sample", "sample", "exit"])
         self.assertLessEqual(self.clock.now - signalled[0], 0.5)
 
+    # What 13/10/2026 looked like: the driver held the walk for 80 s. The
+    # memory figures are the ones that must not stop.
+    def test_stalled_walk_does_not_stop_the_sampling(self):
+        self.at(20, lambda: setattr(self, "stalled", True))
+        self.at(110, self.release)
+        self.main("--count", "10", "--walk-wait", "0")
+        rows = self.samples()
+        ticks = [row for row in rows if "walk_mono" not in row]
+        self.assertEqual([round(row["mono"] - self.clock.start) for row in ticks],
+                         [0, 15, 30, 45, 60, 75, 90, 105, 120])
+        blind = [row for row in ticks if "drm" not in row]
+        self.assertEqual([row["walk"]["late_s"] for row in blind],
+                         [0, 15, 30, 45, 60, 75])
+        # ...and the walk is logged when it comes back, not a sample later,
+        # with when it began and what it cost.
+        (back,) = [row for row in rows if "walk_mono" in row]
+        self.assertEqual(round(back["mono"] - self.clock.start), 110)
+        self.assertEqual(back["walk_mono"], self.clock.start + 30)
+        self.assertEqual(back["walk_ms"], 80000)
+        self.assertEqual([client["comm"] for client in back["drm"]],
+                         ["shoji_wm", "floorp", "MinkaFX"])
+        self.assertEqual(self.records()[-1]["samples"], len(rows))
+
+    def test_walk_that_is_back_in_time_is_logged_with_its_own_sample(self):
+        self.main("--count", "2")
+        for row in self.samples():
+            self.assertEqual((row["walk_ms"], "walk" in row, "walk_mono" in row),
+                             (0, False, False))
+
+    def test_walk_that_fails_ends_the_run_as_it_did(self):
+        with mock.patch.object(gpumemwatch, "scan_fds", side_effect=ValueError("torn")), \
+                self.assertRaisesRegex(ValueError, "torn"):
+            self.main("--count", "2")
+        self.assertEqual(self.kinds(), ["start", "exit"])
+
     def test_full_disk_stops_the_logging_and_says_why(self):
         nearly_full = types.SimpleNamespace(f_bavail=1000, f_frsize=4096)
         with mock.patch.object(os, "statvfs", return_value=nearly_full):
@@ -424,6 +513,53 @@ class Daemon(SamplerCase):
         self.assertEqual(self.status, 0)
         self.assertEqual(self.kinds(), ["start", "sample", "stop", "exit"])
         self.assertIn("--min-free-mib", self.records()[2]["why"])
+
+
+class Threaded(SamplerCase):
+    """The walk on the thread it really runs on, held where a driver holds
+    it: inside the read of one fdinfo."""
+
+    inline_walks = False
+
+    def test_walk_held_in_a_read_is_not_waited_out(self):
+        self.desktop()
+        held = f"/proc/{COMPOSITOR}/fdinfo/3"
+        reached, let_go = threading.Event(), threading.Event()
+        opener = self._open
+
+        def holding(path, *args, **kwargs):
+            if path == held:
+                reached.set()
+                let_go.wait(30)
+            return opener(path, *args, **kwargs)
+
+        walker = gpumemwatch.Walker(True)
+        with mock.patch.object(gpumemwatch, "open", holding):
+            walker.start()
+            self.assertTrue(reached.wait(30))
+            began = time.monotonic()
+            self.assertIsNone(walker.take(0.05))
+            self.assertLess(time.monotonic() - began, 10)
+
+            # What a row logged meanwhile says: the fd, and the thread's state.
+            task = f"{self.root}/proc/self/task/{walker.tid}"
+            os.makedirs(task)
+            write(f"{task}/stat", f"{walker.tid} (walk) D 1 1 1\n")
+            write(f"{task}/wchan", "ww_mutex_lock")
+            self.assertEqual(walker.where(), {
+                "late_s": 0.0, "pid": COMPOSITOR, "comm": "shoji_wm", "fd": 3,
+                "state": "D", "wchan": "ww_mutex_lock"})
+            self.assertNotEqual(walker.tid, threading.get_native_id())
+
+            let_go.set()
+            # Inside the patches: a walk that outlived them would read the
+            # real /proc.
+            walk = walker.take(30)
+        if walk is None:
+            self.fail("the walk never came back")
+        self.assertEqual(sorted(client["comm"] for client in walk[2]),
+                         ["MinkaFX", "floorp", "shoji_wm"])
+        self.assertFalse(walker.out)
 
 
 if __name__ == "__main__":

@@ -17,8 +17,13 @@ Design:
   * The trigger is cheap. /proc/meminfo's GPUActive is read every 500 ms; it
     costs one small read and needs no fd sweep.
   * Attribution costs a walk over every open fd on the machine, so it only
-    runs once GPUActive is already above the warn threshold, and once per
-    stage: the walk that picks the target is the one its capture records.
+    runs once GPUActive is already above the warn threshold: every 10 s
+    there, and once per stage. The walk that picks the target is the one its
+    capture records.
+  * No walk is waited out. It can stand still in the kernel for minutes (see
+    Walker), so it runs on a thread of its own, the loop goes on reading
+    GPUActive meanwhile, and a stage whose walk is not back in 2 s goes ahead
+    on the last attribution that did arrive.
   * Escalation is staged and each stage must persist -- a burst of GPU memory
     while a video decodes is normal, a plateau above the line is not.
 
@@ -39,8 +44,8 @@ Safety rules, in order of importance:
     signalled. Anything else -- the compositor, systemd, this watchdog -- is
     never a candidate, whatever it is holding.
   * The target is re-read immediately before signalling and its start time is
-    compared with the one observed at escalation, so a recycled PID cannot be
-    signalled by mistake.
+    compared with the one read by the walk that picked it, so a recycled PID
+    cannot be signalled by mistake.
   * --dry-run does everything except signal. Run it that way first.
 
 Usage:
@@ -50,6 +55,7 @@ Usage:
 """
 
 import argparse
+import collections
 import os
 import signal
 import stat
@@ -222,13 +228,103 @@ def pick_target(targets, clients):
     return best
 
 
-def capture(capture_dir, reason, reading, target, dry_run, clients):
+# One walk's answer. `at` is when the walk began, which is as old as anything
+# in it can be. `target` is pick_target()'s choice from `clients`, and
+# `started` that PID's start time as the walk found it.
+Attribution = collections.namedtuple("Attribution", "at clients target started")
+
+
+class Walker:
+    """gpu_clients() on a thread of its own, one walk at a time, and the last
+    attribution a walk delivered.
+
+    Reading a DRM client's fdinfo can stand still in the kernel for as long as
+    the driver is busy with that client's buffers. On 13/10/2026, with xe
+    evicting GPU memory, the two samplers that read it stopped for up to 140 s
+    at a time, 19 times in three hours, and the one stage of this watchdog
+    that began inside such a stretch took 31.9 s where 1.7 s was usual. A loop
+    that waits the walk out stops reading GPUActive for as long, and a
+    critical stage holds its SIGTERM back for as long. So a walk is given
+    `wait` seconds from its start, and past that the caller goes ahead on the
+    attribution it already has.
+    """
+
+    def __init__(self, targets):
+        self.targets = targets
+        self.latest = None              # the last Attribution to arrive
+        self.out = False                # whether a walk is out
+        self.began = float("-inf")      # when it, or the last one, began
+        self._done = threading.Event()
+        self._found = None
+
+    def start(self):
+        """Begin a walk, unless one is still out."""
+        self.collect()
+        if self.out:
+            return
+        self.out = True
+        self.began = time.monotonic()
+        self._done.clear()
+        try:
+            self._spawn()
+        except RuntimeError:    # no thread to be had: walk here, as before
+            self._walk()
+
+    def _spawn(self):
+        threading.Thread(target=self._walk, name="walk", daemon=True).start()
+
+    def _walk(self):
+        try:
+            clients = gpu_clients()
+            target = pick_target(self.targets, clients)
+            # The start time is pinned here, with the PID. Read at the stage
+            # instead, it would vouch for whatever holds the PID by then, and
+            # an attribution can be minutes old when it is acted on.
+            found = Attribution(self.began, clients, target,
+                                _start_time(target[0]) if target else None)
+        except BaseException as error:  # raised again by collect()
+            found = error
+        self._found = found
+        self._done.set()
+
+    def collect(self, wait=0.0):
+        """Take in the walk that is out, if it has finished. Waits for it
+        until `wait` seconds after it began, so one already overdue costs
+        nothing more. Returns the latest attribution: None until a walk has
+        come back."""
+        if self.out and self._done.wait(
+                max(0.0, self.began + wait - time.monotonic())):
+            self.out = False
+            if isinstance(self._found, BaseException):
+                raise self._found
+            self.latest = self._found
+        return self.latest
+
+    def fresh(self, wait):
+        """The attribution of a walk begun now, or of the one already out, if
+        it is back within `wait` seconds of its start; else the latest."""
+        self.start()
+        return self.collect(wait)
+
+    def caveat(self):
+        """For the log and the capture: empty when the attribution in hand is
+        from the walk last asked for, else how old it is."""
+        if not self.out:
+            return ""
+        now = time.monotonic()
+        if self.latest is None:
+            return f" (no attribution: the fd walk has been out {now - self.began:.0f}s)"
+        return (f" (attribution {now - self.latest.at:.0f}s old: "
+                f"the fd walk has been out {now - self.began:.0f}s)")
+
+
+def capture(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
     """Snapshot everything that dies with the process: thread states, wchan,
     its DRM fdinfo, and the system's memory and pressure picture.
 
     `clients` is the walk the target was picked from: the table then shows
     what the decision saw, and the fds are not walked again ahead of the
-    signal."""
+    signal. `caveat` is Walker.caveat() for that walk."""
     stamp = time.strftime("%Y%m%d-%H%M%S")
     path = os.path.join(capture_dir, f"gpuwatchdog-{stamp}.txt")
     lines = [
@@ -236,7 +332,7 @@ def capture(capture_dir, reason, reading, target, dry_run, clients):
         f"when: {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
         f"dry-run: {dry_run}",
         f"reading: {reading}",
-        f"target: {target}",
+        f"target: {target}{caveat}",
         "",
     ]
     # Read here, not through `cat`: a capture is taken when memory is short,
@@ -352,6 +448,16 @@ def main():
                     help="seconds after acting before acting again")
     ap.add_argument("--target", action="append", default=None,
                     help="comm allowed to be signalled (repeatable)")
+    ap.add_argument("--walk-wait", type=float, default=2.0,
+                    help="seconds a stage waits for its fd walk before going "
+                         "ahead on the last attribution")
+    ap.add_argument("--walk-every", type=float, default=10.0,
+                    help="seconds between fd walks while GPUActive is above "
+                         "--warn-gib, so that attribution is recent; 0 walks "
+                         "only at a stage")
+    ap.add_argument("--attribution-max-age", type=float, default=300.0,
+                    help="the oldest attribution, in seconds, that a critical "
+                         "stage will signal on")
     ap.add_argument("--heartbeat", type=float, default=1800.0,
                     help="seconds between liveness lines; 0 disables. A watchdog "
                          "that is silent when healthy cannot be told from a dead "
@@ -389,14 +495,18 @@ def main():
     # Test the permission, not the client count: the service starts at boot
     # before any DRM client exists, and on 1/10 "none visible" was reported as
     # a missing capability when nothing was wrong.
-    visible = gpu_clients()
+    walker = Walker(targets)
+    seen = walker.fresh(args.walk_wait)
     denied = fdinfo_denied() if os.geteuid() == 0 else []
     if denied:
         log(f"WARNING: fdinfo unreadable for {len(denied)} processes "
             f"(e.g. {_comm(denied[0])}({denied[0]})) -- their GPU memory cannot "
             "be attributed. CAP_SYS_PTRACE is missing.")
-    elif visible:
-        log(f"attribution ok: {len(visible)} DRM clients visible")
+    elif seen is None:
+        log(f"WARNING: the first fd walk is not back after {args.walk_wait}s; "
+            "nothing can be attributed until it is")
+    elif seen.clients:
+        log(f"attribution ok: {len(seen.clients)} DRM clients visible")
     elif os.geteuid() == 0:
         log("attribution ok: fdinfo readable, no DRM clients yet")
     else:
@@ -409,6 +519,7 @@ def main():
 
     above_warn_since = None
     above_crit_since = None
+    blind_since = None      # the plateau already reported as unattributable
     warned = False
     # -inf, not 0.0: time.monotonic() counts from boot, so a zero here means
     # "acted at boot" and the first --cooldown seconds of uptime were spent in
@@ -427,10 +538,11 @@ def main():
 
         if args.heartbeat and now - last_beat >= args.heartbeat:
             last_beat = now
-            best = pick_target(targets, gpu_clients())
+            seen = walker.fresh(args.walk_wait)
+            best = seen.target if seen else None
             held =f"{best[1] / 1048576:.2f} GiB by {best[2]}" if best else "none"
             log(f"alive: GPUActive={gpu / 1048576:.2f} GiB "
-                f"MemAvailable={avail / 1048576:.2f} GiB held={held}")
+                f"MemAvailable={avail / 1048576:.2f} GiB held={held}{walker.caveat()}")
 
         if gpu < warn_kib:
             # One reading below the line clears the state: the runaway we care
@@ -443,13 +555,18 @@ def main():
         reading = (f"GPUActive={gpu / 1048576:.2f} GiB "
                    f"MemAvailable={avail / 1048576:.2f} GiB")
 
+        # Up here the attribution is kept recent, so that a stage whose own
+        # walk does not come back has one worth acting on.
+        if args.walk_every and now - walker.began >= args.walk_every:
+            walker.start()
+
         if not warned and now - above_warn_since >= args.warn_hold:
             warned = True
-            clients = gpu_clients()
-            target = pick_target(targets, clients)
+            seen = walker.fresh(args.walk_wait)
+            target = seen.target if seen else None
             path = capture(args.capture_dir, "warn", reading, target, args.dry_run,
-                           clients)
-            log(f"WARN {reading} target={target} capture={path}")
+                           seen.clients if seen else {}, walker.caveat())
+            log(f"WARN {reading} target={target} capture={path}{walker.caveat()}")
             notify(args.uid, "GPU memory climbing",
                    f"{reading}\nHolding: {target[2] if target else 'unknown'}")
 
@@ -464,10 +581,21 @@ def main():
         if now - acted_at < args.cooldown:
             continue
 
-        clients = gpu_clients()
-        target = pick_target(targets, clients)
+        seen = walker.fresh(args.walk_wait)
+        if seen is None or time.monotonic() - seen.at > args.attribution_max_age:
+            # Nothing recent enough to choose a target from. Say so once for
+            # this plateau and look again at the next reading: the stage goes
+            # ahead as soon as a walk is back.
+            if blind_since != above_crit_since:
+                blind_since = above_crit_since
+                log(f"CRITICAL {reading} but no attribution newer than "
+                    f"{args.attribution_max_age:.0f}s{walker.caveat()}; "
+                    "signalling once a walk is back")
+            continue
+
+        target = seen.target
         path = capture(args.capture_dir, "critical", reading, target, args.dry_run,
-                       clients)
+                       seen.clients, walker.caveat())
         if not target:
             log(f"CRITICAL {reading} but no target in {sorted(targets)} holds GPU "
                 f"memory; not signalling. capture={path}")
@@ -475,9 +603,9 @@ def main():
             continue
 
         pid, kib, comm = target
-        started = _start_time(pid)
+        started = seen.started
         log(f"CRITICAL {reading} target={comm}({pid}) holding "
-            f"{kib / 1048576:.2f} GiB capture={path}")
+            f"{kib / 1048576:.2f} GiB capture={path}{walker.caveat()}")
         notify(args.uid, "GPU runaway: restarting " + comm,
                f"{reading}\n{comm} holds {kib / 1048576:.1f} GiB. "
                f"Sending SIGTERM so the session is saved.")
