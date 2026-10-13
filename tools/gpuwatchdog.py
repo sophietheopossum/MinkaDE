@@ -63,6 +63,10 @@ DRM_TOTAL = "drm-total-gtt:"
 DRM_SHARED = "drm-shared-gtt:"
 DRM_CLIENT_ID = "drm-client-id:"
 DRM_PDEV = "drm-pdev:"
+# KiB per fdinfo size unit. The kernel prints each size in the largest unit
+# that divides it exactly, so one client can report "307660 KiB" of total and
+# "30 MiB" of shared.
+DRM_UNIT = {"KiB": 1, "MiB": 1024, "GiB": 1024 * 1024}
 
 
 def read_meminfo():
@@ -102,6 +106,23 @@ def _start_time(pid):
     return tail[19] if len(tail) > 19 else None
 
 
+def _same_process(pid, comm, started):
+    """Whether `pid` is still the process pinned at escalation. Every signal
+    goes through this one test: it used to be written out at each site, and
+    the SIGKILL copy had lost its start-time comparison."""
+    return (started is not None and _comm(pid) == comm
+            and _start_time(pid) == started)
+
+
+def _kib(line):
+    """The size on a 'drm-total-gtt:\\t672 MiB' line, in KiB. A bare number is
+    bytes; in practice that is only ever 0."""
+    words = line.split()
+    if len(words) < 3:
+        return int(words[1]) // 1024
+    return int(words[1]) * DRM_UNIT.get(words[2], 1)
+
+
 def gpu_clients():
     """Private GTT per process, deduplicated by (pdev, drm-client-id).
 
@@ -132,9 +153,9 @@ def gpu_clients():
             client = pdev = ""
             for line in text.splitlines():
                 if line.startswith(DRM_TOTAL):
-                    total = int(line.split()[1])
+                    total = _kib(line)
                 elif line.startswith(DRM_SHARED):
-                    shared = int(line.split()[1])
+                    shared = _kib(line)
                 elif line.startswith(DRM_CLIENT_ID):
                     client = line.split()[1]
                 elif line.startswith(DRM_PDEV):
@@ -342,8 +363,11 @@ def main():
     above_warn_since = None
     above_crit_since = None
     warned = False
-    acted_at = 0.0
-    last_beat = 0.0
+    # -inf, not 0.0: time.monotonic() counts from boot, so a zero here means
+    # "acted at boot" and the first --cooldown seconds of uptime were spent in
+    # a cooldown, with the critical stage skipped and nothing logged.
+    acted_at = float("-inf")
+    last_beat = float("-inf")
 
     while True:
         time.sleep(args.interval)
@@ -414,7 +438,7 @@ def main():
 
         # Re-read identity immediately before signalling: between the scan and
         # here the process may have exited and the PID been reused.
-        if _comm(pid) != comm or _start_time(pid) != started:
+        if not _same_process(pid, comm, started):
             log(f"target {pid} changed identity before signalling; standing down")
             acted_at = now
             continue
@@ -429,9 +453,9 @@ def main():
         deadline = time.monotonic() + args.term_grace
         while time.monotonic() < deadline:
             time.sleep(0.5)
-            if _start_time(pid) is None:
+            if not _same_process(pid, comm, started):
                 break
-        if _start_time(pid) is not None and _comm(pid) == comm:
+        if _same_process(pid, comm, started):
             log(f"{comm}({pid}) ignored SIGTERM for {args.term_grace}s; SIGKILL")
             try:
                 os.kill(pid, signal.SIGKILL)

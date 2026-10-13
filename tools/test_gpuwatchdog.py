@@ -6,10 +6,6 @@ Nothing here touches the machine it runs on. The watchdog sees a /proc built
 under a temp dir and a clock that only counts; os.kill and subprocess.run are
 recorders; every PID is above the kernel's PID_MAX_LIMIT. So no test can signal
 a process, raise a desktop notification or write to /var/log/gpuwatchdog.
-
-The expected failures are defects these tests found in the script, not flaky
-tests: the comment on each says what is wrong. Fixing the script turns one into
-an "unexpected success", which is the cue to delete its decorator.
 """
 
 import contextlib
@@ -255,11 +251,9 @@ class Attribution(WatchdogCase):
                    "pos:\t0\nflags:\t02100002\nmnt_id:\t28\nino:\t9\n")
         self.assertEqual(gpuwatchdog.gpu_clients(), {BROWSER: 1024})
 
-    # Defect: every value is read as KiB, but the kernel prints a whole number
-    # of MiB as "672 MiB". Live on 12/10/2026 that misread 8 of this desktop's
-    # 21 clients, these two among them; shoji_wm's 329 MiB came out as 0.
-    # gpumemwatch.py's _kib() already honours the unit.
-    @unittest.expectedFailure
+    # The kernel prints a whole number of MiB as "672 MiB". Reading every value
+    # as KiB misread 8 of this desktop's 21 clients on 12/10/2026, these two
+    # among them: shoji_wm's 329 MiB came out as 0.
     def test_sizes_carry_their_own_unit(self):
         self.spawn(COMPOSITOR, "shoji_wm", drm(7, "672 MiB", "351200 KiB"))
         self.spawn(BROWSER, "floorp", drm(28, "307660 KiB", "30 MiB"))
@@ -389,10 +383,14 @@ class Escalation(WatchdogCase):
         self.assertTrue(self.logged("CRITICAL"))
         self.assertEqual(self.signals, [])
 
-    # Defect: before SIGKILL only the comm is re-read, not the start time the
-    # docstring promises, so a same-named process that takes the PID during
-    # the grace period is killed.
-    @unittest.expectedFailure
+    def test_target_whose_start_time_is_unreadable_is_not_signalled(self):
+        os.remove(f"{self.root}/proc/{BROWSER}/stat")
+        self.meminfo(gpu=8, avail=1)
+        self.watch(seconds=120)
+        self.assertTrue(self.logged("CRITICAL"))
+        self.assertEqual(self.signals, [])
+
+    # Same comm, new start time: a comm check alone would kill the newcomer.
     def test_pid_recycled_during_the_grace_is_not_killed(self):
         def relaunched():
             self.meminfo(gpu=1.9, avail=6)
@@ -403,17 +401,16 @@ class Escalation(WatchdogCase):
         self.watch(seconds=120)
         self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
 
-    # Defect: acted_at starts at 0.0 and is compared with time.monotonic(),
-    # which counts from boot, so the first --cooldown seconds of uptime pass
-    # for a cooldown: a runaway then is neither acted on nor logged.
-    # (last_beat has the same start, delaying the first heartbeat.)
-    @unittest.expectedFailure
+    # time.monotonic() counts from boot, so "never acted" and "never beat"
+    # must not be 0.0: that made the first --cooldown seconds of uptime a
+    # cooldown, and held the first heartbeat back to 30 minutes.
     def test_runaway_just_after_boot(self):
         self.clock.boot(20)
         self.meminfo(gpu=8, avail=1)
         self.on_term = self.quits
         self.watch(seconds=120)
         self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertTrue(self.logged("alive:"))
 
     def test_refused_signal_does_not_stop_the_watchdog(self):
         self.kill_error = PermissionError(errno.EPERM, "Operation not permitted")
