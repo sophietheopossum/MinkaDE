@@ -3,9 +3,10 @@
     python3 tools/test_gpuwatchdog.py
 
 Nothing here touches the machine it runs on. The watchdog sees a /proc built
-under a temp dir and a clock that only counts; os.kill and subprocess.run are
-recorders; every PID is above the kernel's PID_MAX_LIMIT. So no test can signal
-a process, raise a desktop notification or write to /var/log/gpuwatchdog.
+under a temp dir, fds whose device numbers are made up and a clock that only
+counts; os.kill and subprocess.run are recorders; every PID is above the
+kernel's PID_MAX_LIMIT. So no test can signal a process, raise a desktop
+notification or write to /var/log/gpuwatchdog.
 """
 
 import contextlib
@@ -14,10 +15,13 @@ import io
 import os
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import types
 import unittest
 from unittest import mock
 
@@ -32,7 +36,16 @@ GIB = 1024 * 1024  # in KiB, the unit of /proc/meminfo
 # such process.
 BROWSER, COMPOSITOR, OTHER = 5000001, 5000002, 5000003
 
+# What os.stat() answers for an fd, by what the fd is open on. An inotify fd
+# is an anonymous inode, which has no file type at all.
+RENDER_NODE = types.SimpleNamespace(st_mode=stat.S_IFCHR | 0o666,
+                                    st_rdev=os.makedev(226, 128))
+DEV_NULL = types.SimpleNamespace(st_mode=stat.S_IFCHR | 0o666,
+                                 st_rdev=os.makedev(1, 3))
+ANON_INODE = types.SimpleNamespace(st_mode=0o600, st_rdev=0)
+
 _listdir = os.listdir
+_stat = os.stat
 
 
 def read(path):
@@ -116,6 +129,8 @@ class WatchdogCase(unittest.TestCase):
         os.mkdir(os.path.join(self.root, "proc"))
         self.clock = Clock()
         self.denied = set()     # fdinfo directories that answer EACCES
+        self.nodes = {}         # /proc/<pid>/fd/<n> -> what os.stat() answers
+        self.opened = []        # every path the watchdog opened, in order
         self.signals = []       # (pid, signal) in the order sent
         self.sent_at = []       # ...and when, in seconds since the run began
         self.on_term = None     # what the target does on SIGTERM; None ignores it
@@ -131,10 +146,11 @@ class WatchdogCase(unittest.TestCase):
         patch(gpuwatchdog, "log",
               lambda message: self.journal.append((self.clock.elapsed, message)))
         patch(os, "listdir", self._listdir)
+        patch(os, "stat", self._stat)
         patch(os, "kill", self._kill)
         patch(os, "geteuid", return_value=0)
-        patch(subprocess, "run",
-              return_value=subprocess.CompletedProcess([], 0, "", ""))
+        self.spawned = patch(subprocess, "run",
+                             return_value=subprocess.CompletedProcess([], 0, "", ""))
         self.notify = patch(gpuwatchdog, "notify")
 
     def _path(self, path):
@@ -143,12 +159,18 @@ class WatchdogCase(unittest.TestCase):
         return path
 
     def _open(self, path, *args, **kwargs):
+        self.opened.append(path)
         return open(self._path(path), *args, **kwargs)
 
     def _listdir(self, path="."):
         if path in self.denied:
             raise PermissionError(errno.EACCES, "Permission denied", path)
         return _listdir(self._path(path))
+
+    def _stat(self, path, *args, **kwargs):
+        if isinstance(path, str) and path in self.nodes:
+            return self.nodes[path]
+        return _stat(self._path(path), *args, **kwargs)
 
     def _kill(self, pid, sig):
         self.signals.append((pid, sig))
@@ -171,23 +193,28 @@ class WatchdogCase(unittest.TestCase):
         write(f"{self.root}/proc/meminfo", text)
 
     def spawn(self, pid, comm, *fdinfo, start=1):
-        """A process with one fd per fdinfo text. Spawning a live PID again is
-        that PID recycled."""
+        """A process with one fd per fdinfo text: open on a render node when
+        the text is a DRM client's, on an anonymous inode otherwise. Spawning
+        a live PID again is that PID recycled."""
         self.exit(pid)
         proc = f"{self.root}/proc/{pid}"
         os.makedirs(f"{proc}/fdinfo")
         os.makedirs(f"{proc}/task/{pid}")
         # Field 22, the start time, is the 20th after the comm's closing paren.
-        stat = f"{pid} ({comm}) S {'0 ' * 18}{start} 0 0\n"
+        stat_line = f"{pid} ({comm}) S {'0 ' * 18}{start} 0 0\n"
         write(f"{proc}/comm", comm + "\n")
-        write(f"{proc}/stat", stat)
-        write(f"{proc}/task/{pid}/stat", stat)
+        write(f"{proc}/stat", stat_line)
+        write(f"{proc}/task/{pid}/stat", stat_line)
         write(f"{proc}/task/{pid}/wchan", "futex_do_wait")
         for fd, text in enumerate(fdinfo):
             write(f"{proc}/fdinfo/{fd}", text)
+            self.nodes[f"/proc/{pid}/fd/{fd}"] = (
+                RENDER_NODE if "drm-client-id" in text else ANON_INODE)
 
     def exit(self, pid):
         shutil.rmtree(f"{self.root}/proc/{pid}", ignore_errors=True)
+        for path in [path for path in self.nodes if path.startswith(f"/proc/{pid}/")]:
+            del self.nodes[path]
 
     def at(self, seconds, event):
         """Call `event` once the run is `seconds` old, before that reading."""
@@ -269,17 +296,35 @@ class Attribution(WatchdogCase):
         self.assertEqual(gpuwatchdog.gpu_clients(), {BROWSER: 165828})
         self.assertEqual(gpuwatchdog.fdinfo_denied(), [OTHER])
 
+    # fdinfo is not cheap for every fd: an inotify fd prints each watch it
+    # holds, and on 13/10/2026 two of them were 30 MB of text and 94% of the
+    # walk. Only a DRM node's fdinfo is opened at all.
+    def test_only_a_drm_fd_has_its_fdinfo_read(self):
+        watches = ("pos:\t0\nflags:\t02004000\nmnt_id:\t16\nino:\t2073\n"
+                   "inotify wd:1 ino:c0a sdev:27 mask:fce ignored_mask:0\n")
+        self.spawn(BROWSER, "gitkraken", watches, drm(28, "1000 KiB"), "pos:\t0\n")
+        self.nodes[f"/proc/{BROWSER}/fd/2"] = DEV_NULL
+        self.assertEqual(gpuwatchdog.gpu_clients(), {BROWSER: 1000})
+        self.assertEqual(self.opened, [f"/proc/{BROWSER}/fdinfo/1"])
+
+    def test_fd_closed_mid_walk_is_skipped(self):
+        self.spawn(BROWSER, "hellfire", drm(28, "1000 KiB"), drm(29, "24 KiB"))
+        del self.nodes[f"/proc/{BROWSER}/fd/1"]
+        self.assertEqual(gpuwatchdog.gpu_clients(), {BROWSER: 1000})
+
     def test_only_an_allowlisted_comm_is_a_target(self):
         self.spawn(COMPOSITOR, "shoji_wm", drm(7, "9437188 KiB"))
         self.spawn(BROWSER, "hellfire", drm(28, "307660 KiB"))
-        self.assertEqual(gpuwatchdog.pick_target({"hellfire"}),
+        clients = gpuwatchdog.gpu_clients()
+        self.assertEqual(gpuwatchdog.pick_target({"hellfire"}, clients),
                          (BROWSER, 307660, "hellfire"))
-        self.assertIsNone(gpuwatchdog.pick_target({"floorp"}))
+        self.assertIsNone(gpuwatchdog.pick_target({"floorp"}, clients))
 
     def test_biggest_allowlisted_holder_wins(self):
         self.spawn(BROWSER, "hellfire", drm(28, "307660 KiB"))
         self.spawn(OTHER, "floorp", drm(29, "7340036 KiB"))
-        self.assertEqual(gpuwatchdog.pick_target({"hellfire", "floorp"}),
+        self.assertEqual(gpuwatchdog.pick_target({"hellfire", "floorp"},
+                                                 gpuwatchdog.gpu_clients()),
                          (OTHER, 7340036, "floorp"))
 
 
@@ -353,6 +398,18 @@ class Escalation(WatchdogCase):
         self.assertEqual(self.signals, [])
         self.assertTrue(self.logged("dry-run:"))
         self.assertIn("reason: critical", self.captured())
+
+    # A stage walks every fd on the machine while memory is short and, at the
+    # critical one, with the signal still to send: once, not once to pick the
+    # target and again for the capture's table.
+    def test_each_stage_walks_the_fds_once(self):
+        self.meminfo(gpu=8, avail=1)
+        with mock.patch.object(gpuwatchdog, "gpu_clients",
+                               wraps=gpuwatchdog.gpu_clients) as walk:
+            self.watch("--dry-run", "--heartbeat", "0", seconds=70)
+        self.assertEqual(self.captured(), ["reason: critical", "reason: warn"])
+        # ...and the third is the self-check at startup.
+        self.assertEqual(walk.call_count, 3)
 
     def test_no_allowlisted_holder_means_no_signal(self):
         self.exit(BROWSER)
@@ -463,7 +520,8 @@ class Capture(WatchdogCase):
     def capture(self, directory):
         self.spawn(BROWSER, "hellfire", drm(28, "7340036 KiB"))
         return gpuwatchdog.capture(directory, "critical", "GPUActive=8.00 GiB",
-                                   (BROWSER, 7340036, "hellfire"), True)
+                                   (BROWSER, 7340036, "hellfire"), True,
+                                   gpuwatchdog.gpu_clients())
 
     def test_capture_records_what_dies_with_the_process(self):
         text = read(self.capture(self.capture_dir))
@@ -471,6 +529,13 @@ class Capture(WatchdogCase):
         # Per-thread state and wchan: what was missing on 11/9.
         self.assertIn(f"  {BROWSER} S futex_do_wait", text)
         self.assertRegex(text, rf"{BROWSER} hellfire +7340036")
+        self.assertIn("--- meminfo ---\nMemTotal:", text)
+
+    # Each `cat` a capture used to run was a fork and an exec, with memory
+    # short and, at the critical stage, the signal still to send.
+    def test_capture_starts_no_process(self):
+        self.capture(self.capture_dir)
+        self.spawned.assert_not_called()
 
     def test_unwritable_capture_dir_is_not_fatal(self):
         blocker = os.path.join(self.root, "not-a-directory")
@@ -483,8 +548,14 @@ class Notify(unittest.TestCase):
     def notify(self, bus, **run):
         with mock.patch.object(os.path, "exists", return_value=bus), \
                 mock.patch.object(os, "geteuid", return_value=0), \
+                mock.patch.object(threading, "excepthook") as crashed, \
                 mock.patch.object(subprocess, "run", **run) as spawned:
-            gpuwatchdog.notify(1000, "GPU memory climbing", "GPUActive=5.00 GiB")
+            sender = gpuwatchdog.notify(1000, "GPU memory climbing", "GPUActive=5.00 GiB")
+            # Inside the patches: the send is on a thread, and one that outlived
+            # them would run the real notify-send.
+            if sender:
+                sender.join()
+        crashed.assert_not_called()
         return spawned
 
     def test_no_session_bus_no_notification(self):
@@ -501,6 +572,22 @@ class Notify(unittest.TestCase):
     def test_hung_notification_daemon_is_survived(self):
         self.notify(bus=True,
                     side_effect=subprocess.TimeoutExpired("notify-send", 5))
+
+    # The critical notification is raised with the SIGTERM still to send, and
+    # notify-send can take its whole timeout to come back.
+    def test_notification_is_not_waited_for(self):
+        answered = threading.Event()
+        with mock.patch.object(os.path, "exists", return_value=True), \
+                mock.patch.object(os, "geteuid", return_value=0), \
+                mock.patch.object(subprocess, "run",
+                                  side_effect=lambda *_, **_env: answered.wait(10)):
+            sender = gpuwatchdog.notify(1000, "GPU runaway", "GPUActive=8.00 GiB")
+            if sender is None:
+                self.fail("nothing was sent")
+            still_sending = sender.is_alive()
+            answered.set()
+            sender.join()
+        self.assertTrue(still_sending)
 
 
 if __name__ == "__main__":

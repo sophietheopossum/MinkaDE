@@ -16,8 +16,9 @@ storm it is supposed to watch.
 Design:
   * The trigger is cheap. /proc/meminfo's GPUActive is read every 500 ms; it
     costs one small read and needs no fd sweep.
-  * Attribution is expensive (a walk over every process's fdinfo), so it only
-    runs once GPUActive is already above the warn threshold.
+  * Attribution costs a walk over every open fd on the machine, so it only
+    runs once GPUActive is already above the warn threshold, and once per
+    stage: the walk that picks the target is the one its capture records.
   * Escalation is staged and each stage must persist -- a burst of GPU memory
     while a video decodes is normal, a plateau above the line is not.
 
@@ -51,8 +52,10 @@ Usage:
 import argparse
 import os
 import signal
+import stat
 import subprocess
 import sys
+import threading
 import time
 
 MEMINFO = "/proc/meminfo"
@@ -67,6 +70,8 @@ DRM_PDEV = "drm-pdev:"
 # that divides it exactly, so one client can report "307660 KiB" of total and
 # "30 MiB" of shared.
 DRM_UNIT = {"KiB": 1, "MiB": 1024, "GiB": 1024 * 1024}
+# The kernel's DRM_MAJOR: every /dev/dri/card* and /dev/dri/renderD* node.
+DRM_MAJOR = 226
 
 
 def read_meminfo():
@@ -123,6 +128,22 @@ def _kib(line):
     return int(words[1]) * DRM_UNIT.get(words[2], 1)
 
 
+def _is_drm_fd(pid, fd):
+    """Whether the fd is open on a DRM device node. Asked before its fdinfo is
+    read, because fdinfo is not cheap for every kind of fd: an inotify fd lists
+    each of its watches. On 13/10/2026 two of those (gitkraken's 124573
+    watches, 17.9 MB of text, and an electron's 86221) were 94% of a 636 ms
+    walk in which the 63 DRM fds took 4 ms. With this check it takes 19 ms.
+
+    The device number is tested rather than the link's path, which is only
+    what the node was called where the process opened it."""
+    try:
+        node = os.stat(f"/proc/{pid}/fd/{fd}")
+    except OSError:
+        return False
+    return stat.S_ISCHR(node.st_mode) and os.major(node.st_rdev) == DRM_MAJOR
+
+
 def gpu_clients():
     """Private GTT per process, deduplicated by (pdev, drm-client-id).
 
@@ -142,6 +163,8 @@ def gpu_clients():
         except OSError:
             continue
         for fd in fds:
+            if not _is_drm_fd(pid, fd):
+                continue
             try:
                 with open(f"{fdinfo_dir}/{fd}") as handle:
                     text = handle.read()
@@ -186,10 +209,11 @@ def fdinfo_denied():
     return denied
 
 
-def pick_target(targets):
-    """The biggest private-GTT holder whose comm is in the allowlist."""
+def pick_target(targets, clients):
+    """The biggest private-GTT holder whose comm is in the allowlist, out of
+    one gpu_clients() walk."""
     best = None
-    for pid, kib in gpu_clients().items():
+    for pid, kib in clients.items():
         comm = _comm(pid)
         if comm not in targets:
             continue
@@ -198,9 +222,13 @@ def pick_target(targets):
     return best
 
 
-def capture(capture_dir, reason, reading, target, dry_run):
+def capture(capture_dir, reason, reading, target, dry_run, clients):
     """Snapshot everything that dies with the process: thread states, wchan,
-    its DRM fdinfo, and the system's memory and pressure picture."""
+    its DRM fdinfo, and the system's memory and pressure picture.
+
+    `clients` is the walk the target was picked from: the table then shows
+    what the decision saw, and the fds are not walked again ahead of the
+    signal."""
     stamp = time.strftime("%Y%m%d-%H%M%S")
     path = os.path.join(capture_dir, f"gpuwatchdog-{stamp}.txt")
     lines = [
@@ -211,16 +239,18 @@ def capture(capture_dir, reason, reading, target, dry_run):
         f"target: {target}",
         "",
     ]
-    for name, cmd in (
-        ("meminfo", ["cat", MEMINFO]),
-        ("pressure-memory", ["cat", "/proc/pressure/memory"]),
-        ("pressure-io", ["cat", "/proc/pressure/io"]),
+    # Read here, not through `cat`: a capture is taken when memory is short,
+    # and each child was a fork and an exec ahead of the signal.
+    for name, source in (
+        ("meminfo", MEMINFO),
+        ("pressure-memory", "/proc/pressure/memory"),
+        ("pressure-io", "/proc/pressure/io"),
     ):
+        lines.append(f"--- {name} ---")
         try:
-            lines.append(f"--- {name} ---")
-            lines.append(subprocess.run(cmd, capture_output=True, text=True,
-                                        timeout=5).stdout)
-        except Exception as error:  # a capture must never break the watchdog
+            with open(source) as handle:
+                lines.append(handle.read())
+        except OSError as error:  # a capture must never break the watchdog
             lines.append(f"({name} failed: {error})")
 
     if target:
@@ -247,7 +277,7 @@ def capture(capture_dir, reason, reading, target, dry_run):
             lines.append(f"  (unavailable: {error})")
 
     lines.append("--- gpu clients (private GTT, KiB) ---")
-    for pid, kib in sorted(gpu_clients().items(), key=lambda kv: -kv[1])[:12]:
+    for pid, kib in sorted(clients.items(), key=lambda kv: -kv[1])[:12]:
         lines.append(f"  {pid:>8} {_comm(pid):<20} {kib:>10}")
 
     try:
@@ -262,10 +292,27 @@ def capture(capture_dir, reason, reading, target, dry_run):
 
 def notify(uid, summary, body):
     """Raise a desktop notification in the user's session. Best effort: the
-    watchdog's job does not depend on the user being logged in."""
+    watchdog's job does not depend on the user being logged in.
+
+    Nor does it wait for the session. The critical notification is raised
+    between choosing the target and signalling it, and a desktop that is
+    thrashing can hold notify-send to its whole timeout, so the send runs on
+    a thread of its own. Returns that thread, or None when nothing was sent."""
     bus = f"/run/user/{uid}/bus"
     if not os.path.exists(bus):
-        return
+        return None
+    sender = threading.Thread(target=_notify_send, args=(uid, bus, summary, body),
+                              daemon=True)
+    try:
+        sender.start()
+    except RuntimeError:  # no thread to be had; the signal matters more
+        return None
+    return sender
+
+
+def _notify_send(uid, bus, summary, body):
+    """notify()'s thread: run notify-send as the user, and give up on it at
+    the timeout."""
     try:
         subprocess.run(
             ["notify-send", "-u", "critical", "-a", "gpuwatchdog", summary, body],
@@ -327,7 +374,7 @@ def main():
         gpu = mem.get("GPUActive")
         print(f"GPUActive: {'absent' if gpu is None else f'{gpu / 1048576:.2f} GiB'}")
         print(f"MemAvailable: {mem.get('MemAvailable', 0) / 1048576:.2f} GiB")
-        best = pick_target(targets)
+        best = pick_target(targets, gpu_clients())
         print(f"largest target: {best if best else 'none'}")
         return 0
 
@@ -380,8 +427,8 @@ def main():
 
         if args.heartbeat and now - last_beat >= args.heartbeat:
             last_beat = now
-            best = pick_target(targets)
-            held = f"{best[1] / 1048576:.2f} GiB by {best[2]}" if best else "none"
+            best = pick_target(targets, gpu_clients())
+            held =f"{best[1] / 1048576:.2f} GiB by {best[2]}" if best else "none"
             log(f"alive: GPUActive={gpu / 1048576:.2f} GiB "
                 f"MemAvailable={avail / 1048576:.2f} GiB held={held}")
 
@@ -398,8 +445,10 @@ def main():
 
         if not warned and now - above_warn_since >= args.warn_hold:
             warned = True
-            target = pick_target(targets)
-            path = capture(args.capture_dir, "warn", reading, target, args.dry_run)
+            clients = gpu_clients()
+            target = pick_target(targets, clients)
+            path = capture(args.capture_dir, "warn", reading, target, args.dry_run,
+                           clients)
             log(f"WARN {reading} target={target} capture={path}")
             notify(args.uid, "GPU memory climbing",
                    f"{reading}\nHolding: {target[2] if target else 'unknown'}")
@@ -415,8 +464,10 @@ def main():
         if now - acted_at < args.cooldown:
             continue
 
-        target = pick_target(targets)
-        path = capture(args.capture_dir, "critical", reading, target, args.dry_run)
+        clients = gpu_clients()
+        target = pick_target(targets, clients)
+        path = capture(args.capture_dir, "critical", reading, target, args.dry_run,
+                       clients)
         if not target:
             log(f"CRITICAL {reading} but no target in {sorted(targets)} holds GPU "
                 f"memory; not signalling. capture={path}")
