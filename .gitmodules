@@ -61,3 +61,12 @@
 [submodule "tools/keysend"]
 	path = tools/keysend
 	url = git@github.com:sophietheopossum/keysend.git
+[submodule "floorp/Floorp-Runtime"]
+	path = floorp/Floorp-Runtime
+	url = git@github.com:sophietheopossum/Floorp-Runtime.git
+[submodule "floorp/Floorp"]
+	path = floorp/Floorp
+	url = git@github.com:sophietheopossum/Floorp.git
+[submodule "floorp/Floorp-core"]
+	path = floorp/Floorp-core
+	url = git@github.com:Floorp-Projects/Floorp-core.git
