@@ -93,6 +93,19 @@
       "problemMatcher": ["$rustc"]
     },
     {
+      "label": "floorp: build and install package from local clones",
+      "detail": "Builds the Arch package in MinkaPKG/floorp from the committed HEADs of floorp/Floorp, floorp/Floorp-Runtime and floorp/Floorp-core, then installs it with makepkg --install (pacman asks for sudo after the build). The helper refuses dirty clones because makepkg's Git sources cannot see uncommitted changes. This is the full from-source/PGO package build. Runs in a memory-bounded transient scope (see 'build limits' below).",
+      "type": "shell",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- ${workspaceFolder}/floorp/build-local-package.sh -- --install",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
+      "group": "build",
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
       "label": "build limits (reference, does nothing)",
       "detail": "Every build task above runs as `systemd-run --user --scope -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G` with CARGO_BUILD_JOBS=6. MemoryHigh throttles by reclaim (the build slows, it does not die); MemoryMax is the backstop and DOES kill inside the scope, so a build that dies with a bare 'signal: 9, SIGKILL' hit 10G — raise it here, do not raise it globally. MemorySwapMax IS LOAD-BEARING and must never be dropped: MemoryMax bounds RESIDENT memory only, so without a swap cap a build simply spills into swap, exhausts the system's swap headroom and triggers a GLOBAL OOM that kills your browser and editor instead of the build. That is exactly what happened to the Floorp build on 7/9/2026 — 9.3 GiB resident stayed under a 13 GiB MemoryMax while 9.6 GiB went to swap unbounded. 6 of 8 jobs leaves the desktop two cores and cuts peak RSS, which scales with concurrent rustc. Rationale: 6/9/2026, a release-fast build on top of an 8G lspmux/rust-analyzer set off a four-minute kernel OOM storm (13 kills, none of them the build) that took out Code, GitKraken and the portals. Bounding the build keeps the kill inside the build's own cgroup.",
       "type": "shell",
