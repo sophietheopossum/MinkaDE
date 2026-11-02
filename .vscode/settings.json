@@ -1,0 +1,25 @@
+{
+  // This workspace roots all of MinkaDE, including ~300G of build output
+  // (ShojiWM/target, Floorp-Runtime objdir, MinkaPKG src/pkg). Keep the
+  // watcher and search indexer out of it: nothing under these paths is
+  // ever edited by hand, and watching them is what balloons the
+  // extension host into swap.
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/.hg/store/**": true,
+    "**/target/**": true,
+    "**/obj-*/**": true,
+    "**/MinkaPKG/*/src/**": true,
+    "**/MinkaPKG/*/pkg/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/target": true,
+    "**/obj-*": true,
+    "**/MinkaPKG/*/src": true,
+    "**/MinkaPKG/*/pkg": true
+  }
+}
