@@ -67,6 +67,19 @@
       "problemMatcher": ["$rustc"]
     },
     {
+      "label": "minkashell: build release",
+      "detail": "The session shell's launcher (MinkaShell/dist/minkashell) runs target/release/minkashell, so the build is the install. The running shell keeps the old binary: it changes at the next session start, or when the shell is restarted through the launcher.",
+      "type": "shell",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
+      "options": {
+        "cwd": "${workspaceFolder}/MinkaShell",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
       "label": "minkaledger: build core release",
       "detail": "The launcher runs target/release/minka-ledger. Restart MinkaLedger afterwards: the running core keeps the old inode.",
       "type": "shell",
@@ -115,12 +128,13 @@
     },
     {
       "label": "session: rebuild everything the next session runs",
-      "detail": "Satellite, MinkaFX and MinkaCap release builds, then the ShojiWM install with the Rust config (sudo prompt comes last). Sequential, so only one bounded scope is live at a time.",
+      "detail": "Satellite, MinkaFX, MinkaCap and MinkaShell release builds, then the ShojiWM install with the Rust config (sudo prompt comes last). Sequential, so only one bounded scope is live at a time.",
       "dependsOrder": "sequence",
       "dependsOn": [
         "xwayland-satellite: build release",
         "minkafx: build release",
         "minkacap: build release",
+        "minkashell: build release",
         "shojiwm: install"
       ],
       "problemMatcher": []
