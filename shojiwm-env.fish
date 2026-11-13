@@ -16,6 +16,10 @@ set -gx SHOJI_XWAYLAND_SATELLITE_PATH $HOME/Documents/src/MinkaDE/xwayland-satel
 # Run the Minka apps from the repo checkouts. Without these the config falls
 # back to the tarball-install locations (/usr/share/minka, /usr/bin).
 set -gx MINKA_SHELL_DIR $HOME/Documents/src/MinkaDE/MinkaShell
+# The shell's launcher (MinkaShell/dist/minkashell) runs the AntiWebUI binary
+# from target/release. Uncomment to get the Quickshell shell back at the next
+# login instead:
+# set -gx MINKA_SHELL_FRONTEND quickshell
 set -gx MINKA_SHOT_DIR $HOME/Documents/src/MinkaDE/MinkaShot
 set -gx MINKA_FX_BIN $HOME/Documents/src/MinkaDE/MinkaFX/target/release/MinkaFX
 set -gx MINKA_CAP_BIN $HOME/Documents/src/MinkaDE/MinkaCap/target/release/MinkaCap
