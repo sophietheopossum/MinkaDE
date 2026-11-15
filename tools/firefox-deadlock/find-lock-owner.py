@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Name the owner of the mutex wedging Firefox's storage (QuotaManager) threads.
 
+    sudo find-lock-owner.py [PID]
+
+PID is the browser's parent process; without one, the oldest process named
+floorp.
+
 READ-ONLY: reads /proc only, writes nothing, signals nothing, does not stop the
 browser. Needs root solely because the parent is non-dumpable, so
 /proc/<tid>/syscall and /proc/<pid>/mem are gated by ptrace_may_access().
@@ -14,8 +19,12 @@ are not contended locks.
 import os, struct, subprocess, sys
 
 NR_FUTEX = 202  # x86_64
-pid = int(sys.argv[1]) if len(sys.argv) > 1 else int(
-    subprocess.run(["pgrep", "-xo", "hellfire"], capture_output=True, text=True).stdout.split()[0])
+BROWSER = "floorp"  # the parent's process name; content processes have their own
+if len(sys.argv) > 1: pid = int(sys.argv[1])
+else:
+    found = subprocess.run(["pgrep", "-xo", BROWSER], capture_output=True, text=True).stdout.split()
+    if not found: sys.exit(f"no {BROWSER} process is running; pass the browser's PID")
+    pid = int(found[0])
 
 def comm(t):
     try: return open(f"/proc/{pid}/task/{t}/comm").read().strip()
@@ -36,7 +45,7 @@ def mutex(addr):
     except Exception: return None
 
 tids = sorted(int(t) for t in os.listdir(f"/proc/{pid}/task"))
-print(f"hellfire pid {pid}: {len(tids)} threads\n", flush=True)
+print(f"{comm(pid)} pid {pid}: {len(tids)} threads\n", flush=True)
 print("--- storage threads ---", flush=True)
 for t in tids:
     c = comm(t)
