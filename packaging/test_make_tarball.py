@@ -2,35 +2,39 @@
 
     python3 packaging/test_make_tarball.py
 
-Nothing here reads or writes this checkout. Each test copies make-tarball.sh
-into a stand-in checkout under a temp dir, so the script's own
+Nothing here reads or writes this checkout, except that one test reads the
+Rust config's source and asset files. Each test copies make-tarball.sh into a
+stand-in checkout under a temp dir, so the script's own
 `cd "$(dirname "$0")/.."` lands there and the tarball it writes goes there too.
 It runs from a third directory, to show that it finds its checkout by itself.
-npm is a recorder on PATH: for `ci` it writes the marker real npm leaves in
-node_modules and downloads nothing. TMPDIR points into the temp dir, so a
-staging dir the script failed to remove is caught.
+TMPDIR points into the temp dir, so a staging dir the script failed to remove
+is caught.
 
 The stand-in holds one small file for each input the script names, plus what it
-must leave out: VCS and IDE state, cargo's target/, node_modules, each app's
-dist/ and an app that does not ship. Each file's contents name its own path, so
-a file shipped under the wrong name fails as well. install.sh and uninstall.sh
-are the real ones, because one test checks install.sh against the tarball.
+must leave out: VCS and IDE state, cargo's target/ (MinkaShell's AntiWebUI
+build among it), the old TypeScript shoji_wm, node_modules, each app's dist/, a
+TypeScript file beside the shaders, and an app that does not ship. Each file's
+contents name its own path, so a file shipped under the wrong name fails as
+well. install.sh and uninstall.sh are the real ones, because one test checks
+install.sh against the tarball. test_install.py builds on Checkout.
 """
 
-import json
 import os
 import re
 import shutil
 import stat
 import subprocess
-import sys
 import tarfile
 import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
 SCRIPT = "packaging/make-tarball.sh"
 REAL = (SCRIPT, "packaging/install.sh", "packaging/uninstall.sh")
+# The Rust config, whose source names the assets it reads.
+RUST_CONFIG = os.path.join(REPO, "ShojiWM/src/shojiwm_rs/examples/default_config")
+ASSET_ROOT = "ShojiWM/packages/config"
 
 VERSION = "9.9-test"
 ROOT = f"minkade-{VERSION}"
@@ -45,16 +49,16 @@ CHECKOUT = (
     "ShojiWM/.idea/workspace.xml",
     "ShojiWM/Cargo.toml",
     "ShojiWM/src/main.rs",
-    "ShojiWM/target/release/shoji_wm",
+    "ShojiWM/target/release/shoji_wm",  # the TypeScript build: must not ship
+    "ShojiWM/target/release/examples/default_config",
     "ShojiWM/target/release/xdg-desktop-portal-shojiwm",
     "ShojiWM/package.json",
-    "ShojiWM/package-lock.json",
-    "ShojiWM/tsconfig.json",
     "ShojiWM/node_modules/esbuild/package.json",
-    "ShojiWM/packages/shoji_wm/index.ts",
     "ShojiWM/packages/config/src/index.tsx",
-    "ShojiWM/tools/decoration-runtime.ts",
-    "ShojiWM/tools/release.sh",
+    "ShojiWM/packages/config/src/effect/island-glass.ts",
+    "ShojiWM/packages/config/src/effect/liquid-glass.frag",
+    "ShojiWM/packages/config/src/effect/backdrop-fade.frag",
+    "ShojiWM/packages/config/assets/drag-tab-top.svg",
     "ShojiWM/dist/shojiwm.portal",
     "ShojiWM/dist/org.freedesktop.impl.portal.desktop.shojiwm.service",
     "ShojiWM/dist/xdg-desktop-portal-shojiwm.service",
@@ -77,12 +81,22 @@ CHECKOUT = (
     "MinkaShell/.idea/workspace.xml",
     "MinkaShell/shell.qml",
     "MinkaShell/modules/bar/Bar.qml",
+    "MinkaShell/Cargo.toml",
+    "MinkaShell/src/main.rs",
+    "MinkaShell/target/release/minkashell",
+    "MinkaShell/dist/minkashell",
     "MinkaConf/.git",
     "MinkaConf/shell.qml",
     "MinkaConf/dist/MinkaConf.desktop",
     "MinkaMon/.git",
     "MinkaMon/shell.qml",
-    "MinkaMon/scripts/sampler.py",
+    "MinkaMon/Cargo.toml",
+    "MinkaMon/src/main.rs",
+    "MinkaMon/assets/coastlines.json",
+    "MinkaMon/sampler-rs/Cargo.toml",
+    "MinkaMon/sampler-rs/src/main.rs",
+    "MinkaMon/target/release/minkamon",
+    "MinkaMon/sampler-rs/target/release/minkamon-sampler",
     "MinkaMon/dist/minkamon",
     "MinkaMon/dist/MinkaMon.desktop",
     "Proustite/.git",
@@ -96,9 +110,14 @@ CHECKOUT = (
 EXECUTABLE = {
     "packaging/minka-session",
     "ShojiWM/target/release/shoji_wm",
+    "ShojiWM/target/release/examples/default_config",
     "ShojiWM/target/release/xdg-desktop-portal-shojiwm",
     "xwayland-satellite/target/release/xwayland-satellite",
     "MinkaFX/target/release/MinkaFX",
+    "MinkaShell/target/release/minkashell",
+    "MinkaShell/dist/minkashell",
+    "MinkaMon/target/release/minkamon",
+    "MinkaMon/sampler-rs/target/release/minkamon-sampler",
     "MinkaMon/dist/minkamon",
 }
 # Each app reaches the shared singletons through these, as in the real tree.
@@ -107,23 +126,20 @@ CHECKOUT_LINKS = {
     "MinkaShell/MinkaLink": "../MinkaLink",
     "MinkaConf/Proustite": "../Proustite",
     "MinkaMon/Proustite": "../Proustite",
+    "MinkaMon/MinkaLink": "../MinkaLink",
 }
 
-# What the npm stand-in writes into node_modules.
-NPM_MARKER = b"fixture: npm ci\n"
-
 # The tarball under ROOT: every file in it, and the checkout file it must be a
-# copy of (None: written by npm ci). Nothing else may be in it.
+# copy of. Nothing else may be in it.
 SHIPPED_SOURCES = (
     "ShojiWM/Cargo.toml",
     "ShojiWM/src/main.rs",
     "ShojiWM/package.json",
-    "ShojiWM/package-lock.json",
-    "ShojiWM/tsconfig.json",
-    "ShojiWM/packages/shoji_wm/index.ts",
     "ShojiWM/packages/config/src/index.tsx",
-    "ShojiWM/tools/decoration-runtime.ts",
-    "ShojiWM/tools/release.sh",
+    "ShojiWM/packages/config/src/effect/island-glass.ts",
+    "ShojiWM/packages/config/src/effect/liquid-glass.frag",
+    "ShojiWM/packages/config/src/effect/backdrop-fade.frag",
+    "ShojiWM/packages/config/assets/drag-tab-top.svg",
     "ShojiWM/dist/shojiwm.portal",
     "ShojiWM/dist/org.freedesktop.impl.portal.desktop.shojiwm.service",
     "ShojiWM/dist/xdg-desktop-portal-shojiwm.service",
@@ -131,30 +147,42 @@ SHIPPED_SOURCES = (
     "xwayland-satellite/src/main.rs",
     "MinkaFX/Cargo.toml",
     "MinkaFX/src/main.rs",
+    "MinkaMon/shell.qml",
+    "MinkaMon/Cargo.toml",
+    "MinkaMon/src/main.rs",
+    "MinkaMon/assets/coastlines.json",
+    "MinkaMon/sampler-rs/Cargo.toml",
+    "MinkaMon/sampler-rs/src/main.rs",
+    "MinkaMon/dist/minkamon",
+    "MinkaMon/dist/MinkaMon.desktop",
     "MinkaIPC/Cargo.toml",
     "MinkaIPC/src/lib.rs",
     "smithay/Cargo.toml",
     "smithay/src/lib.rs",
 )
 TARBALL = {
-    "bin/shoji_wm": "ShojiWM/target/release/shoji_wm",
+    "bin/shoji_wm": "ShojiWM/target/release/examples/default_config",
     "bin/xdg-desktop-portal-shojiwm": "ShojiWM/target/release/xdg-desktop-portal-shojiwm",
     "bin/xwayland-satellite": "xwayland-satellite/target/release/xwayland-satellite",
     "bin/MinkaFX": "MinkaFX/target/release/MinkaFX",
 
-    "runtime/package.json": "ShojiWM/package.json",
-    "runtime/package-lock.json": "ShojiWM/package-lock.json",
-    "runtime/tsconfig.json": "ShojiWM/tsconfig.json",
-    "runtime/packages/shoji_wm/index.ts": "ShojiWM/packages/shoji_wm/index.ts",
-    "runtime/packages/config/src/index.tsx": "ShojiWM/packages/config/src/index.tsx",
-    "runtime/tools/decoration-runtime.ts": "ShojiWM/tools/decoration-runtime.ts",
-    "runtime/node_modules/.package-lock.json": None,
+    "minka/shojiwm/src/effect/liquid-glass.frag": f"{ASSET_ROOT}/src/effect/liquid-glass.frag",
+    "minka/shojiwm/src/effect/backdrop-fade.frag": f"{ASSET_ROOT}/src/effect/backdrop-fade.frag",
+    "minka/shojiwm/assets/drag-tab-top.svg": f"{ASSET_ROOT}/assets/drag-tab-top.svg",
 
     "minka/MinkaShell/shell.qml": "MinkaShell/shell.qml",
     "minka/MinkaShell/modules/bar/Bar.qml": "MinkaShell/modules/bar/Bar.qml",
+    "minka/MinkaShell/Cargo.toml": "MinkaShell/Cargo.toml",
+    "minka/MinkaShell/src/main.rs": "MinkaShell/src/main.rs",
     "minka/MinkaConf/shell.qml": "MinkaConf/shell.qml",
     "minka/MinkaMon/shell.qml": "MinkaMon/shell.qml",
-    "minka/MinkaMon/scripts/sampler.py": "MinkaMon/scripts/sampler.py",
+    "minka/MinkaMon/Cargo.toml": "MinkaMon/Cargo.toml",
+    "minka/MinkaMon/src/main.rs": "MinkaMon/src/main.rs",
+    "minka/MinkaMon/assets/coastlines.json": "MinkaMon/assets/coastlines.json",
+    "minka/MinkaMon/sampler-rs/Cargo.toml": "MinkaMon/sampler-rs/Cargo.toml",
+    "minka/MinkaMon/sampler-rs/src/main.rs": "MinkaMon/sampler-rs/src/main.rs",
+    "minka/MinkaMon/minkamon": "MinkaMon/target/release/minkamon",
+    "minka/MinkaMon/minkamon-sampler": "MinkaMon/sampler-rs/target/release/minkamon-sampler",
     "minka/Proustite/qmldir": "Proustite/qmldir",
     "minka/Proustite/Proustite.qml": "Proustite/Proustite.qml",
     "minka/MinkaLink/qmldir": "MinkaLink/qmldir",
@@ -176,11 +204,17 @@ TARBALL = {
     "uninstall.sh": "packaging/uninstall.sh",
     "README.md": "README.md",
 }
-TARBALL_LINKS = {f"minka/{link}": target for link, target in CHECKOUT_LINKS.items()}
+APP_LINKS = {f"minka/{link}": target for link, target in CHECKOUT_LINKS.items()}
+# MinkaMon's source tree keeps its links as well. They dangle in src/, where
+# nothing reads them: its cargo build compiles the theme in.
+TARBALL_LINKS = {**APP_LINKS,
+                 **{f"src/{link}": target for link, target in CHECKOUT_LINKS.items()
+                    if link.startswith("MinkaMon/")}}
 # The files the script installs with an explicit mode. Copied trees keep theirs.
 MODES = {
     **dict.fromkeys(("bin/shoji_wm", "bin/xdg-desktop-portal-shojiwm",
                      "bin/xwayland-satellite", "bin/MinkaFX",
+                     "minka/MinkaMon/minkamon", "minka/MinkaMon/minkamon-sampler",
                      "dist/minka-session", "dist/minkamon",
                      "install.sh", "uninstall.sh"), 0o755),
     **dict.fromkeys(("dist/minka.desktop", "dist/MinkaConf.desktop", "dist/MinkaMon.desktop",
@@ -190,23 +224,8 @@ MODES = {
                      "README.md"), 0o644),
 }
 
-# npm, as make-tarball.sh calls it. Logs each call as a JSON line; for `ci`
-# refuses a prefix with no lockfile, as real npm does, and otherwise writes
-# NPM_MARKER where real npm writes its hidden lockfile. FAKE_NPM_FAIL makes it
-# fail after logging.
-FAKE_NPM = f"""#!{sys.executable}
-import json, os, sys
-with open(os.environ["FAKE_NPM_LOG"], "a") as log:
-    log.write(json.dumps(sys.argv[1:]) + "\\n")
-if os.environ.get("FAKE_NPM_FAIL"):
-    sys.exit("npm error fake failure")
-prefix = sys.argv[sys.argv.index("--prefix") + 1]
-if not os.path.isfile(os.path.join(prefix, "package-lock.json")):
-    sys.exit("npm error `npm ci` can only install with an existing package-lock.json")
-os.makedirs(os.path.join(prefix, "node_modules"))
-with open(os.path.join(prefix, "node_modules", ".package-lock.json"), "wb") as out:
-    out.write({NPM_MARKER!r})
-"""
+# Relative asset paths in the Rust config's source: "./src/effect/x.frag".
+ASSET_LITERAL = re.compile(r'"\./([^"]+\.(?:frag|vert|glsl|wgsl|svg|png))"')
 
 
 def member_bytes(tar, member):
@@ -216,16 +235,28 @@ def member_bytes(tar, member):
     return handle.read()
 
 
+def config_asset_paths():
+    """Every asset path the Rust config's source names, relative to its root."""
+    paths = set()
+    for parent, _, names in os.walk(RUST_CONFIG):
+        for name in names:
+            if name.endswith(".rs"):
+                with open(os.path.join(parent, name)) as source:
+                    paths.update(ASSET_LITERAL.findall(source.read()))
+    return paths
+
+
 @unittest.skipUnless(shutil.which("rsync"), "make-tarball.sh copies trees with rsync")
-class MakeTarball(unittest.TestCase):
+class Checkout(unittest.TestCase):
+    """A stand-in checkout with make-tarball.sh in it, run from elsewhere."""
+
     def setUp(self):
-        self.tmp = self.enterContext(tempfile.TemporaryDirectory(prefix="test_make_tarball."))
+        self.tmp = self.enterContext(tempfile.TemporaryDirectory(prefix="test_packaging."))
         self.repo = os.path.join(self.tmp, "checkout")
         self.tmpdir = os.path.join(self.tmp, "tmpdir")      # the script's TMPDIR
         self.cwd = os.path.join(self.tmp, "elsewhere")      # where it is run from
-        fake_bin = os.path.join(self.tmp, "bin")
-        self.npm_log = os.path.join(self.tmp, "npm.log")
-        for path in (self.tmpdir, self.cwd, fake_bin):
+        self.bin = os.path.join(self.tmp, "bin")            # stand-ins, first on PATH
+        for path in (self.tmpdir, self.cwd, self.bin):
             os.makedirs(path)
 
         for path in CHECKOUT:
@@ -237,14 +268,8 @@ class MakeTarball(unittest.TestCase):
         for link, target in CHECKOUT_LINKS.items():
             os.symlink(target, os.path.join(self.repo, link))
 
-        npm = os.path.join(fake_bin, "npm")
-        with open(npm, "w") as out:
-            out.write(FAKE_NPM)
-        os.chmod(npm, 0o755)
-
-        self.env = dict(os.environ, PATH=fake_bin + os.pathsep + os.environ.get("PATH", ""),
-                        TMPDIR=self.tmpdir, FAKE_NPM_LOG=self.npm_log)
-        self.env.pop("FAKE_NPM_FAIL", None)
+        self.env = dict(os.environ, PATH=self.bin + os.pathsep + os.environ.get("PATH", ""),
+                        TMPDIR=self.tmpdir)
 
     def write(self, path, data, mode):
         full = os.path.join(self.repo, path)
@@ -252,6 +277,13 @@ class MakeTarball(unittest.TestCase):
         with open(full, "wb") as out:
             out.write(data)
         os.chmod(full, mode)
+
+    def stub(self, name, body):
+        """Put a command named `name` first on PATH: a shell script."""
+        path = os.path.join(self.bin, name)
+        with open(path, "w") as out:
+            out.write("#!/bin/sh\n" + body)
+        os.chmod(path, 0o755)
 
     def checkout_bytes(self, path):
         with open(os.path.join(self.repo, path), "rb") as handle:
@@ -270,24 +302,21 @@ class MakeTarball(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         return self.tarball(version)
 
-    def npm_calls(self):
-        try:
-            with open(self.npm_log) as log:
-                return [json.loads(line) for line in log]
-        except FileNotFoundError:
-            return []
-
     def assertNothingLeftBehind(self, before):
         """The checkout has only what was there before, and the staging dir is gone."""
         self.assertEqual(sorted(os.listdir(self.repo)), sorted(before))
         self.assertEqual(os.listdir(self.tmpdir), [])
 
+
+class MakeTarball(Checkout):
     def test_tarball_holds_exactly_the_listed_files(self):
         before = os.listdir(self.repo)
         tarball = self.build(VERSION)
-        # The tarball is the only thing the script adds to its checkout.
+        # The tarball is the only thing the script adds to its checkout, and
+        # its staging dir is gone.
         self.assertEqual(sorted(set(os.listdir(self.repo)) - set(before)),
                          [os.path.basename(tarball)])
+        self.assertEqual(os.listdir(self.tmpdir), [])
 
         with tarfile.open(tarball) as tar:
             members = tar.getmembers()
@@ -303,8 +332,7 @@ class MakeTarball(unittest.TestCase):
             self.assertEqual(others, [])
             for name, source in TARBALL.items():
                 with self.subTest(file=name):
-                    want = NPM_MARKER if source is None else self.checkout_bytes(source)
-                    self.assertEqual(member_bytes(tar, files[name]), want)
+                    self.assertEqual(member_bytes(tar, files[name]), self.checkout_bytes(source))
             for name, mode in MODES.items():
                 with self.subTest(mode=name):
                     self.assertEqual(oct(stat.S_IMODE(files[name].mode)), oct(mode))
@@ -313,20 +341,9 @@ class MakeTarball(unittest.TestCase):
         out = os.path.join(self.tmp, "unpacked")
         with tarfile.open(self.build(VERSION)) as tar:
             tar.extractall(out, filter="data")
-        for link in TARBALL_LINKS:
+        for link in APP_LINKS:
             with self.subTest(link=link):
                 self.assertTrue(os.path.isfile(os.path.join(out, ROOT, link, "qmldir")))
-
-    def test_npm_ci_runs_once_in_the_staged_runtime(self):
-        self.build(VERSION)
-        calls = self.npm_calls()
-        self.assertEqual(len(calls), 1, calls)
-        flag, prefix, *rest = calls[0]
-        self.assertEqual((flag, rest), ("--prefix", ["ci", "--silent"]))
-        # Staged under TMPDIR, not in the checkout, and removed once packed.
-        self.assertEqual(os.path.relpath(prefix, self.tmpdir).split(os.sep)[1:],
-                         [ROOT, "runtime"])
-        self.assertEqual(os.listdir(self.tmpdir), [])
 
     def test_version_defaults_to_0_1(self):
         done = self.run_script()
@@ -335,36 +352,51 @@ class MakeTarball(unittest.TestCase):
             self.assertEqual({name.split("/")[0] for name in tar.getnames()}, {"minkade-0.1"})
 
     def test_preflight_lists_every_missing_input_and_stages_nothing(self):
-        os.remove(os.path.join(self.repo, "ShojiWM/target/release/shoji_wm"))
+        for path in ("ShojiWM/target/release/examples/default_config",
+                     "MinkaMon/sampler-rs/target/release/minkamon-sampler",
+                     f"{ASSET_ROOT}/src/effect/liquid-glass.frag",
+                     f"{ASSET_ROOT}/src/effect/backdrop-fade.frag",
+                     "MinkaMon/dist/MinkaMon.desktop",
+                     "README.md"):
+            os.remove(os.path.join(self.repo, path))
         os.chmod(os.path.join(self.repo, "MinkaFX/target/release/MinkaFX"), 0o644)
-        os.remove(os.path.join(self.repo, "ShojiWM/tools/decoration-runtime.ts"))
         shutil.rmtree(os.path.join(self.repo, "MinkaLink"))
-        os.remove(os.path.join(self.repo, "MinkaMon/dist/MinkaMon.desktop"))
-        os.remove(os.path.join(self.repo, "README.md"))
         before = os.listdir(self.repo)
 
         done = self.run_script(VERSION)
         self.assertEqual(done.returncode, 1)
         self.assertEqual(done.stdout, "")
+        # An asset pattern that matches nothing is reported as written.
         self.assertEqual(done.stderr,
                          "missing from this checkout:\n"
-                         "   - ShojiWM/target/release/shoji_wm (release binary)\n"
+                         "   - ShojiWM/target/release/examples/default_config (release binary)\n"
                          "   - MinkaFX/target/release/MinkaFX (release binary)\n"
-                         "   - ShojiWM/tools/decoration-runtime.ts\n"
+                         "   - MinkaMon/sampler-rs/target/release/minkamon-sampler (release binary)\n"
+                         f"   - {ASSET_ROOT}/src/effect/*.frag\n"
                          "   - MinkaLink\n"
                          "   - MinkaMon/dist/MinkaMon.desktop\n"
                          "   - README.md\n")
-        self.assertEqual(self.npm_calls(), [])
         self.assertNothingLeftBehind(before)
 
-    def test_failed_npm_ci_leaves_no_tarball_or_staging_dir(self):
-        self.env["FAKE_NPM_FAIL"] = "1"
+    def test_failure_after_staging_leaves_no_tarball_or_staging_dir(self):
+        self.stub("tar", 'echo "tar: fake failure" >&2\nexit 2\n')
         before = os.listdir(self.repo)
         done = self.run_script(VERSION)
         self.assertNotEqual(done.returncode, 0)
-        self.assertIn("npm error fake failure", done.stderr)
-        self.assertEqual(len(self.npm_calls()), 1)
+        self.assertIn("tar: fake failure", done.stderr)
         self.assertNothingLeftBehind(before)
+
+    @unittest.skipUnless(os.path.isdir(RUST_CONFIG), "no Rust config checkout beside this script")
+    def test_every_asset_the_rust_config_names_ships(self):
+        """Uses the real asset files, so a shader added, renamed or moved by the
+        config is checked against the script's ASSETS patterns."""
+        named = config_asset_paths()
+        self.assertTrue(named, "found no asset paths in the Rust config: the pattern is stale")
+        shutil.rmtree(os.path.join(self.repo, ASSET_ROOT))
+        shutil.copytree(os.path.join(REPO, ASSET_ROOT), os.path.join(self.repo, ASSET_ROOT))
+        with tarfile.open(self.build(VERSION)) as tar:
+            shipped = set(tar.getnames())
+        self.assertEqual(sorted(p for p in named if f"{ROOT}/minka/shojiwm/{p}" not in shipped), [])
 
     def test_every_tarball_path_install_sh_reads_ships(self):
         """install.sh names what it installs one by one (make-tarball.sh says so
@@ -374,10 +406,10 @@ class MakeTarball(unittest.TestCase):
             shipped = {name.removeprefix(f"{ROOT}/") for name in tar.getnames()}
             install_sh = member_bytes(tar, f"{ROOT}/install.sh").decode()
         # Relative paths only: /usr/share/minka/MinkaShell is where it installs to.
-        read = set(re.findall(r"(?<![\w/.-])((?:bin|dist|minka|runtime|src)/[\w.+-]+(?:/[\w.+-]+)*)",
+        read = set(re.findall(r"(?<![\w/.-])((?:bin|dist|minka|src)/[\w.+-]+(?:/[\w.+-]+)*)",
                               install_sh))
         # --from-source builds these itself.
-        read = {path for path in read if not re.match(r"src/[^/]+/target/", path)}
+        read = {path for path in read if "/target/" not in path}
         self.assertTrue(read, "found no tarball paths in install.sh: the pattern is stale")
         self.assertEqual(sorted(read - shipped), [])
 

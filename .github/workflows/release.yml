@@ -1,7 +1,8 @@
 # Tag → GitHub release with the tester tarball attached.
 #
 # Pushing a version tag (e.g. `git tag 0.9.1 && git push origin 0.9.1`)
-# builds all four release binaries from the submodules pinned by that tag,
+# builds the release binaries from the submodules pinned by that tag (the
+# compositor is the Rust config, shojiwm_rs's default_config example),
 # assembles minkade-<tag>-linux-x86_64.tar.gz via packaging/make-tarball.sh,
 # and publishes it as a GitHub release with auto-generated notes.
 #
@@ -45,15 +46,15 @@ jobs:
             libegl1-mesa-dev libgles2-mesa-dev \
             libpixman-1-dev \
             libpipewire-0.3-dev \
-            libxcb1-dev libxcb-cursor-dev
+            libxcb1-dev libxcb-cursor-dev \
+            libfontconfig-dev
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-
-      - name: Build ShojiWM (compositor + portal)
+      # --example limits a build to examples, so the portal is built apart.
+      - name: Build ShojiWM (compositor with the Rust config + portal)
         working-directory: ShojiWM
-        run: cargo build --release --locked
+        run: |
+          cargo build --release --locked -p shojiwm_rs --example default_config
+          cargo build --release --locked -p xdg-desktop-portal-shojiwm
 
       - name: Build xwayland-satellite
         working-directory: xwayland-satellite
@@ -62,6 +63,12 @@ jobs:
       - name: Build MinkaFX
         working-directory: MinkaFX
         run: cargo build --release --locked
+
+      - name: Build MinkaMon + sampler
+        working-directory: MinkaMon
+        run: |
+          cargo build --release --locked
+          cargo build --release --locked --manifest-path sampler-rs/Cargo.toml
 
       - name: Assemble tarball
         run: packaging/make-tarball.sh "${GITHUB_REF_NAME}"

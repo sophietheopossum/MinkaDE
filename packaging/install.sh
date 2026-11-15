@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
 # MinkaDE tester install script.
 #
-# Installs the Minka desktop environment: the ShojiWM compositor + TypeScript
-# runtime, the ScreenCast portal backend, the patched xwayland-satellite, the
-# MinkaFX overlay, and the MinkaShell / MinkaConf / MinkaMon Quickshell trees
-# (with their shared Proustite / MinkaLink singletons), plus a "Minka" Wayland
-# session entry for your display manager and launchers for the settings and
+# Installs the Minka desktop environment: the ShojiWM compositor with Minka's
+# config compiled in (plus the shaders and icons it reads), the ScreenCast
+# portal backend, the patched xwayland-satellite, the MinkaFX overlay, the
+# MinkaShell / MinkaConf Quickshell trees (with their shared Proustite /
+# MinkaLink singletons), the MinkaMon system monitor, a "Minka" Wayland
+# session entry for your display manager, and launchers for the settings and
 # system-monitor apps.
 #
 # Usage:
 #   ./install.sh                 install the prebuilt x86_64 binaries (default)
-#   ./install.sh --from-source   build everything here first (needs rust + npm)
+#   ./install.sh --from-source   build everything here first (needs rust)
 #   ./install.sh --no-portal     skip the ScreenCast portal backend
 #
 # System files go to /usr (sudo is requested for that step only). Per-user
-# files go to ~/.config. Re-running is safe; an existing ~/.config/shojiwm
-# user config is never overwritten.
+# files go to ~/.config. Re-running is safe; your settings in
+# ~/.config/minka-settings.json are never touched.
 
 set -euo pipefail
 
@@ -41,15 +42,13 @@ done
 # ── dependency sanity check ──────────────────────────────────────────────
 missing=()
 need() { command -v "$1" >/dev/null 2>&1 || missing+=("$1${2:+ ($2)}"); }
-need node "runs the TypeScript config runtime"
-need qs "quickshell - renders MinkaShell/MinkaConf/MinkaMon"
-need python3 "MinkaMon's stats sampler (stdlib only, no pip packages)"
+need qs "quickshell - renders MinkaShell and MinkaConf"
+need python3 "MinkaShell's per-app mute and MinkaConf's cursor previews (stdlib only)"
 need Xwayland "X11 application support"
 need kitty "default terminal (Super+T)"
 command -v pipewire >/dev/null 2>&1 || [ -S "${XDG_RUNTIME_DIR:-/run/user/$UID}/pipewire-0" ] || missing+=("pipewire (audio + screen sharing)")
 if [[ $FROM_SOURCE -eq 1 ]]; then
     need cargo "rust toolchain, required for --from-source"
-    need npm "required for --from-source"
 fi
 if [[ ${#missing[@]} -gt 0 ]]; then
     echo "!! missing dependencies:" >&2
@@ -59,31 +58,31 @@ if [[ ${#missing[@]} -gt 0 ]]; then
     [[ "$reply" == y* || "$reply" == Y* ]] || exit 1
 fi
 
-# ── resolve binaries + runtime ───────────────────────────────────────────
+# ── resolve binaries ─────────────────────────────────────────────────────
 if [[ $FROM_SOURCE -eq 1 ]]; then
+    # The compositor is shojiwm_rs's default_config example: Minka's config
+    # compiled in. --example limits a build to examples, so the portal gets
+    # a build of its own.
     echo ">> building ShojiWM + portal (this can take a while)"
-    (cd src/ShojiWM && cargo build --release -p shoji_wm -p xdg-desktop-portal-shojiwm)
+    (cd src/ShojiWM && cargo build --release -p shojiwm_rs --example default_config \
+        && cargo build --release -p xdg-desktop-portal-shojiwm)
     echo ">> building xwayland-satellite"
     (cd src/xwayland-satellite && cargo build --release)
     echo ">> building MinkaFX"
     (cd src/MinkaFX && cargo build --release)
+    echo ">> building MinkaMon + sampler"
+    (cd src/MinkaMon && cargo build --release)
+    (cd src/MinkaMon/sampler-rs && cargo build --release)
 
-    SHOJI_BIN="src/ShojiWM/target/release/shoji_wm"
+    SHOJI_BIN="src/ShojiWM/target/release/examples/default_config"
     PORTAL_BIN="src/ShojiWM/target/release/xdg-desktop-portal-shojiwm"
     SATELLITE_BIN="src/xwayland-satellite/target/release/xwayland-satellite"
     MINKAFX_BIN="src/MinkaFX/target/release/MinkaFX"
-
-    echo ">> staging TypeScript runtime (npm ci)"
-    RUNTIME_SRC="$(mktemp -d)/shojiwm-runtime"
-    trap 'rm -rf "$(dirname "$RUNTIME_SRC")"' EXIT
-    mkdir -p "$RUNTIME_SRC/packages" "$RUNTIME_SRC/tools"
-    cp src/ShojiWM/package.json src/ShojiWM/package-lock.json src/ShojiWM/tsconfig.json "$RUNTIME_SRC/"
-    cp -a src/ShojiWM/packages/shoji_wm "$RUNTIME_SRC/packages/"
-    cp -a src/ShojiWM/packages/config "$RUNTIME_SRC/packages/"
-    cp src/ShojiWM/tools/decoration-runtime.ts "$RUNTIME_SRC/tools/"
-    npm --prefix "$RUNTIME_SRC" ci
+    MINKAMON_BIN="src/MinkaMon/target/release/minkamon"
+    SAMPLER_BIN="src/MinkaMon/sampler-rs/target/release/minkamon-sampler"
 else
-    for f in bin/shoji_wm bin/xdg-desktop-portal-shojiwm bin/xwayland-satellite bin/MinkaFX runtime/package.json; do
+    for f in bin/shoji_wm bin/xdg-desktop-portal-shojiwm bin/xwayland-satellite bin/MinkaFX \
+             minka/MinkaMon/minkamon minka/MinkaMon/minkamon-sampler; do
         if [[ ! -e "$f" ]]; then
             echo "prebuilt file missing from tarball: $f (re-download, or use --from-source)" >&2
             exit 1
@@ -93,7 +92,8 @@ else
     PORTAL_BIN="bin/xdg-desktop-portal-shojiwm"
     SATELLITE_BIN="bin/xwayland-satellite"
     MINKAFX_BIN="bin/MinkaFX"
-    RUNTIME_SRC="runtime"
+    MINKAMON_BIN="minka/MinkaMon/minkamon"
+    SAMPLER_BIN="minka/MinkaMon/minkamon-sampler"
 fi
 
 # ── system install (sudo) ────────────────────────────────────────────────
@@ -104,17 +104,13 @@ sudo install -Dm755 "$SATELLITE_BIN" /usr/lib/minka/xwayland-satellite
 sudo install -Dm755 dist/minka-session /usr/bin/minka-session
 sudo install -Dm644 dist/minka.desktop /usr/share/wayland-sessions/minka.desktop
 
-sudo rm -rf /usr/lib/shojiwm
-sudo mkdir -p /usr/lib/shojiwm
-sudo cp -a "$RUNTIME_SRC/." /usr/lib/shojiwm/
-
-sudo rm -rf /usr/share/shojiwm/default-config
-sudo mkdir -p /usr/share/shojiwm/default-config
-sudo cp -a "$RUNTIME_SRC/packages/config/." /usr/share/shojiwm/default-config/
-
 sudo rm -rf /usr/share/minka/MinkaShell /usr/share/minka/MinkaConf \
-    /usr/share/minka/MinkaMon /usr/share/minka/Proustite /usr/share/minka/MinkaLink
+    /usr/share/minka/MinkaMon /usr/share/minka/Proustite /usr/share/minka/MinkaLink \
+    /usr/share/minka/shojiwm
 sudo mkdir -p /usr/share/minka
+# The compositor's shaders and icons. It reads them from the checkout it was
+# built from while that exists, and from here otherwise.
+sudo cp -a minka/shojiwm /usr/share/minka/
 sudo cp -a minka/MinkaShell /usr/share/minka/
 sudo cp -a minka/MinkaConf /usr/share/minka/
 sudo cp -a minka/MinkaMon /usr/share/minka/
@@ -123,12 +119,15 @@ sudo cp -a minka/MinkaMon /usr/share/minka/
 # /usr/share/minka/<app>/ if these sit next to it.
 sudo cp -a minka/Proustite /usr/share/minka/
 sudo cp -a minka/MinkaLink /usr/share/minka/
+# MinkaMon looks for its sampler beside itself. A source build replaces the
+# prebuilt pair that came with the tree.
+sudo install -m755 "$MINKAMON_BIN" "$SAMPLER_BIN" /usr/share/minka/MinkaMon/
 
 # Application launchers (the session entry is separate, in wayland-sessions).
 sudo install -Dm644 dist/MinkaConf.desktop /usr/share/applications/MinkaConf.desktop
 sudo install -Dm644 dist/MinkaMon.desktop /usr/share/applications/MinkaMon.desktop
-# MinkaMon.desktop execs this rather than qs directly, so its output reaches a
-# log file instead of /dev/null.
+# MinkaMon.desktop execs this rather than the binary directly, so its output
+# reaches a log file instead of /dev/null.
 sudo install -Dm755 dist/minkamon /usr/bin/minkamon
 
 if [[ $INSTALL_PORTAL -eq 1 ]]; then
@@ -141,48 +140,6 @@ if [[ $INSTALL_PORTAL -eq 1 ]]; then
 fi
 
 # ── per-user setup (no sudo) ─────────────────────────────────────────────
-USER_CONFIG_DIR="$XDG_CONFIG_HOME/shojiwm"
-CREATED_CONFIG=0
-if [[ ! -e "$USER_CONFIG_DIR/src/index.tsx" ]]; then
-    echo ">> creating user config at $USER_CONFIG_DIR"
-    mkdir -p "$USER_CONFIG_DIR"
-    cp -a "$RUNTIME_SRC/packages/config/." "$USER_CONFIG_DIR/"
-    CREATED_CONFIG=1
-else
-    echo ">> keeping existing user config at $USER_CONFIG_DIR"
-fi
-
-mkdir -p "$USER_CONFIG_DIR/node_modules"
-ln -sfn /usr/lib/shojiwm/packages/shoji_wm "$USER_CONFIG_DIR/node_modules/shoji_wm"
-if [[ $CREATED_CONFIG -eq 1 || ! -e "$USER_CONFIG_DIR/package.json" ]]; then
-    cat > "$USER_CONFIG_DIR/package.json" <<'EOF'
-{
-  "name": "shojiwm-user-config",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "shoji_wm": "file:/usr/lib/shojiwm/packages/shoji_wm"
-  }
-}
-EOF
-fi
-if [[ $CREATED_CONFIG -eq 1 || ! -e "$USER_CONFIG_DIR/tsconfig.json" ]]; then
-    cat > "$USER_CONFIG_DIR/tsconfig.json" <<'EOF'
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
-    "jsxImportSource": "shoji_wm",
-    "strict": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true
-  }
-}
-EOF
-fi
-
 if [[ $INSTALL_PORTAL -eq 1 ]]; then
     echo ">> writing user portals.conf"
     mkdir -p "$XDG_CONFIG_HOME/xdg-desktop-portal"
@@ -203,5 +160,5 @@ fi
 echo ""
 echo "done. log out and pick the \"Minka\" session in your display manager."
 echo "settings app:   qs -p /usr/share/minka/MinkaConf  (or via the start menu)"
-echo "system monitor: qs -p /usr/share/minka/MinkaMon   (or via the start menu)"
+echo "system monitor: minkamon                          (or via the start menu)"
 echo "see README.md for the keybinding quickstart."
