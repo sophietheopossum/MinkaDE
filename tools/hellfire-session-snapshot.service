@@ -1,0 +1,11 @@
+# hellfire-session-snapshot.service -- user unit, run by hellfire-session-snapshot.timer.
+# Install: see the header of tools/hellfire-session-snapshot.
+[Unit]
+Description=Snapshot the browser's session store (Floorp/Firefox)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/hellfire-session-snapshot snapshot
+# It only ever reads the profile and writes under ~/.local/state.
+Nice=10
+IOSchedulingClass=idle

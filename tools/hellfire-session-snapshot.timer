@@ -1,0 +1,13 @@
+# hellfire-session-snapshot.timer -- user timer for tools/hellfire-session-snapshot.
+# Install: see the header of tools/hellfire-session-snapshot.
+[Unit]
+Description=Snapshot the browser's session store every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

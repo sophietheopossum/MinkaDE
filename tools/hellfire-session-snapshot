@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+# Snapshot the browser's live session store (Floorp now; hellfire/Firefox before 27/9/2026),
+# and keep a "best" copy a collapse cannot destroy.
+#
+# Why this exists: on 7/9/2026 a shutdown AsyncShutdown timeout crash
+# (ServiceWorkerRegistrar: Flushing data) meant the session's final write never completed.
+# Firefox came back with 26 tabs instead of 352. It was recoverable ONLY because
+# recovery.baklz4 happened to be frozen one write cycle before the loss -- a ~15 second
+# margin. This removes the luck.
+#
+#   snapshot   take one now (what the timer runs)
+#   list       show what is held for the live profile
+#   restore    put the best snapshot back (the browser must be closed)
+#
+# Install (user units; the units call it as ~/.local/bin/hellfire-session-snapshot):
+#   ln -s "$PWD"/tools/hellfire-session-snapshot ~/.local/bin/
+#   cp tools/hellfire-session-snapshot.{service,timer} ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now hellfire-session-snapshot.timer
+set -uo pipefail
+
+# One subdirectory per profile, named after the profile's directory. Until 15/11/2026
+# this script globbed ~/.mozilla only, so after the move to Floorp on 27/9 it kept
+# re-checking hellfire's dead profile and protected nothing for seven weeks. A shared
+# "best" would also have pitted the new browser's session against the old one's.
+# hellfire's last snapshots stay where they were, in the top level of this directory.
+STATE_BASE="${XDG_STATE_HOME:-$HOME/.local/state}/hellfire-session-snapshots"
+KEEP=48                      # rotating history; at 5 min apart that is 4 hours
+BEST_RATIO_NUM=9             # replace "best" only when new >= 90% of it, so a
+BEST_RATIO_DEN=10            # collapse can never overwrite a healthy copy
+
+profile() {
+    local p root
+    # The profile whose session was written most recently, across every place a
+    # profile of hers lives: Floorp's absolute-path profile (~/.floorp-profiles, the
+    # install default), Floorp's own root, and the old Firefox/hellfire root.
+    #
+    # Both session files count. A clean shutdown DELETES recovery.jsonlz4 and writes
+    # sessionstore.jsonlz4 instead, so going by the recovery file alone picked the
+    # newest leftover from some other profile -- hellfire's of 27/9 -- exactly when
+    # the browser is closed and a restore is wanted.
+    local files=()
+    for root in "$HOME"/.floorp-profiles "$HOME"/.config/floorp "$HOME"/.mozilla/firefox; do
+        files+=("$root"/*/sessionstore-backups/recovery.jsonlz4 "$root"/*/sessionstore.jsonlz4)
+    done
+    p=$(ls -t "${files[@]}" 2>/dev/null | head -1)
+    [ -n "$p" ] || return 1
+    p=$(dirname "$p")
+    [ "$(basename "$p")" = sessionstore-backups ] && p=$(dirname "$p")
+    echo "$p"
+}
+
+state_dir() {
+    echo "$STATE_BASE/$(basename "$1")"
+}
+
+# Decode a mozlz4 file and print "<tabs> <groups>". python-lz4 is not installed here,
+# so the LZ4 block decoder is inline.
+describe() {
+    python3 - "$1" <<'PY' 2>/dev/null || echo "? ?"
+import sys, struct, json
+raw = open(sys.argv[1], 'rb').read()
+if raw[:8] != b'mozLz40\x00': raise SystemExit(1)
+src, out, i = raw[12:], bytearray(), 0
+while i < len(src):
+    tok = src[i]; i += 1
+    n = tok >> 4
+    if n == 15:
+        while True:
+            b = src[i]; i += 1; n += b
+            if b != 255: break
+    out += src[i:i+n]; i += n
+    if i >= len(src): break
+    off = src[i] | (src[i+1] << 8); i += 2
+    m = tok & 15
+    if m == 15:
+        while True:
+            b = src[i]; i += 1; m += b
+            if b != 255: break
+    m += 4; s = len(out) - off
+    for k in range(m): out.append(out[s + k])
+d = json.loads(out)
+w = d.get('windows', [])
+print(sum(len(x.get('tabs', [])) for x in w),
+      sum(len(x.get('groups', []) or []) for x in w))
+PY
+}
+
+cmd_snapshot() {
+    local P; P=$(profile) || exit 0
+    [ -n "${P:-}" ] || exit 0
+    local live="$P/sessionstore-backups/recovery.jsonlz4"
+    [ -s "$live" ] || exit 0
+    local STATE; STATE=$(state_dir "$P")
+    mkdir -p "$STATE"
+    local size; size=$(stat -c %s "$live")
+
+    # Skip if identical to the newest snapshot we already hold.
+    local newest; newest=$(ls -t "$STATE"/session-*.jsonlz4 2>/dev/null | head -1)
+    if [ -n "$newest" ] && cmp -s "$live" "$newest"; then exit 0; fi
+
+    cp -a "$live" "$STATE/session-$(date +%Y%m%d-%H%M%S).jsonlz4"
+
+    # "best" is only replaced by something comparably large, so a collapsed session
+    # can never overwrite a healthy one no matter how long it sits there.
+    local best="$STATE/best.jsonlz4"
+    if [ ! -s "$best" ] || [ "$size" -ge $(( $(stat -c %s "$best") * BEST_RATIO_NUM / BEST_RATIO_DEN )) ]; then
+        cp -a "$live" "$best.tmp" && mv -f "$best.tmp" "$best"
+    fi
+
+    # Prune history, newest KEEP kept.
+    ls -t "$STATE"/session-*.jsonlz4 2>/dev/null | tail -n +$((KEEP + 1)) | xargs -r rm -f
+}
+
+cmd_list() {
+    local P; P=$(profile) || { echo "no profile found"; exit 0; }
+    local STATE; STATE=$(state_dir "$P")
+    echo "profile: $P"
+    echo "held in: $STATE"
+    [ -d "$STATE" ] || { echo "no snapshots yet"; exit 0; }
+    printf '%-34s %10s  %s\n' FILE BYTES 'TABS GROUPS'
+    for f in "$STATE"/best.jsonlz4 $(ls -t "$STATE"/session-*.jsonlz4 2>/dev/null); do
+        [ -s "$f" ] || continue
+        printf '%-34s %10s  %s\n' "$(basename "$f")" "$(stat -c %s "$f")" "$(describe "$f")"
+    done
+}
+
+cmd_restore() {
+    local P; P=$(profile) || { echo "no profile found" >&2; exit 1; }
+    local STATE; STATE=$(state_dir "$P")
+    local src="${1:-$STATE/best.jsonlz4}"
+    [ -s "$src" ] || { echo "no snapshot to restore: $src" >&2; exit 1; }
+    # -x, never -f: a -f pattern matches this script's own command line.
+    #
+    # Match EVERY name the browser can run under. This guard was written as
+    # `pgrep -x firefox` alone and was therefore inert for two months: her build
+    # runs as `hellfire` (/usr/bin/hellfire -> /opt/hellfire/firefox), so the
+    # check never fired and restore would happily overwrite sessionstore under a
+    # LIVE browser — which then rewrites it again on exit, losing the restore and
+    # possibly the live session with it. Found 9/9/2026. `floorp` added 15/11/2026.
+    local running; running=$(pgrep -x floorp; pgrep -x hellfire; pgrep -x firefox; pgrep -x firefox-bin)
+    running=$(echo "$running" | tr '\n' ' ' | tr -s ' ' | sed 's/^ *//;s/ *$//')
+    if [ -n "$running" ]; then
+        echo "Browser is running (pids: $running). Close it first." >&2
+        exit 1
+    fi
+    # Belt and braces: the profile lock is authoritative even if the process is
+    # named something new again. It is a symlink to <ip>:+<pid> while held.
+    if [ -L "$P/lock" ]; then
+        local lockpid; lockpid=$(readlink "$P/lock" | sed 's/.*+//')
+        if [ -n "$lockpid" ] && kill -0 "$lockpid" 2>/dev/null; then
+            echo "Profile still locked by live pid $lockpid ($(ps -o comm= -p "$lockpid" 2>/dev/null)). Close it first." >&2
+            exit 1
+        fi
+    fi
+    local pre="$STATE/pre-restore-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$pre"
+    cp -a "$P/sessionstore.jsonlz4" "$pre/" 2>/dev/null
+    cp -a "$P/sessionstore-backups/recovery.jsonlz4" "$pre/" 2>/dev/null
+    cp "$src" "$P/sessionstore.jsonlz4"
+    cp "$src" "$P/sessionstore-backups/recovery.jsonlz4"
+    echo "restored $(basename "$src") -> $P"
+    echo "  now in place: $(describe "$P/sessionstore.jsonlz4") (tabs groups)"
+    echo "  replaced files saved in $pre"
+}
+
+case "${1:-snapshot}" in
+    snapshot) cmd_snapshot ;;
+    list)     cmd_list ;;
+    restore)  shift; cmd_restore "${1:-}" ;;
+    *) echo "usage: ${0##*/} [snapshot|list|restore [file]]" >&2; exit 2 ;;
+esac
