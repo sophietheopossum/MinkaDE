@@ -28,7 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIPT = os.path.join(HERE, "resolve.py")
 
 BUILD_ID = "0123456789abcdef0123456789abcdef01234567"
-LONGEST = "L" * 199   # s_at looks for the NUL in 200 bytes: this one's is the last
+LONGEST = "L" * 199   # string_at looks for the NUL in 200 bytes: this one's is the last
 TOO_LONG = "M" * 200  # and this one's is one past them
 CALLEES = 13          # one more than resolve.py follows
 
