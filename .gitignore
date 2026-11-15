@@ -5,3 +5,5 @@ tools/__pycache__/
 tools/*/__pycache__/
 
 tools/keysend/target/
+
+packaging/__pycache__/
