@@ -12,4 +12,11 @@ if [ -x /usr/lib/minka/xwayland-satellite ]; then
     export XWLS_LOGICAL_GEOMETRY=1
 fi
 
+# The AntiWebUI apps (the shell, MinkaMon) otherwise limit Vulkan to the
+# compositor GPU's drivers through VK_LOADER_DRIVERS_SELECT, which every app
+# started from the shell's start menu inherits: on a hybrid laptop those
+# could not see the other GPU at all. The cost is the shell and MinkaMon
+# waking a sleeping dGPU for a moment as they start.
+export ANTIWEBUI_VULKAN_DRIVERS=all
+
 exec /usr/bin/shoji_wm --tty

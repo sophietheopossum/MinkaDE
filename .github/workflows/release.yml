@@ -64,11 +64,26 @@ jobs:
         working-directory: MinkaFX
         run: cargo build --release --locked
 
+      - name: Build MinkaCap
+        working-directory: MinkaCap
+        run: cargo build --release --locked
+
       - name: Build MinkaMon + sampler
         working-directory: MinkaMon
         run: |
           cargo build --release --locked
           cargo build --release --locked --manifest-path sampler-rs/Cargo.toml
+
+      - name: Build MinkaShell (AntiWebUI)
+        working-directory: MinkaShell
+        run: cargo build --release --locked
+
+      # Against the submodules this tag pins: among other things, that every
+      # asset the Rust config names ships, and lands where it looks.
+      - name: Test packaging
+        run: |
+          python3 packaging/test_make_tarball.py
+          python3 packaging/test_install.py
 
       - name: Assemble tarball
         run: packaging/make-tarball.sh "${GITHUB_REF_NAME}"

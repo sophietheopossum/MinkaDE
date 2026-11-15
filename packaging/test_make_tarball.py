@@ -11,9 +11,11 @@ TMPDIR points into the temp dir, so a staging dir the script failed to remove
 is caught.
 
 The stand-in holds one small file for each input the script names, plus what it
-must leave out: VCS and IDE state, cargo's target/ (MinkaShell's AntiWebUI
-build among it), the old TypeScript shoji_wm, node_modules, each app's dist/, a
-TypeScript file beside the shaders, and an app that does not ship. Each file's
+must leave out: VCS and IDE state, cargo's target/ (but for the builds it
+names), the old TypeScript shoji_wm, node_modules, each app's dist/ (but for
+MinkaShell's launcher), a TypeScript file beside the shaders, and an app that
+does not ship. The session's MINKA_*/SHOJI_* overrides are left out of the
+environment, so nothing points back into a real checkout. Each file's
 contents name its own path, so a file shipped under the wrong name fails as
 well. install.sh and uninstall.sh are the real ones, because one test checks
 install.sh against the tarball. test_install.py builds on Checkout.
@@ -70,6 +72,11 @@ CHECKOUT = (
     "MinkaFX/Cargo.toml",
     "MinkaFX/src/main.rs",
     "MinkaFX/target/release/MinkaFX",
+    "MinkaCap/.git",
+    "MinkaCap/Cargo.toml",
+    "MinkaCap/src/main.rs",
+    "MinkaCap/target/release/MinkaCap",
+    "MinkaCap/target/debug/MinkaCap",
     "MinkaIPC/.git",
     "MinkaIPC/Cargo.toml",
     "MinkaIPC/src/lib.rs",
@@ -83,7 +90,10 @@ CHECKOUT = (
     "MinkaShell/modules/bar/Bar.qml",
     "MinkaShell/Cargo.toml",
     "MinkaShell/src/main.rs",
+    "MinkaShell/assets/mac-glass-minimize.svg",
+    "MinkaShell/scripts/app-mute.py",
     "MinkaShell/target/release/minkashell",
+    "MinkaShell/target/debug/minkashell",
     "MinkaShell/dist/minkashell",
     "MinkaConf/.git",
     "MinkaConf/shell.qml",
@@ -105,7 +115,10 @@ CHECKOUT = (
     "MinkaLink/.git",
     "MinkaLink/qmldir",
     "MinkaLink/ShojiClient.qml",
-    "MinkaShot/shell.qml",  # not a shipped app
+    "MinkaShot/.git",
+    "MinkaShot/shell.qml",
+    "MinkaShot/services/ShotState.qml",
+    "MinkaLedger/ui/shell.qml",  # not a shipped app
 )
 EXECUTABLE = {
     "packaging/minka-session",
@@ -114,11 +127,20 @@ EXECUTABLE = {
     "ShojiWM/target/release/xdg-desktop-portal-shojiwm",
     "xwayland-satellite/target/release/xwayland-satellite",
     "MinkaFX/target/release/MinkaFX",
+    "MinkaCap/target/release/MinkaCap",
+    "MinkaCap/target/debug/MinkaCap",
     "MinkaShell/target/release/minkashell",
+    "MinkaShell/target/debug/minkashell",
     "MinkaShell/dist/minkashell",
     "MinkaMon/target/release/minkamon",
     "MinkaMon/sampler-rs/target/release/minkamon-sampler",
     "MinkaMon/dist/minkamon",
+}
+# Contents other than "fixture: <path>". The compositor's name its asset
+# fallback, as a real build's do: make-tarball.sh looks for it.
+CONTENTS = {
+    "ShojiWM/target/release/examples/default_config":
+        "fixture: the Rust config, falling back to /usr/share/minka/shojiwm\n",
 }
 # Each app reaches the shared singletons through these, as in the real tree.
 CHECKOUT_LINKS = {
@@ -127,6 +149,8 @@ CHECKOUT_LINKS = {
     "MinkaConf/Proustite": "../Proustite",
     "MinkaMon/Proustite": "../Proustite",
     "MinkaMon/MinkaLink": "../MinkaLink",
+    "MinkaShot/Proustite": "../Proustite",
+    "MinkaShot/MinkaLink": "../MinkaLink",
 }
 
 # The tarball under ROOT: every file in it, and the checkout file it must be a
@@ -147,6 +171,15 @@ SHIPPED_SOURCES = (
     "xwayland-satellite/src/main.rs",
     "MinkaFX/Cargo.toml",
     "MinkaFX/src/main.rs",
+    "MinkaCap/Cargo.toml",
+    "MinkaCap/src/main.rs",
+    "MinkaShell/shell.qml",
+    "MinkaShell/modules/bar/Bar.qml",
+    "MinkaShell/Cargo.toml",
+    "MinkaShell/src/main.rs",
+    "MinkaShell/assets/mac-glass-minimize.svg",
+    "MinkaShell/scripts/app-mute.py",
+    "MinkaShell/dist/minkashell",
     "MinkaMon/shell.qml",
     "MinkaMon/Cargo.toml",
     "MinkaMon/src/main.rs",
@@ -165,6 +198,7 @@ TARBALL = {
     "bin/xdg-desktop-portal-shojiwm": "ShojiWM/target/release/xdg-desktop-portal-shojiwm",
     "bin/xwayland-satellite": "xwayland-satellite/target/release/xwayland-satellite",
     "bin/MinkaFX": "MinkaFX/target/release/MinkaFX",
+    "bin/MinkaCap": "MinkaCap/target/release/MinkaCap",
 
     "minka/shojiwm/src/effect/liquid-glass.frag": f"{ASSET_ROOT}/src/effect/liquid-glass.frag",
     "minka/shojiwm/src/effect/backdrop-fade.frag": f"{ASSET_ROOT}/src/effect/backdrop-fade.frag",
@@ -174,6 +208,12 @@ TARBALL = {
     "minka/MinkaShell/modules/bar/Bar.qml": "MinkaShell/modules/bar/Bar.qml",
     "minka/MinkaShell/Cargo.toml": "MinkaShell/Cargo.toml",
     "minka/MinkaShell/src/main.rs": "MinkaShell/src/main.rs",
+    "minka/MinkaShell/assets/mac-glass-minimize.svg": "MinkaShell/assets/mac-glass-minimize.svg",
+    "minka/MinkaShell/scripts/app-mute.py": "MinkaShell/scripts/app-mute.py",
+    "minka/MinkaShell/minkashell": "MinkaShell/target/release/minkashell",
+    "minka/MinkaShell/dist/minkashell": "MinkaShell/dist/minkashell",
+    "minka/MinkaShot/shell.qml": "MinkaShot/shell.qml",
+    "minka/MinkaShot/services/ShotState.qml": "MinkaShot/services/ShotState.qml",
     "minka/MinkaConf/shell.qml": "MinkaConf/shell.qml",
     "minka/MinkaMon/shell.qml": "MinkaMon/shell.qml",
     "minka/MinkaMon/Cargo.toml": "MinkaMon/Cargo.toml",
@@ -205,15 +245,17 @@ TARBALL = {
     "README.md": "README.md",
 }
 APP_LINKS = {f"minka/{link}": target for link, target in CHECKOUT_LINKS.items()}
-# MinkaMon's source tree keeps its links as well. They dangle in src/, where
-# nothing reads them: its cargo build compiles the theme in.
+# The source trees of MinkaMon and MinkaShell keep their links as well. They
+# dangle in src/, where nothing reads them: the cargo builds compile the
+# theme in.
 TARBALL_LINKS = {**APP_LINKS,
                  **{f"src/{link}": target for link, target in CHECKOUT_LINKS.items()
-                    if link.startswith("MinkaMon/")}}
+                    if link.startswith(("MinkaMon/", "MinkaShell/"))}}
 # The files the script installs with an explicit mode. Copied trees keep theirs.
 MODES = {
     **dict.fromkeys(("bin/shoji_wm", "bin/xdg-desktop-portal-shojiwm",
-                     "bin/xwayland-satellite", "bin/MinkaFX",
+                     "bin/xwayland-satellite", "bin/MinkaFX", "bin/MinkaCap",
+                     "minka/MinkaShell/minkashell", "minka/MinkaShell/dist/minkashell",
                      "minka/MinkaMon/minkamon", "minka/MinkaMon/minkamon-sampler",
                      "dist/minka-session", "dist/minkamon",
                      "install.sh", "uninstall.sh"), 0o755),
@@ -224,8 +266,10 @@ MODES = {
                      "README.md"), 0o644),
 }
 
-# Relative asset paths in the Rust config's source: "./src/effect/x.frag".
-ASSET_LITERAL = re.compile(r'"\./([^"]+\.(?:frag|vert|glsl|wgsl|svg|png))"')
+# A string literal naming an asset file in the Rust config's source. All of
+# them are relative paths written out whole ("./src/effect/x.frag"); one
+# that is not would be a path this test cannot follow.
+ASSET_STRING = re.compile(r'"([^"\\]*\.(?:frag|vert|glsl|wgsl|svg|png|jpg|webp|ttf|otf))"')
 
 
 def member_bytes(tar, member):
@@ -236,14 +280,20 @@ def member_bytes(tar, member):
 
 
 def config_asset_paths():
-    """Every asset path the Rust config's source names, relative to its root."""
-    paths = set()
+    """Every asset path the Rust config's source names, relative to its root,
+    and any asset literal that is not such a path."""
+    paths, odd = set(), []
     for parent, _, names in os.walk(RUST_CONFIG):
         for name in names:
             if name.endswith(".rs"):
                 with open(os.path.join(parent, name)) as source:
-                    paths.update(ASSET_LITERAL.findall(source.read()))
-    return paths
+                    code = re.sub(r"//.*", "", source.read())
+                for literal in ASSET_STRING.findall(code):
+                    if literal.startswith("./"):
+                        paths.add(literal.removeprefix("./"))
+                    else:
+                        odd.append(f"{os.path.join(parent, name)}: {literal!r}")
+    return paths, odd
 
 
 @unittest.skipUnless(shutil.which("rsync"), "make-tarball.sh copies trees with rsync")
@@ -260,7 +310,7 @@ class Checkout(unittest.TestCase):
             os.makedirs(path)
 
         for path in CHECKOUT:
-            self.write(path, f"fixture: {path}\n".encode(),
+            self.write(path, CONTENTS.get(path, f"fixture: {path}\n").encode(),
                        0o755 if path in EXECUTABLE else 0o644)
         for path in REAL:
             with open(os.path.join(HERE, os.path.basename(path)), "rb") as real:
@@ -268,7 +318,9 @@ class Checkout(unittest.TestCase):
         for link, target in CHECKOUT_LINKS.items():
             os.symlink(target, os.path.join(self.repo, link))
 
-        self.env = dict(os.environ, PATH=self.bin + os.pathsep + os.environ.get("PATH", ""),
+        self.env = {name: value for name, value in os.environ.items()
+                    if not name.startswith(("MINKA_", "SHOJI_", "ANTIWEBUI_"))}
+        self.env.update(PATH=self.bin + os.pathsep + os.environ.get("PATH", ""),
                         TMPDIR=self.tmpdir)
 
     def write(self, path, data, mode):
@@ -353,6 +405,8 @@ class MakeTarball(Checkout):
 
     def test_preflight_lists_every_missing_input_and_stages_nothing(self):
         for path in ("ShojiWM/target/release/examples/default_config",
+                     "MinkaShell/target/release/minkashell",
+                     "MinkaShell/dist/minkashell",
                      "MinkaMon/sampler-rs/target/release/minkamon-sampler",
                      f"{ASSET_ROOT}/src/effect/liquid-glass.frag",
                      f"{ASSET_ROOT}/src/effect/backdrop-fade.frag",
@@ -371,11 +425,26 @@ class MakeTarball(Checkout):
                          "missing from this checkout:\n"
                          "   - ShojiWM/target/release/examples/default_config (release binary)\n"
                          "   - MinkaFX/target/release/MinkaFX (release binary)\n"
+                         "   - MinkaShell/target/release/minkashell (release binary)\n"
                          "   - MinkaMon/sampler-rs/target/release/minkamon-sampler (release binary)\n"
                          f"   - {ASSET_ROOT}/src/effect/*.frag\n"
                          "   - MinkaLink\n"
+                         "   - MinkaShell/dist/minkashell\n"
                          "   - MinkaMon/dist/MinkaMon.desktop\n"
                          "   - README.md\n")
+        self.assertNothingLeftBehind(before)
+
+    def test_preflight_refuses_a_compositor_without_the_asset_fallback(self):
+        """As one built from a ShojiWM commit older than the fallback would be."""
+        self.write("ShojiWM/target/release/examples/default_config",
+                   b"fixture: an older Rust config\n", 0o755)
+        before = os.listdir(self.repo)
+        done = self.run_script(VERSION)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stderr,
+                         "missing from this checkout:\n"
+                         "   - ShojiWM/target/release/examples/default_config (has no "
+                         "/usr/share/minka/shojiwm asset fallback: is the ShojiWM gitlink current?)\n")
         self.assertNothingLeftBehind(before)
 
     def test_failure_after_staging_leaves_no_tarball_or_staging_dir(self):
@@ -390,8 +459,9 @@ class MakeTarball(Checkout):
     def test_every_asset_the_rust_config_names_ships(self):
         """Uses the real asset files, so a shader added, renamed or moved by the
         config is checked against the script's ASSETS patterns."""
-        named = config_asset_paths()
+        named, odd = config_asset_paths()
         self.assertTrue(named, "found no asset paths in the Rust config: the pattern is stale")
+        self.assertEqual(odd, [], "asset paths not written as whole \"./...\" literals")
         shutil.rmtree(os.path.join(self.repo, ASSET_ROOT))
         shutil.copytree(os.path.join(REPO, ASSET_ROOT), os.path.join(self.repo, ASSET_ROOT))
         with tarfile.open(self.build(VERSION)) as tar:
