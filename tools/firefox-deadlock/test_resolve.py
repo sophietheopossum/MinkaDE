@@ -2,14 +2,14 @@
 
     python3 tools/firefox-deadlock/test_resolve.py
 
-Nothing here reads the real libxul. resolve.py and fde.py each name their
-library in a LIB = "..." line, so the tests run copies of the two in which that
-line names a small library compiled here from FIXTURE and then stripped, as
-libxul is. Every address a test passes comes from the unstripped build's
-symbols; resolve.py only ever sees the stripped copy.
+Nothing here reads a real libxul. Every run passes --lib, naming a small library
+compiled here from FIXTURE and then stripped, as libxul is; the one that names no
+library asks only for --help, which exits before a library is opened. Every
+address a test passes comes from the unstripped build's symbols; resolve.py only
+ever sees the stripped copy.
 
-The scripts are run as she runs them, as a command with addresses on the line,
-and each test checks the exact lines printed.
+resolve.py is run as she runs it, as a command with offsets on the line, and each
+test checks the exact lines printed.
 
 FIXTURE is C, built with gcc and the system linker, so these tests are x86-64
 only and skip where gcc or binutils is missing.
@@ -25,7 +25,9 @@ import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+SCRIPT = os.path.join(HERE, "resolve.py")
 
+BUILD_ID = "0123456789abcdef0123456789abcdef01234567"
 LONGEST = "L" * 199   # s_at looks for the NUL in 200 bytes: this one's is the last
 TOO_LONG = "M" * 200  # and this one's is one past them
 CALLEES = 13          # one more than resolve.py follows
@@ -111,13 +113,12 @@ CFLAGS = [
     "-fasynchronous-unwind-tables", # an FDE per function: what fde.py reads
     "-fPIC", "-shared",
     "-nostdlib",                    # no crt objects: these functions and nothing else
+    f"-Wl,--build-id=0x{BUILD_ID}", # a build-id to expect on resolve.py's first line
 ]
 
 # The functions defined in FIXTURE, by name.
 FUNCTIONS = (["anchor", "paths", "plain", "silent", "caller", "filtered", "crowded"]
              + [f"callee{i:02}" for i in range(CALLEES)] + ["fan", "last"])
-
-LIB_LINE = re.compile(r'^LIB = "[^"\n]*"$', re.M)
 
 
 def run(*cmd):
@@ -136,20 +137,21 @@ class Resolve(unittest.TestCase):
     def setUpClass(cls):
         tmp = tempfile.TemporaryDirectory(prefix="test_resolve.")
         cls.addClassCleanup(tmp.cleanup)
+        cls.tmp = tmp.name
         source = os.path.join(tmp.name, "fixture.c")
         built = os.path.join(tmp.name, "libfixture.so")
-        lib = os.path.join(tmp.name, "libfixture-stripped.so")
+        cls.lib = os.path.join(tmp.name, "libfixture-stripped.so")
         with open(source, "w") as handle:
             handle.write(FIXTURE)
         run("gcc", *CFLAGS, "-o", built, source)
-        run("strip", "-o", lib, built)
+        run("strip", "-o", cls.lib, built)
 
         # The tests mean something only if resolve.py sees what it sees in
         # libxul: no symbol table, a few exported names, an .eh_frame_hdr.
-        sections = run("readelf", "-SW", lib)
-        if ".symtab" in sections or ".eh_frame_hdr" not in sections:
-            raise AssertionError(f"the fixture is not stripped like libxul:\n{sections}")
-        exported = run("nm", "-D", "--defined-only", lib).split()
+        cls.sections = run("readelf", "-SW", cls.lib)
+        if ".symtab" in cls.sections or ".eh_frame_hdr" not in cls.sections:
+            raise AssertionError(f"the fixture is not stripped like libxul:\n{cls.sections}")
+        exported = run("nm", "-D", "--defined-only", cls.lib).split()
         if exported[-1:] != ["anchor"] or len(exported) != 3:
             raise AssertionError(f"the fixture should export only anchor: {exported}")
 
@@ -161,29 +163,21 @@ class Resolve(unittest.TestCase):
         order = sorted(cls.at.values())
         cls.next = dict(zip(order, order[1:]))  # function start -> the next one's
 
-        # Copies of the two scripts that read the fixture instead of libxul.
-        cls.script = os.path.join(tmp.name, "resolve.py")
-        for name in ("fde.py", "resolve.py"):
-            with open(os.path.join(HERE, name)) as handle:
-                text = handle.read()
-            original = LIB_LINE.search(text)
-            text, count = LIB_LINE.subn(lambda _: f"LIB = {lib!r}", text)
-            if count != 1 or original is None:
-                raise AssertionError(f'{name}: expected one LIB = "..." line to point at '
-                                     f"the fixture, found {count}")
-            if original.group(0).split(" = ", 1)[1] in text:
-                raise AssertionError(f"{name} still names its library outside the LIB line")
-            with open(os.path.join(tmp.name, name), "w") as handle:
-                handle.write(text)
+    @staticmethod
+    def run_resolve(*args):
+        return subprocess.run(
+            [sys.executable, "-I", "-B", SCRIPT, *args],
+            capture_output=True, text=True, timeout=120,
+            env=dict(os.environ, LC_ALL="C", NO_COLOR="1"))
 
     def resolve(self, *addresses):
-        """resolve.py's output for these addresses, without its blank lines."""
-        done = subprocess.run(
-            [sys.executable, "-I", "-B", self.script, *(f"0x{a:x}" for a in addresses)],
-            capture_output=True, text=True, timeout=120,
-            env=dict(os.environ, LC_ALL="C"))
+        """resolve.py's output for these addresses in the fixture, without its
+        blank lines or the first, which names the library."""
+        done = self.run_resolve("--lib", self.lib, *(f"0x{a:x}" for a in addresses))
         self.assertEqual((done.returncode, done.stderr), (0, ""))
-        return [line for line in done.stdout.splitlines() if line]
+        lines = [line for line in done.stdout.splitlines() if line]
+        self.assertEqual(lines[0], f"{self.lib}: build-id {BUILD_ID}")
+        return lines[1:]
 
     def header(self, address, function):
         start = self.at[function]
@@ -255,6 +249,48 @@ class Resolve(unittest.TestCase):
             "    str: 'UnknownErr in %s'",
             "    str: 'moz-extension:'",
         ])
+
+    def test_offsets_may_omit_0x_and_keep_eu_stacks_plus(self):
+        start = self.at["plain"]
+        done = self.run_resolve("--lib", self.lib, f"{start:x}", f"+0x{start:x}")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual([line for line in done.stdout.splitlines() if line.startswith("===")],
+                         [self.header(start, "plain")] * 2)
+
+    def test_floorps_libxul_is_the_default(self):
+        done = self.run_resolve("--help")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("default /usr/lib/floorp/libxul.so", " ".join(done.stdout.split()))
+
+    def test_a_missing_library_is_named_before_anything_is_read(self):
+        missing = os.path.join(self.tmp, "no-such-libxul.so")
+        done = self.run_resolve("--lib", missing, "0x1000")
+        self.assertEqual((done.returncode, done.stdout), (2, ""))
+        self.assertTrue(done.stderr.endswith(f"error: {missing}: no such file\n"), done.stderr)
+
+    def test_an_offset_that_is_not_hex_is_refused(self):
+        done = self.run_resolve("--lib", self.lib, "0x1000", "0x34d8a00-1")
+        self.assertEqual((done.returncode, done.stdout), (2, ""))
+        self.assertTrue(done.stderr.endswith(
+            "error: argument OFFSET: invalid offset value: '0x34d8a00-1'\n"), done.stderr)
+
+    def test_an_eh_frame_hdr_laid_out_otherwise_is_refused(self):
+        # fde.py reads one layout, the one LLD writes. Another must stop it, not
+        # turn into function starts read from the wrong bytes.
+        section = re.search(r"\.eh_frame_hdr\s+\S+\s+[0-9a-f]+\s+([0-9a-f]+)", self.sections)
+        if section is None:
+            self.fail(f"no .eh_frame_hdr in\n{self.sections}")
+        offset = int(section.group(1), 16)
+        with open(self.lib, "rb") as handle:
+            blob = bytearray(handle.read())
+        self.assertEqual(blob[offset:offset + 4].hex(), "011b033b")
+        blob[offset] = 2  # version 2
+        other = os.path.join(self.tmp, "libfixture-version2.so")
+        with open(other, "wb") as handle:
+            handle.write(blob)
+        done = self.run_resolve("--lib", other, f"0x{self.at['plain']:x}")
+        self.assertEqual((done.returncode, done.stdout), (1, ""))
+        self.assertEqual(done.stderr, f"{other}: .eh_frame_hdr starts 021b033b, not 011b033b\n")
 
 
 if __name__ == "__main__":

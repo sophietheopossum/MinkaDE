@@ -1,9 +1,26 @@
 #!/usr/bin/env python3
-"""Name stripped libxul frames by the string literals their function (and its callees) reference."""
-import re, subprocess, sys, bisect
-sys.path.insert(0, __import__("os").path.dirname(__file__))
-from fde import func_start, starts, blob
-LIB = "/opt/hellfire/libxul.so"
+"""Name stripped libxul frames by the string literals their function (and its callees) reference.
+
+OFFSETs are libxul-relative, as eu-stack prints them after a frame's build-id
+("[615805be...]@0x7f823c600000+0x7bb7801"), and name the right code only in that
+build: the first line printed is the build-id of the library they were read against.
+"""
+import argparse, os, re, subprocess, sys, bisect
+sys.path.insert(0, os.path.dirname(__file__))
+import fde
+FLOORP = "/usr/lib/floorp/libxul.so"
+def offset(s): return int(s, 16)
+ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+ap.add_argument("--lib", default=FLOORP, help=f"the libxul the stacks came from (default {FLOORP}; "
+                "the September hellfire captures need /opt/hellfire/libxul.so)")
+ap.add_argument("offsets", metavar="OFFSET", type=offset, nargs="+", help="hex, 0x optional")
+args = ap.parse_args()
+LIB = args.lib
+if not os.path.isfile(LIB): ap.error(f"{LIB}: no such file")
+blob, starts = fde.load(LIB)
+def func_start(a): return fde.func_start(starts, a)
+bid = re.search(r'Build ID: ([0-9a-f]+)', subprocess.run(["readelf", "-n", LIB], capture_output=True, text=True).stdout)
+print(f"{LIB}: build-id {bid.group(1) if bid else '(none)'}")
 loads = []
 for ln in subprocess.run(["readelf", "-lW", LIB], capture_output=True, text=True).stdout.splitlines():
     m = re.match(r'\s+LOAD\s+(0x[0-9a-f]+)\s+(0x[0-9a-f]+)\s+\S+\s+(0x[0-9a-f]+)', ln)
@@ -32,8 +49,8 @@ def harvest(fn):
         m = re.search(r'\bcall\s+([0-9a-f]+)', ln)
         if m: calls.append(int(m.group(1), 16))
     return strs, calls
-for a in sys.argv[1:]:
-    addr = int(a, 16); fn = func_start(addr)
+for addr in args.offsets:
+    fn = func_start(addr)
     if fn is None: print(f"\n=== 0x{addr:x} -> below the first function start ==="); continue
     strs, calls = harvest(fn)
     print(f"\n=== 0x{addr:x} -> fn 0x{fn:x} (+0x{addr-fn:x}, size 0x{fend(fn)-fn:x}) ===")
