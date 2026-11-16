@@ -165,7 +165,7 @@ def print_frame(library: Library, address: int) -> None:
     print(f"\n=== 0x{address:x} -> fn 0x{start:x} (+0x{address - start:x}, size 0x{size:x}) ===")
     for text in strings[:FRAME_STRINGS]:
         print(f"    str: {text!r}")
-    followed: set[int] = set()
+    followed = {start}  # a recursive call names this frame again
     for target in calls[:CALLS_FOLLOWED]:
         callee = fde.func_start(library.starts, target)
         if callee is None or callee in followed:
