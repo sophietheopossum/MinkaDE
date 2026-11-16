@@ -12,6 +12,7 @@ import bisect
 import importlib.util
 import os
 import re
+import struct
 import subprocess
 from dataclasses import dataclass, field
 from types import ModuleType
@@ -31,7 +32,7 @@ BUILD_ID = re.compile(r'Build ID: ([0-9a-f]+)')
 # eu-stack's whole frame token: [BUILD-ID]@BASE+OFFSET
 FRAME = re.compile(r'\[([0-9a-f]+)\]@0x[0-9a-f]+\+(0x[0-9a-f]+)')
 LOAD = re.compile(r'\s+LOAD\s+(?P<offset>0x[0-9a-f]+)\s+(?P<vaddr>0x[0-9a-f]+)'
-                  r'\s+\S+\s+(?P<filesz>0x[0-9a-f]+)')
+                  r'\s+\S+\s+(?P<filesz>0x[0-9a-f]+)\s+\S+\s+(?P<flags>[RWE ]+?)\s+0x')
 # objdump follows a RIP-relative operand with its target: "lea -0x13d5(%rip),%rax  # 6b3 <...>"
 OPERAND_TARGET = re.compile(r'#\s*([0-9a-f]+)')
 CALL = re.compile(r'\bcall\s+([0-9a-f]+)')
@@ -44,8 +45,7 @@ PREFIXES = ("addr32", "data16", "notrack", "bnd", "lock", "rep", "repz", "repnz"
 
 # Rust's string literals have no NUL: rustc packs them end to end, and passes a &str as its
 # address in one argument register and its length, a constant, in the next. A panic or
-# assert message goes as fmt::Arguments::from_str's len << 1 | 1 instead, which a call does
-# not tell apart from a length, so such a message runs on into the next literal.
+# assert message goes as fmt::Arguments::from_str's len << 1 | 1 instead.
 ARGUMENT_REGISTERS = (  # System V order, each at 64, 32, 16 and 8 bits
     ("%rdi", "%edi", "%di", "%dil"), ("%rsi", "%esi", "%si", "%sil"),
     ("%rdx", "%edx", "%dx", "%dl"), ("%rcx", "%ecx", "%cx", "%cl"),
@@ -54,6 +54,9 @@ ARGUMENT_REGISTERS = (  # System V order, each at 64, 32, 16 and 8 bits
 NEXT_ARGUMENT = {address[0]: (address, length)
                  for address, length in zip(ARGUMENT_REGISTERS, ARGUMENT_REGISTERS[1:])}
 PAIR_REACH = 6  # instructions searched from a &str's lea, for its length and for the call
+# lea disp32(%rip),%reg as encoded: REX.W (REX.WR for %r8-%r15), 8d, ModRM mod 00 rm 101
+RIP_LEA = re.compile(rb'[\x48\x4c]\x8d[\x05\x0d\x15\x1d\x25\x2d\x35\x3d]')
+DISPLACEMENT = struct.Struct("<i")
 
 
 def import_sibling(name: str) -> ModuleType:
@@ -78,6 +81,7 @@ class Segment(NamedTuple):
     vaddr: int
     offset: int
     filesz: int  # not MemSiz: past FileSiz (.bss) there are no bytes to read a literal from
+    executable: bool
 
 
 class Harvest(NamedTuple):
@@ -93,6 +97,7 @@ class Library:
     starts: list[int]  # every function's first byte, sorted
     segments: list[Segment]
     harvested: dict[int, Harvest] = field(default_factory=dict)  # by function start
+    lea_targets: bytearray | None = None  # a bit per address, built when first needed
 
 
 class Offset(NamedTuple):
@@ -125,7 +130,8 @@ def load_segments(lib: str) -> list[Segment]:
         if match:
             segments.append(Segment(vaddr=int(match.group("vaddr"), 16),
                                     offset=int(match.group("offset"), 16),
-                                    filesz=int(match.group("filesz"), 16)))
+                                    filesz=int(match.group("filesz"), 16),
+                                    executable="E" in match.group("flags")))
     return segments
 
 
@@ -140,18 +146,54 @@ def printable(raw: bytes) -> bool:
     return all(0x20 <= byte < 0x7f for byte in raw)
 
 
-def string_at(blob: bytes, segments: list[Segment], vaddr: int,
-              length: int | None = None) -> str | None:
+def lea_targets(library: Library) -> bytearray:
+    """A bit for every address some lea in the library's code loads. Read from the code's
+    bytes, as objdump takes minutes over a libxul: a pattern that is really the inside of
+    another instruction now and then sets a stray bit, which does no harm here."""
+    limit = max((segment.vaddr + segment.filesz for segment in library.segments), default=0)
+    bits = bytearray(limit // 8 + 1)
+    for segment in library.segments:
+        if not segment.executable:
+            continue
+        after = segment.vaddr - segment.offset + 7  # a lea's target is relative to its end
+        for match in RIP_LEA.finditer(library.blob, segment.offset,
+                                      segment.offset + segment.filesz):
+            target = after + match.start() + DISPLACEMENT.unpack_from(library.blob,
+                                                                      match.start() + 3)[0]
+            if 0 <= target < limit:
+                bits[target >> 3] |= 1 << (target & 7)
+    return bits
+
+
+def referenced(library: Library, vaddr: int) -> bool:
+    """Whether code loads VADDR: where a Rust literal starts, with no NUL to say so."""
+    if library.lea_targets is None:
+        library.lea_targets = lea_targets(library)
+    bits = library.lea_targets
+    return 0 <= vaddr < len(bits) * 8 and bool(bits[vaddr >> 3] >> (vaddr & 7) & 1)
+
+
+def string_at(library: Library, vaddr: int, length: int | None = None) -> str | None:
     """The printable ASCII text at VADDR, if that is what is there: NUL-terminated, or the
     LENGTH bytes of a Rust literal when the code passes one with it."""
-    start = file_offset(segments, vaddr)
+    blob = library.blob
+    start = file_offset(library.segments, vaddr)
     if start is None:
         return None
     end = blob.find(b"\0", start, start + STRING_SCAN)
     text = None
     if end >= 0 and end - start >= MIN_STRING and printable(blob[start:end]):
         text = blob[start:end].decode("ascii")
-    if length is None or not MIN_STRING <= length < STRING_SCAN:
+    if length is None:
+        return text
+    # A panic's len << 1 | 1: odd, and its half ends where the next literal starts. A C
+    # string's own length that happens to be odd ends at its NUL instead.
+    half = blob[start:start + (length >> 1)]
+    if (length % 2 == 1 and MIN_STRING <= len(half) < STRING_SCAN and printable(half)
+            and blob[start + length:start + length + 1] != b"\0"
+            and referenced(library, vaddr + len(half))):
+        return half.decode("ascii")
+    if not MIN_STRING <= length < STRING_SCAN:
         return text
     literal = blob[start:start + length]
     if not printable(literal):
@@ -164,8 +206,9 @@ def string_at(blob: bytes, segments: list[Segment], vaddr: int,
         return text
     # A name with no space, cut between two letters, is as likely a C++ name the linker keeps
     # inside a longer one ("CanvasRendering…arc" in "OffscreenCanvasRendering…arc") with a
-    # count of arguments beside it. Rust's run-together field names stay glued with it.
-    if text[length - 1].isalpha() and text[length].isalpha() and " " not in text:
+    # count of arguments beside it, unless code loads the rest as a literal of its own.
+    if (text[length - 1].isalpha() and text[length].isalpha() and " " not in text
+            and not referenced(library, vaddr + length)):
         return text
     return literal.decode("ascii")
 
@@ -277,7 +320,7 @@ def read_function(library: Library, lines: list[str], bounds: tuple[int, int]) -
     for line in lines:
         for match in OPERAND_TARGET.finditer(line):
             address = int(match.group(1), 16)
-            text = string_at(library.blob, library.segments, address, lengths.get(address))
+            text = string_at(library, address, lengths.get(address))
             if text is not None and text not in strings:
                 strings.append(text)
         call = CALL.search(line)

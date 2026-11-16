@@ -151,6 +151,30 @@ SHAPE(call_too_far, SECOND_AT SECOND_LENGTH "nop\n\tnop\n\tnop\n\tnop\n\tnop\n\t
 __attribute__((used)) static const char c_format[] = "\0    0x%08x (Unknown1)\n";
 SHAPE(variadic, "lea c_format+1(%%rip),%%rdi\n\tmov $8,%%esi\n\txor %%eax,%%eax\n\tcall report")
 
+/* A panic message goes as fmt::Arguments::from_str's len << 1 | 1, and other code loads
+   the literal its half ends at. Each lea in a function of its own, as above. */
+#define PANIC "assertion failed: ready"
+static const char panics[] = "\0" PANIC "capacity overflow" "and the run goes on";
+void panic_message(void) { take(panics + 1, 2 * LEN(PANIC) + 1); }
+void next_panic(void) { sink = panics + 1 + LEN(PANIC); }
+
+/* Odd lengths that are lengths: a C string's own, whose half other code loads as well,
+   and a Rust literal's, whose half nothing loads. */
+static const char select_multiple[] = "\0select-multiple";
+void c_length(void) { report(select_multiple + 1, LEN("select-multiple")); }
+void multiple(void) { sink = select_multiple + 1 + LEN("select-"); }
+static const char odd_run[] = "\0even" "an odd literal!" "and the run goes on";
+void odd_length(void) { take(odd_run + 1 + LEN("even"), LEN("an odd literal!")); }
+
+/* Rust's field names, run together: one cut between two letters, where code loads the
+   next. That load goes into %r8, as a lea with REX.R. */
+static const char fields[] = "\0deviceID" "widgetId" "isWebExt";
+void field_name(void) { take(fields + 1 + LEN("deviceID"), LEN("widgetId")); }
+void next_field(void) {
+    __asm__ volatile("lea fields+%c0(%%rip),%%r8" :: "i"(1 + LEN("deviceID") + LEN("widgetId"))
+                     : "r8");
+}
+
 void uses_rust_path(void) {
     sink = "calls rust_path";
     rust_path();
@@ -189,7 +213,10 @@ CFLAGS = [
 FUNCTIONS = (["anchor", "paths", "plain", "silent", "caller", "filtered", "crowded",
               "recursive", "take", "report", "rusty", "rust_path", "cpp_report",
               "canvas_method", "length_after", "prefixed_call", "tail_call", "loaded_twice",
-              "address_replaced", "branch_between", "call_too_far", "variadic", "uses_rust_path"]
+              "address_replaced", "branch_between", "call_too_far", "variadic",
+              "panic_message", "next_panic", "c_length", "multiple", "odd_length",
+              "field_name", "next_field",
+              "uses_rust_path"]
              + [f"callee{i:02}" for i in range(CALLEES)] + ["fan", "last"])
 
 
@@ -373,6 +400,31 @@ class Resolve(unittest.TestCase):
         for name, line in shapes:
             expected += [self.header(self.at[name], name), line]
         self.assertEqual(self.resolve(*(self.at[name] for name, _ in shapes)), expected)
+
+    def test_a_panic_message_is_read_to_half_its_tagged_length(self):
+        # Read to its NUL, it is the whole run, from "assertion" to "goes on".
+        address = self.at["panic_message"]
+        self.assertEqual(self.resolve(address), [
+            self.header(address, "panic_message"),
+            "    str: 'assertion failed: ready'",
+        ])
+
+    def test_an_odd_length_is_not_halved_at_a_nul_or_where_nothing_loads_the_half(self):
+        c_length, odd_length = self.at["c_length"], self.at["odd_length"]
+        self.assertEqual(self.resolve(c_length, odd_length), [
+            self.header(c_length, "c_length"),
+            "    str: 'select-multiple'",
+            self.header(odd_length, "odd_length"),
+            "    str: 'an odd literal!'",
+        ])
+
+    def test_run_together_names_are_cut_where_code_loads_the_next(self):
+        # canvas_method's name stays whole: nothing loads "sRenderingContext2D.arc".
+        address = self.at["field_name"]
+        self.assertEqual(self.resolve(address), [
+            self.header(address, "field_name"),
+            "    str: 'widgetId'",
+        ])
 
     def test_a_printf_style_call_gives_no_length(self):
         # Its %esi is an argument: read to its NUL, the format has a "\n", so
