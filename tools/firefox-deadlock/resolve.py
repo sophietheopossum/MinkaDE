@@ -124,34 +124,140 @@ def function_end(starts: list[int], start: int) -> int:
     return starts[following] if following < len(starts) else start + GUESSED_SIZE
 
 
-def harvest(library: Library, start: int) -> Harvest:
-    """The strings and call targets of the function at START. It goes through objdump once
-    per run, as a callee is often reached from many frames."""
-    if start in library.harvested:
-        return library.harvested[start]
-    objdump = run("objdump", "-d", "--no-show-raw-insn", f"--start-address=0x{start:x}",
-                  f"--stop-address=0x{function_end(library.starts, start):x}", library.path)
+def parse(line: str) -> tuple[str, str] | None:
+    """An objdump line's mnemonic and operands, or None for a label or any other line."""
+    match = INSTRUCTION.match(line)
+    if not match:
+        return None
+    mnemonic, operands = match.group(1), match.group(2).strip()
+    while mnemonic in PREFIXES and operands:
+        mnemonic, _, operands = operands.partition(" ")
+        operands = operands.strip()
+    return mnemonic, operands
+
+
+def written(operands: str) -> str:
+    return operands.rsplit(",", 1)[-1]  # AT&T puts the destination last
+
+
+def leaves_block(mnemonic: str) -> bool:
+    return mnemonic.startswith(("j", "call", "ret", "ud2", "hlt", "int3"))
+
+
+def is_call(mnemonic: str, operands: str, bounds: tuple[int, int]) -> bool:
+    """A call, or a jmp out of the function: a tail call made in a call's place."""
+    if mnemonic == "call":
+        return True
+    if mnemonic != "jmp":
+        return False
+    if operands.startswith("*"):
+        return operands.endswith("(%rip)")  # through the GOT; "*%rax" is a switch's table
+    target = DIRECT_TARGET.match(operands)
+    return bool(target) and not bounds[0] <= int(target.group(1), 16) < bounds[1]
+
+
+def counts_vector_registers(mnemonic: str, operands: str) -> bool:
+    """`xor %eax,%eax` or `mov $n,%al`: a variadic C call (printf and kin) saying how many
+    vector registers it passes. Rust has no variadic functions, so a &str call never does."""
+    if mnemonic == "xor":
+        return operands == "%eax,%eax"
+    constant = CONSTANT_INTO.fullmatch(operands)
+    return mnemonic == "mov" and constant is not None and constant.group(2) in ("%al", "%eax")
+
+
+def constant_moved(mnemonic: str, operands: str, register: tuple[str, ...]) -> int | None:
+    """The constant a `mov $c,%reg` puts in REGISTER at 64 or 32 bits."""
+    match = CONSTANT_INTO.fullmatch(operands)
+    if mnemonic == "mov" and match and match.group(2) in register[:2]:
+        return int(match.group(1), 16)
+    return None
+
+
+def str_length(lines: list[str], index: int, bounds: tuple[int, int]) -> int | None:
+    """The length of the &str whose address the lea at LINES[index] loads: a constant in the
+    next argument register, set before the lea or after it, and both reaching one call.
+    BOUNDS are the function's, to tell a tail call from a jump inside it."""
+    lea = parse(lines[index])
+    into = RIP_RELATIVE_INTO.search(lea[1]) if lea and lea[0] == "lea" else None
+    registers = NEXT_ARGUMENT.get(into.group(1)) if into else None
+    if registers is None:
+        return None
+    address, length_register = registers
+    length = None
+    for line in lines[index + 1:index + 1 + PAIR_REACH]:
+        instruction = parse(line)
+        if instruction is None:
+            return None
+        mnemonic, operands = instruction
+        if is_call(mnemonic, operands, bounds):
+            break
+        if (leaves_block(mnemonic) or written(operands) in address
+                or counts_vector_registers(mnemonic, operands)):
+            return None
+        if written(operands) in length_register:
+            length = constant_moved(mnemonic, operands, length_register)
+            if length is None:
+                return None
+    else:
+        return None  # no call within reach
+    if length is not None:
+        return length
+    for line in reversed(lines[max(0, index - PAIR_REACH):index]):
+        instruction = parse(line)
+        if (instruction is None or leaves_block(instruction[0])
+                or counts_vector_registers(*instruction)):
+            return None
+        if written(instruction[1]) in length_register:
+            return constant_moved(*instruction, length_register)
+    return None
+
+
+def read_function(library: Library, lines: list[str], bounds: tuple[int, int]) -> Harvest:
+    """The strings and call targets in a function's disassembly, LINES."""
+    lengths: dict[int, int] = {}  # by address: the shortest any &str load there passes
+    for index, line in enumerate(lines):
+        length = str_length(lines, index, bounds)
+        target = OPERAND_TARGET.search(line)
+        if length is not None and target:
+            address = int(target.group(1), 16)
+            lengths[address] = min(length, lengths.get(address, length))
     strings: list[str] = []
     calls: list[int] = []
-    for line in objdump.stdout.splitlines():
+    for line in lines:
         for match in OPERAND_TARGET.finditer(line):
-            text = string_at(library.blob, library.segments, int(match.group(1), 16))
+            address = int(match.group(1), 16)
+            text = string_at(library.blob, library.segments, address, lengths.get(address))
             if text is not None and text not in strings:
                 strings.append(text)
         call = CALL.search(line)
         if call:
             calls.append(int(call.group(1), 16))
-    found = Harvest(tuple(strings), tuple(calls))
+    return Harvest(tuple(strings), tuple(calls))
+
+
+def harvest(library: Library, start: int) -> Harvest:
+    """The strings and call targets of the function at START. It goes through objdump once
+    per run, as a callee is often reached from many frames."""
+    if start in library.harvested:
+        return library.harvested[start]
+    end = function_end(library.starts, start)
+    objdump = run("objdump", "-d", "--no-show-raw-insn", f"--start-address=0x{start:x}",
+                  f"--stop-address=0x{end:x}", library.path)
+    found = read_function(library, objdump.stdout.splitlines(), (start, end))
     # A failed objdump (an OOM kill, say) is not kept, so the next reach runs it again.
     if objdump.returncode == 0:
         library.harvested[start] = found
     return found
 
 
+def is_source_path(text: str) -> bool:
+    return "/" in text and (".cpp" in text or ".h" in text or text.endswith(".rs"))
+
+
 def callee_strings(strings: tuple[str, ...]) -> tuple[str, ...]:
     """A callee's first source paths, which name it better than shared assert texts do;
     without any, its first strings."""
-    paths = tuple(text for text in strings if "/" in text and (".cpp" in text or ".h" in text))
+    paths = tuple(text for text in strings if is_source_path(text))
     return paths[:CALLEE_STRINGS] or strings[:CALLEE_STRINGS]
 
 
