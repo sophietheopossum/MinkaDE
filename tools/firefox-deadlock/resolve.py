@@ -3,7 +3,9 @@
 
 OFFSETs are libxul-relative, as eu-stack prints them after a frame's build-id
 ("[615805be...]@0x7f823c600000+0x7bb7801"), and name the right code only in that
-build: the first line printed is the build-id of the library they were read against.
+build. Given that whole token, an OFFSET from another build is refused; given the
+offset alone, check it against the first line printed, the build-id of the library
+they were read against.
 """
 import argparse
 import bisect
@@ -93,9 +95,17 @@ class Library:
     harvested: dict[int, Harvest] = field(default_factory=dict)  # by function start
 
 
-def offset(text: str) -> int:
+class Offset(NamedTuple):
+    address: int
+    build_id: str | None  # the build eu-stack read it from, when given the whole frame
+
+
+def offset(text: str) -> Offset:
     # argparse names its error after this function: "invalid offset value".
-    return int(text, 16)
+    frame = FRAME.fullmatch(text.strip())
+    if frame:
+        return Offset(int(frame.group(2), 16), frame.group(1))
+    return Offset(int(text, 16), None)
 
 
 def run(*command: str) -> subprocess.CompletedProcess[str]:
@@ -103,9 +113,9 @@ def run(*command: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(command, capture_output=True, text=True)
 
 
-def build_id(lib: str) -> str:
+def build_id(lib: str) -> str | None:
     match = BUILD_ID.search(run("readelf", "-n", lib).stdout)
-    return match.group(1) if match else "(none)"
+    return match.group(1) if match else None
 
 
 def load_segments(lib: str) -> list[Segment]:
@@ -329,15 +339,20 @@ def main() -> None:
                         help=f"the libxul the stacks came from (default {FLOORP_LIBXUL}; "
                              "the September hellfire captures need /opt/hellfire/libxul.so)")
     parser.add_argument("offsets", metavar="OFFSET", type=offset, nargs="+",
-                        help="hex, 0x optional")
+                        help="hex, 0x optional; or eu-stack's whole [BUILD-ID]@BASE+OFFSET")
     args = parser.parse_args()
     lib = args.lib
     if not os.path.isfile(lib):
         parser.error(f"{lib}: no such file")
+    lib_id = build_id(lib)
+    for address, frame_id in args.offsets:
+        if frame_id is not None and frame_id != lib_id:
+            parser.error(f"0x{address:x} comes from build {frame_id}, but {lib} "
+                         + (f"is build {lib_id}" if lib_id else "has no build-id"))
     blob, starts = fde.load(lib)
-    print(f"{lib}: build-id {build_id(lib)}")
+    print(f"{lib}: build-id {lib_id or '(none)'}")
     library = Library(lib, blob, starts, load_segments(lib))
-    for address in args.offsets:
+    for address, _ in args.offsets:
         print_frame(library, address)
 
 

@@ -395,6 +395,27 @@ class Resolve(unittest.TestCase):
         self.assertEqual([line for line in done.stdout.splitlines() if line.startswith("===")],
                          [self.header(start, "plain")] * 2)
 
+    def test_a_whole_eu_stack_frame_from_the_librarys_build_is_resolved(self):
+        start = self.at["plain"]
+        self.assertEqual(self.resolve_args(f"[{BUILD_ID}]@0x7f823c600000+0x{start:x}"),
+                         self.resolve(start))
+
+    def test_a_frame_from_another_build_is_refused_before_anything_is_printed(self):
+        start, other = self.at["plain"], "f" * 40
+        done = self.run_resolve("--lib", self.lib, f"0x{start:x}",
+                                f"[{other}]@0x7f823c600000+0x{start:x}")
+        self.assertEqual((done.returncode, done.stdout), (2, ""))
+        self.assertTrue(done.stderr.endswith(
+            f"error: 0x{start:x} comes from build {other}, but {self.lib} is build {BUILD_ID}\n"),
+            done.stderr)
+
+    def test_a_frame_without_its_offset_or_with_more_is_refused(self):
+        for frame in (f"[{BUILD_ID}]@0x7f823c600000", f"[{BUILD_ID}]@0x7f823c600000+0x1000junk"):
+            done = self.run_resolve("--lib", self.lib, frame)
+            self.assertEqual((done.returncode, done.stdout), (2, ""), frame)
+            self.assertTrue(done.stderr.endswith(
+                f"error: argument OFFSET: invalid offset value: '{frame}'\n"), done.stderr)
+
     def test_floorps_libxul_is_the_default(self):
         done = self.run_resolve("--help")
         self.assertEqual(done.returncode, 0, done.stderr)
