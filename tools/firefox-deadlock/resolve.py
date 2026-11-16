@@ -26,11 +26,32 @@ CALLEE_STRINGS = 2
 GUESSED_SIZE = 0x200  # the last function has no next start to end it
 
 BUILD_ID = re.compile(r'Build ID: ([0-9a-f]+)')
+# eu-stack's whole frame token: [BUILD-ID]@BASE+OFFSET
+FRAME = re.compile(r'\[([0-9a-f]+)\]@0x[0-9a-f]+\+(0x[0-9a-f]+)')
 LOAD = re.compile(r'\s+LOAD\s+(?P<offset>0x[0-9a-f]+)\s+(?P<vaddr>0x[0-9a-f]+)'
                   r'\s+\S+\s+(?P<filesz>0x[0-9a-f]+)')
 # objdump follows a RIP-relative operand with its target: "lea -0x13d5(%rip),%rax  # 6b3 <...>"
 OPERAND_TARGET = re.compile(r'#\s*([0-9a-f]+)')
 CALL = re.compile(r'\bcall\s+([0-9a-f]+)')
+INSTRUCTION = re.compile(r'\s*[0-9a-f]+:\s+(\S+)\s*([^#]*)')  # mnemonic, operands
+RIP_RELATIVE_INTO = re.compile(r'\(%rip\),(%\w+)$')
+CONSTANT_INTO = re.compile(r'\$0x([0-9a-f]+),(%\w+)')
+DIRECT_TARGET = re.compile(r'([0-9a-f]+)\b')
+# objdump writes these before the mnemonic: "addr32 call 55f6da0", "notrack jmp *%rax"
+PREFIXES = ("addr32", "data16", "notrack", "bnd", "lock", "rep", "repz", "repnz", "cs", "ds")
+
+# Rust's string literals have no NUL: rustc packs them end to end, and passes a &str as its
+# address in one argument register and its length, a constant, in the next. A panic or
+# assert message goes as fmt::Arguments::from_str's len << 1 | 1 instead, which a call does
+# not tell apart from a length, so such a message runs on into the next literal.
+ARGUMENT_REGISTERS = (  # System V order, each at 64, 32, 16 and 8 bits
+    ("%rdi", "%edi", "%di", "%dil"), ("%rsi", "%esi", "%si", "%sil"),
+    ("%rdx", "%edx", "%dx", "%dl"), ("%rcx", "%ecx", "%cx", "%cl"),
+    ("%r8", "%r8d", "%r8w", "%r8b"), ("%r9", "%r9d", "%r9w", "%r9b"))
+# An address register's names, with the next register's: where its length would go.
+NEXT_ARGUMENT = {address[0]: (address, length)
+                 for address, length in zip(ARGUMENT_REGISTERS, ARGUMENT_REGISTERS[1:])}
+PAIR_REACH = 6  # instructions searched from a &str's lea, for its length and for the call
 
 
 def import_sibling(name: str) -> ModuleType:
@@ -105,18 +126,38 @@ def file_offset(segments: list[Segment], vaddr: int) -> int | None:
     return None
 
 
-def string_at(blob: bytes, segments: list[Segment], vaddr: int) -> str | None:
-    """The NUL-terminated printable ASCII text at VADDR, if that is what is there."""
+def printable(raw: bytes) -> bool:
+    return all(0x20 <= byte < 0x7f for byte in raw)
+
+
+def string_at(blob: bytes, segments: list[Segment], vaddr: int,
+              length: int | None = None) -> str | None:
+    """The printable ASCII text at VADDR, if that is what is there: NUL-terminated, or the
+    LENGTH bytes of a Rust literal when the code passes one with it."""
     start = file_offset(segments, vaddr)
     if start is None:
         return None
     end = blob.find(b"\0", start, start + STRING_SCAN)
-    if end < 0 or end - start < MIN_STRING:
-        return None
-    raw = blob[start:end]
-    if not all(0x20 <= byte < 0x7f for byte in raw):
-        return None
-    return raw.decode("ascii")
+    text = None
+    if end >= 0 and end - start >= MIN_STRING and printable(blob[start:end]):
+        text = blob[start:end].decode("ascii")
+    if length is None or not MIN_STRING <= length < STRING_SCAN:
+        return text
+    literal = blob[start:start + length]
+    if not printable(literal):
+        return text
+    if text is None:
+        return literal.decode("ascii")
+    # Cut short of its NUL, the text is a Rust literal only inside a run of them. Just after a
+    # NUL it is a C string, and LENGTH something else, a line number say.
+    if length >= len(text) or start == 0 or blob[start - 1] == 0:
+        return text
+    # A name with no space, cut between two letters, is as likely a C++ name the linker keeps
+    # inside a longer one ("CanvasRendering…arc" in "OffscreenCanvasRendering…arc") with a
+    # count of arguments beside it. Rust's run-together field names stay glued with it.
+    if text[length - 1].isalpha() and text[length].isalpha() and " " not in text:
+        return text
+    return literal.decode("ascii")
 
 
 def function_end(starts: list[int], start: int) -> int:

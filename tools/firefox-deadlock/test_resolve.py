@@ -33,8 +33,9 @@ TOO_LONG = "M" * 200  # and this one's is one past them
 CALLEES = 13          # one more than resolve.py follows
 
 # A function's string literals are what resolve.py prints, so each function
-# here stores its own in `sink`: that is one RIP-relative lea per literal, whose
-# target objdump prints after a "#", as it does all through libxul.
+# here stores its own in `sink`, or passes it on as Rust does: that is one
+# RIP-relative lea per literal, whose target objdump prints after a "#", as it
+# does all through libxul.
 FIXTURE = r"""
 const char *volatile sink;
 
@@ -167,6 +168,7 @@ void last(void) { sink = "the last function"; }
 FIXTURE = (FIXTURE
            .replace("@TOO_LONG@", TOO_LONG)
            .replace("@LONGEST@", LONGEST)
+           .replace("@FILLER@", "x" * 300)
            .replace("@CALLEES@", "\n".join(
                f'void callee{i:02}(void) {{ sink = "callee {i:02}"; }}' for i in range(CALLEES)))
            .replace("@CALLS@", "\n".join(f"    callee{i:02}();" for i in range(CALLEES))))
