@@ -38,6 +38,34 @@ XWayland bridge.
 - **Never name shared singleton after a Qt type** — QtQuick's built-in `Palette`
   silently shadowed our singleton; that's why it's `Proustite`, not `Palette`.
 
+### Visual direction for AntiWebUI apps
+
+Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWebUI:
+**Material 3 Expressive widgets and motion, in the Proustite palette.**
+
+- **Use `anti_webui_md3e` before hand-drawing a control.** The crate is part of AntiWebUI at
+  the revision the apps pin, so it needs no toolkit bump. `tools/md3e-trial` shows every widget
+  (`target/release/md3e-trial`, or `cargo run --release` there).
+- **Colours stay Proustite**, not Material's own purple scheme. `proustite_scheme()` in
+  `tools/md3e-trial/src/main.rs` maps the Proustite tokens onto Material's colour roles; build an
+  app's `ColorScheme` the same way, from tokens. Near-black text on red is fine with her "for
+  some parts of ui" (17/11/2026); the error colours in that mapping are Material's and undecided.
+- **Widgets she named:** animated buttons, switches and checkboxes, sliders, chips, the animated
+  progress bars (she singled these out), shapes, drag and drop, the sortable list and row, the
+  navigation animations, and the date and time pickers (wanted for MinkaLedger once it moves).
+- **The rest of the crate is welcome too** (cards, dialogs and sheets, menus, text fields, app
+  bars, snackbars): "it's fine to use that, in fact it would make sense, making good use of the
+  toolkit".
+- **Restyle and retire Quickshell (17/11/2026):** "i would like restyling and for quickshell to
+  become obsolete please, i think antiwebui has proven itself enough". MinkaShell, MinkaMon and
+  MinkaSyu get restyled this way; MinkaLedger, MinkaShot and MinkaConf move to AntiWebUI. Write
+  no new QML. An app's QML tree stays as its fallback until the port is proven in use; deleting
+  it is Sophie's call.
+- **Keep the density.** Material's defaults are roomy and her UIs are information-rich: use the
+  small component sizes and keep existing layouts tight.
+- **A widget the toolkit lacks:** tell Sophie instead of hand-rolling around it. She may arrange
+  a custom AntiWebUI fork (17/11/2026).
+
 ## Build / lint / run
 
 ```sh
@@ -154,6 +182,6 @@ cargo build --release
   every save-point may become a commit. she may format proposed edits
   ("user modified your proposed changes" = intentional; re-read before editing the region again).
 - When restarting session apps from the tool shell, **scrub the env first**
-  (`SHELL=/bin/fish`, drop `Codex*`/`AI_AGENT*`, cwd `$HOME`) — a leaked bash SHELL
+  (`SHELL=/bin/fish`, drop `CLAUDE*`/`CODEX*`/`AI_AGENT*`, cwd `$HOME`) — a leaked bash SHELL
   makes her terminals open bash instead of fish. Kill test instances by **exact PID**,
   never `pkill -f "qs -p ."` (the `.` is a regex wildcard that matched her live shell).
