@@ -73,3 +73,6 @@
 [submodule "MinkaSyu"]
 	path = MinkaSyu
 	url = git@github.com:sophietheopossum/MinkaSyu.git
+[submodule "AntiWebUI"]
+	path = AntiWebUI
+	url = git@github.com:sophietheopossum/AntiWebUI.git
