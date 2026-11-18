@@ -61,10 +61,30 @@ Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWeb
   MinkaSyu get restyled this way; MinkaLedger, MinkaShot and MinkaConf move to AntiWebUI. Write
   no new QML. An app's QML tree stays as its fallback until the port is proven in use; deleting
   it is Sophie's call.
+- **Font: Roboto Flex everywhere** (17/11/2026: "let's go with roboto flex everywhere"), for
+  all proportional text in MinkaDE's own UI. Monospace text stays monospace. Noto Sans remains
+  the fallback, and Noto's CJK and emoji fonts still cover what Roboto Flex lacks.
 - **Keep the density.** Material's defaults are roomy and her UIs are information-rich: use the
   small component sizes and keep existing layouts tight.
 - **A widget the toolkit lacks:** tell Sophie instead of hand-rolling around it. She may arrange
   a custom AntiWebUI fork (17/11/2026).
+
+**Toolkit gaps to fix once AntiWebUI is a submodule** (found restyling MinkaSyu at the pinned
+revision; all in `src/anti-webui-md3e`). Remove an entry when it is fixed:
+
+- **Text fields and the search bar** are a fixed 56 px high (`HEIGHT` in `components/text_field.rs`
+  and `search.rs`) and cannot be focused from code: the inner input's `NodeRef` (`field_ref`) is
+  not public. MinkaSyu therefore keeps the toolkit's plain `text_field` for its two search boxes.
+  Wanted: a compact height and a way to pass a `NodeRef`.
+- **The checkbox** keeps a 48 px touch box (`TOUCH` in `components/checkbox.rs`). MinkaSyu shrinks
+  the returned box to 26 px from outside, which works but is a workaround. Wanted: a dense size.
+- **The X11 backend comes in uninvited.** The crate depends on `anti-webui` with its default
+  features, and Cargo cannot switch a feature off from downstream, so every app using the crate
+  links `libxcb` and `libxkbcommon-x11` and grows by about 5 MB. Wanted: `default-features = false`
+  on that dependency (in the workspace's `[workspace.dependencies]` entry, with the examples asking
+  for what they need).
+- **Component labels are always Roboto Flex** (`typography::FONT_FAMILY`, set on the text node),
+  so an app cannot give them another family.
 
 ## Build / lint / run
 
@@ -173,6 +193,19 @@ cargo build --release
   calls is significant.
 - **Session logs in `~/shoji_wm/logs` are UTC**, while `journalctl` and `ls` show local
   time. Comparing them without converting has produced hours of phantom timeline.
+
+### Before syncing ShojiWM with upstream
+
+- **Upstream commit `83e1127e` (part of PR #221) looks like it can freeze the whole compositor.**
+  It makes the keyboard-focus hook read the pointer while smithay still holds the pointer's lock.
+  Likely trigger: open a menu in Floorp or a Qt or GTK app, press any key while it is open, then
+  close it with the mouse. Found by reading the code on 17/11/2026 and checked in three passes;
+  nobody has reproduced it. `main` does not have this code, and a rebase or merge brings it in
+  without a conflict. Patch or drop that commit before syncing. bea4dev has not been told.
+- **A plain rebase drops merge commits.** `acce509d` (the shoji-island merge of 5/11/2026) holds
+  hand-made conflict resolutions in `handlers/compositor.rs` and `input.rs`.
+- **The running compositor reads shaders and icons from this checkout**, and upstream moved some
+  of them, so do a sync in a separate worktree, not in the live one.
 
 ## Conventions
 
