@@ -69,22 +69,23 @@ Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWeb
 - **A widget the toolkit lacks:** tell Sophie instead of hand-rolling around it. She may arrange
   a custom AntiWebUI fork (17/11/2026).
 
-**Toolkit gaps to fix once AntiWebUI is a submodule** (found restyling MinkaSyu at the pinned
-revision; all in `src/anti-webui-md3e`). Remove an entry when it is fixed:
+**AntiWebUI is the `AntiWebUI/` submodule** (Sophie's fork; `upstream` is bea4dev) since
+18/11/2026. Apps depend on it by path (`../AntiWebUI/src/anti-webui`, `.../anti-webui-md3e`), so
+they all build one revision, and a missing or awkward widget is fixed there. Each app still
+carries the `[patch.crates-io]` wgpu table, pinned to the revision in `AntiWebUI/Cargo.lock`.
+MinkaShell is on it; MinkaSyu, MinkaMon and `tools/md3e-trial` still pin the old git revision.
 
-- **Text fields and the search bar** are a fixed 56 px high (`HEIGHT` in `components/text_field.rs`
-  and `search.rs`) and cannot be focused from code: the inner input's `NodeRef` (`field_ref`) is
-  not public. MinkaSyu therefore keeps the toolkit's plain `text_field` for its two search boxes.
-  Wanted: a compact height and a way to pass a `NodeRef`.
-- **The checkbox** keeps a 48 px touch box (`TOUCH` in `components/checkbox.rs`). MinkaSyu shrinks
-  the returned box to 26 px from outside, which works but is a workaround. Wanted: a dense size.
-- **The X11 backend comes in uninvited.** The crate depends on `anti-webui` with its default
-  features, and Cargo cannot switch a feature off from downstream, so every app using the crate
-  links `libxcb` and `libxkbcommon-x11` and grows by about 5 MB. Wanted: `default-features = false`
-  on that dependency (in the workspace's `[workspace.dependencies]` entry, with the examples asking
-  for what they need).
-- **Component labels are always Roboto Flex** (`typography::FONT_FAMILY`, set on the text node),
-  so an app cannot give them another family.
+- **Compact sizes exist:** call `anti_webui_md3e::set_density(Density::Compact)` before the first
+  view (28 px buttons and icon buttons, 36 px text fields, 32 px menu rows, a 40x24 switch, thin
+  sliders). Chips (32 px), checkboxes and radio buttons (48 px touch box), list rows, the search
+  bar and the date picker have no compact size yet.
+- **The md3e text field cannot be focused from code:** the inner input's `NodeRef` (`field_ref`
+  in `components/text_field.rs`) is not public. Wanted: a way to pass one.
+- **The X11 backend no longer comes in uninvited:** in the fork, the workspace's `anti-webui`
+  dependency has `default-features = false`, and anti-webui-md3e asks for the defaults only for
+  its own examples and tests. Worth offering upstream.
+- **Component labels are always Roboto Flex** (`typography::FONT_FAMILY`, set on the text node).
+  Harmless now that Roboto Flex is MinkaDE's font.
 
 ## Build / lint / run
 
