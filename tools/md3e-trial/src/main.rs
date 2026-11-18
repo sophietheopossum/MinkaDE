@@ -6,7 +6,8 @@
 //! cargo run --release -- --palette material
 //! ```
 //!
-//! Pages: actions, selection, communication, containment, dragging, navigation, inputs.
+//! Pages: actions, selection, communication, containment, dragging, navigation, inputs, and
+//! fonts (Noto Sans beside Roboto Flex, which is this tool's own page).
 //! Palettes: proustite (the one it starts in), material, red. `--light` starts in the light scheme.
 //!
 //! In the window, the moon button in the bar switches dark and light, and the three buttons in
@@ -14,12 +15,15 @@
 //!
 //! `src/pages/` is the `showcase` example of anti-webui-md3e (bea4dev, MIT OR Apache-2.0), copied
 //! unchanged from the AntiWebUI revision named in `Cargo.toml`. Edit the pages to try things.
+//! `src/fonts.rs` is not from there.
 //!
 //! `--shot <page> <file.png>` writes a page to a file without opening a window.
 
 // The pages are upstream's and stay as they are, untyped float literals included.
 #[allow(float_literal_f32_fallback)]
 mod pages;
+
+mod fonts;
 
 use anti_webui::app::headless;
 use anti_webui::prelude::*;
@@ -35,7 +39,7 @@ use anti_webui_md3e::{
 use std::cell::Cell;
 use std::rc::Rc;
 
-const PAGES: [(&str, &str); 7] = [
+const PAGES: [(&str, &str); 8] = [
     ("actions", "Actions"),
     ("selection", "Selection"),
     ("communication", "Feedback"),
@@ -43,6 +47,7 @@ const PAGES: [(&str, &str); 7] = [
     ("dragging", "Dragging"),
     ("navigation", "Navigation"),
     ("inputs", "Inputs"),
+    ("fonts", "Fonts"),
 ];
 
 /// The palettes: what `--palette` calls them, and what their buttons say.
@@ -126,6 +131,7 @@ fn page(name: &str) -> Div {
         "dragging" => pages::dragging::page(),
         "navigation" => pages::navigation::page(),
         "inputs" => pages::inputs::page(),
+        "fonts" => fonts::page(),
         _ => div(),
     }
 }
@@ -155,6 +161,7 @@ fn app(first: usize, palette_at_start: usize, dark_at_start: bool) -> Div {
         nav_item(icons::PAN_TOOL, PAGES[4].1),
         nav_item(icons::EXPLORE, PAGES[5].1),
         nav_item(icons::KEYBOARD, PAGES[6].1),
+        nav_item(icons::TEXT_FIELDS, PAGES[7].1),
     ];
     let content = for_each(
         move || vec![current.get()],
