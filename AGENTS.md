@@ -155,13 +155,15 @@ cargo build --release
   editor launches straight out of `target/release/` with no copy on `PATH`: every change
   needs `cargo build --release` **and** an LSP restart. `cargo test` alone builds only
   the test binary and changes nothing that is running.
-- **The Rust config cannot reload in place: there is no Super+Shift+R.** An edit under
-  `ShojiWM/src/shojiwm_rs/examples/default_config/` takes effect only after
+- **The Rust config cannot reload in place: there is no Super+Shift+R.** An edit to the Rust
+  under `ShojiWM/src/shojiwm_rs/examples/default_config/` (not its `assets/`, which are read
+  from disk, see below) takes effect only after
   `dist/install.sh --dev --no-config --no-portal --rust-config --expect-runtime=minka`
   (VS Code task "shojiwm: install") and a new session. The compositor serving the session it runs from
   is kept as `/usr/lib/shojiwm/shoji_wm.previous` (from a tty, the existing one is kept). The portal is not part of it: it runs
   from `ShojiWM/target/release` through a systemd user `override.conf`. Its shaders and icons are read at runtime from
-  `ShojiWM/packages/config` (an asset root compiled in from the build path), so keep the
+  `ShojiWM/src/shojiwm_rs/examples/default_config/assets` (an asset root compiled in from the
+  build path; a build from before the move to it reads `ShojiWM/packages/config`), so keep the
   checkout where it is. `dist/install.sh --dev` without `--rust-config` puts the
   TypeScript build back. That build hot-reloads on
   Super+Shift+R from `packages/config/**`, while `packages/shoji_wm/**` and

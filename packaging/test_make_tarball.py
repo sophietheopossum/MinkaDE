@@ -36,7 +36,7 @@ SCRIPT = "packaging/make-tarball.sh"
 REAL = (SCRIPT, "packaging/install.sh", "packaging/uninstall.sh")
 # The Rust config, whose source names the assets it reads.
 RUST_CONFIG = os.path.join(REPO, "ShojiWM/src/shojiwm_rs/examples/default_config")
-ASSET_ROOT = "ShojiWM/packages/config"
+ASSET_ROOT = "ShojiWM/src/shojiwm_rs/examples/default_config/assets"
 
 VERSION = "9.9-test"
 ROOT = f"minkade-{VERSION}"
@@ -57,10 +57,12 @@ CHECKOUT = (
     "ShojiWM/package.json",
     "ShojiWM/node_modules/esbuild/package.json",
     "ShojiWM/packages/config/src/index.tsx",
-    "ShojiWM/packages/config/src/effect/island-glass.ts",
-    "ShojiWM/packages/config/src/effect/liquid-glass.frag",
+    # The TypeScript config's copy of a shader the Rust config also reads:
+    # only the one under ASSET_ROOT ships as the compositor's.
     "ShojiWM/packages/config/src/effect/backdrop-fade.frag",
-    "ShojiWM/packages/config/assets/drag-tab-top.svg",
+    f"{ASSET_ROOT}/shaders/liquid-glass.frag",
+    f"{ASSET_ROOT}/shaders/backdrop-fade.frag",
+    f"{ASSET_ROOT}/icons/drag-tab-top.svg",
     "ShojiWM/dist/shojiwm.portal",
     "ShojiWM/dist/org.freedesktop.impl.portal.desktop.shojiwm.service",
     "ShojiWM/dist/xdg-desktop-portal-shojiwm.service",
@@ -160,10 +162,10 @@ SHIPPED_SOURCES = (
     "ShojiWM/src/main.rs",
     "ShojiWM/package.json",
     "ShojiWM/packages/config/src/index.tsx",
-    "ShojiWM/packages/config/src/effect/island-glass.ts",
-    "ShojiWM/packages/config/src/effect/liquid-glass.frag",
     "ShojiWM/packages/config/src/effect/backdrop-fade.frag",
-    "ShojiWM/packages/config/assets/drag-tab-top.svg",
+    f"{ASSET_ROOT}/shaders/liquid-glass.frag",
+    f"{ASSET_ROOT}/shaders/backdrop-fade.frag",
+    f"{ASSET_ROOT}/icons/drag-tab-top.svg",
     "ShojiWM/dist/shojiwm.portal",
     "ShojiWM/dist/org.freedesktop.impl.portal.desktop.shojiwm.service",
     "ShojiWM/dist/xdg-desktop-portal-shojiwm.service",
@@ -200,9 +202,9 @@ TARBALL = {
     "bin/MinkaFX": "MinkaFX/target/release/MinkaFX",
     "bin/MinkaCap": "MinkaCap/target/release/MinkaCap",
 
-    "minka/shojiwm/src/effect/liquid-glass.frag": f"{ASSET_ROOT}/src/effect/liquid-glass.frag",
-    "minka/shojiwm/src/effect/backdrop-fade.frag": f"{ASSET_ROOT}/src/effect/backdrop-fade.frag",
-    "minka/shojiwm/assets/drag-tab-top.svg": f"{ASSET_ROOT}/assets/drag-tab-top.svg",
+    "minka/shojiwm/shaders/liquid-glass.frag": f"{ASSET_ROOT}/shaders/liquid-glass.frag",
+    "minka/shojiwm/shaders/backdrop-fade.frag": f"{ASSET_ROOT}/shaders/backdrop-fade.frag",
+    "minka/shojiwm/icons/drag-tab-top.svg": f"{ASSET_ROOT}/icons/drag-tab-top.svg",
 
     "minka/MinkaShell/shell.qml": "MinkaShell/shell.qml",
     "minka/MinkaShell/modules/bar/Bar.qml": "MinkaShell/modules/bar/Bar.qml",
@@ -267,7 +269,7 @@ MODES = {
 }
 
 # A string literal naming an asset file in the Rust config's source. All of
-# them are relative paths written out whole ("./src/effect/x.frag"); one
+# them are relative paths written out whole ("./shaders/x.frag"); one
 # that is not would be a path this test cannot follow.
 ASSET_STRING = re.compile(r'"([^"\\]*\.(?:frag|vert|glsl|wgsl|svg|png|jpg|webp|ttf|otf))"')
 
@@ -408,8 +410,8 @@ class MakeTarball(Checkout):
                      "MinkaShell/target/release/minkashell",
                      "MinkaShell/dist/minkashell",
                      "MinkaMon/sampler-rs/target/release/minkamon-sampler",
-                     f"{ASSET_ROOT}/src/effect/liquid-glass.frag",
-                     f"{ASSET_ROOT}/src/effect/backdrop-fade.frag",
+                     f"{ASSET_ROOT}/shaders/liquid-glass.frag",
+                     f"{ASSET_ROOT}/shaders/backdrop-fade.frag",
                      "MinkaMon/dist/MinkaMon.desktop",
                      "README.md"):
             os.remove(os.path.join(self.repo, path))
@@ -427,7 +429,7 @@ class MakeTarball(Checkout):
                          "   - MinkaFX/target/release/MinkaFX (release binary)\n"
                          "   - MinkaShell/target/release/minkashell (release binary)\n"
                          "   - MinkaMon/sampler-rs/target/release/minkamon-sampler (release binary)\n"
-                         f"   - {ASSET_ROOT}/src/effect/*.frag\n"
+                         f"   - {ASSET_ROOT}/shaders/*.frag\n"
                          "   - MinkaLink\n"
                          "   - MinkaShell/dist/minkashell\n"
                          "   - MinkaMon/dist/MinkaMon.desktop\n"

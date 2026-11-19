@@ -217,7 +217,7 @@ class Install(Checkout):
         shipped = os.path.join(self.unpacked, "minka/shojiwm")
         installed = self.at(match.group(1))
         self.assertEqual(sorted(tree(installed)), sorted(tree(shipped)))
-        self.assertTrue(os.path.isdir(os.path.join(installed, "src/effect")))
+        self.assertTrue(os.path.isdir(os.path.join(installed, "shaders")))
 
     def test_launchers_start_the_installed_apps(self):
         """The real dist/minkamon and dist/minkashell, run as the session runs

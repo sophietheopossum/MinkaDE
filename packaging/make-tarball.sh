@@ -39,8 +39,8 @@ BINARIES=(
 # compositor reads its shaders and icons from disk; when the checkout it
 # was built from is gone, as a CI build's is, it reads this copy in
 # ASSET_FALLBACK.
-ASSET_ROOT=ShojiWM/packages/config
-ASSETS=("$ASSET_ROOT"/src/effect/*.frag "$ASSET_ROOT"/assets/*.svg)
+ASSET_ROOT=ShojiWM/src/shojiwm_rs/examples/default_config/assets
+ASSETS=("$ASSET_ROOT"/shaders/*.frag "$ASSET_ROOT"/icons/*.svg)
 
 # -> minka/
 QS_APPS=(MinkaShell MinkaConf MinkaMon MinkaShot)
