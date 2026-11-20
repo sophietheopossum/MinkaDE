@@ -11,7 +11,7 @@ dual-screen "Duo" mode).
 |----------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **ShojiWM**    | Rust (smithay) + Rust config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
 | **MinkaShell** | Quickshell/QML             | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications.                                                                                                                               |
-| **MinkaMon**   | Quickshell/QML + Python    | System monitor. `scripts/sampler.py` streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows.                                                                      |
+| **MinkaMon**   | AntiWebUI (Rust)           | System monitor. `sampler-rs/` (`minkamon-sampler`) streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows. The QML tree is the fallback (it runs sampler-rs too). |
 | **MinkaShot**  | Quickshell/QML             | Freeze-frame screenshot tool. Print → frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. Uses MinkaCap for occlusion-free per-window capture.                                      |
 | **MinkaConf**  | Quickshell/QML             | Settings utility.                                                                                                                                                                                                    |
 | **MinkaCap**   | Rust                       | Per-window Wayland capture via ext-image-copy-capture (occlusion-free toplevel screenshots). Consumed by MinkaShot.                                                                                                  |
@@ -122,8 +122,9 @@ env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
 env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
     cargo test -p shoji_wm --lib evaluator
 
-# Syntax-check the sampler
-python3 -m py_compile MinkaMon/scripts/sampler.py
+# Build the MinkaMon sampler. MinkaMon runs sampler-rs/target/release/minkamon-sampler
+# (or $MINKAMON_SAMPLER_BIN), so a debug build or `cargo test` changes nothing it runs.
+cargo build --release --manifest-path MinkaMon/sampler-rs/Cargo.toml
 
 # Run a Quickshell app — ALWAYS use an ABSOLUTE path (relative `.` breaks from other cwds)
 qs -p /home/seirra/Documents/src/MinkaDE/MinkaShell
@@ -194,8 +195,11 @@ cargo build --release
   `ipc.command`; `settings.*` in `minka/settings.rs`); there is no `windows.list`.
   `main.rs` only wires the `minka/` modules together, and the order of its `configure_*`
   calls is significant.
-- **Session logs in `~/shoji_wm/logs` are UTC**, while `journalctl` and `ls` show local
-  time. Comparing them without converting has produced hours of phantom timeline.
+- **Session logs in `~/.local/state/shoji_wm/logs` (`latest.log`) are UTC**, while
+  `journalctl` and `ls` show local time. Comparing them without converting has produced hours
+  of phantom timeline. `$SHOJI_LOG_DIR` overrides the directory. Builds without commit
+  `59ea204c`, such as the `shoji_wm.previous` kept by the 20/11/2026 install, still write to
+  the old `~/shoji_wm/logs`.
 
 ### Before syncing ShojiWM with upstream
 
