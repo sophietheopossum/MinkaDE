@@ -76,3 +76,6 @@
 [submodule "AntiWebUI"]
 	path = AntiWebUI
 	url = git@github.com:sophietheopossum/AntiWebUI.git
+[submodule "MinkaThermal"]
+	path = MinkaThermal
+	url = git@github.com:sophietheopossum/MinkaThermal.git
