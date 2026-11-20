@@ -10,7 +10,7 @@ dual-screen "Duo" mode).
 | Submodule      | Lang                       | Role                                                                                                                                                                                                                 |
 |----------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **ShojiWM**    | Rust (smithay) + Rust config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
-| **MinkaShell** | Quickshell/QML             | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications.                                                                                                                               |
+| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` runs `target/release/minkashell` and logs to `~/.local/state/minka/minkashell.log`. The Quickshell tree (`shell.qml`) is the fallback: used when there is no binary, with `MINKA_SHELL_FRONTEND=quickshell`, or after a third crash in a minute. |
 | **MinkaMon**   | AntiWebUI (Rust)           | System monitor. `sampler-rs/` (`minkamon-sampler`) streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows. The QML tree is the fallback (it runs sampler-rs too). |
 | **MinkaShot**  | Quickshell/QML             | Freeze-frame screenshot tool. Print → frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. Uses MinkaCap for occlusion-free per-window capture.                                      |
 | **MinkaConf**  | Quickshell/QML             | Settings utility.                                                                                                                                                                                                    |
@@ -73,7 +73,7 @@ Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWeb
 18/11/2026. Apps depend on it by path (`../AntiWebUI/src/anti-webui`, `.../anti-webui-md3e`), so
 they all build one revision, and a missing or awkward widget is fixed there. Each app still
 carries the `[patch.crates-io]` wgpu table, pinned to the revision in `AntiWebUI/Cargo.lock`.
-MinkaShell is on it; MinkaSyu, MinkaMon and `tools/md3e-trial` still pin the old git revision.
+MinkaShell and MinkaMon are on it; MinkaSyu and `tools/md3e-trial` still pin the old git revision.
 
 - **Compact sizes exist:** call `anti_webui_md3e::set_density(Density::Compact)` before the first
   view (28 px buttons and icon buttons, 36 px text fields, 32 px menu rows, a 40x24 switch, thin
