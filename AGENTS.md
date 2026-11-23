@@ -88,8 +88,12 @@ uses it with the same features. Her rule: "if something can be deduplicated, i p
   it ("believes it's in a workspace when it's not").
 - **Upstream workspaces stay separate:** ShojiWM, xwayland-satellite, smithay, AntiWebUI and
   GitComet. `.vscode/settings.json` lists them in `rust-analyzer.linkedProjects`, because
-  rust-analyzer's discovery stops at the root `Cargo.toml`. Through lspmux the list only takes
-  effect when VS Code is the first client of the shared instance; Claude Code sends none.
+  rust-analyzer's discovery stops at the root `Cargo.toml`. Claude Code sends the same list, and
+  VS Code's clippy and cache-priming settings, through the `rust-analyzer-minka` plugin
+  (`~/.claude/plugins/marketplaces/minka-local`, installed at local scope here, with the official
+  `rust-analyzer-lsp` disabled in this checkout). Its `workspaceFolder` is the MinkaDE root, so
+  every session joins VS Code's lspmux instance and it is the same whichever client starts it.
+  The list lives in both places: change them together.
 - **Each binary still links its Rust dependencies statically**, as every Rust package on Arch
   does: Rust has no stable ABI, and AntiWebUI's own `anti-webui-dylib` says not to ship it.
 

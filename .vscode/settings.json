@@ -17,9 +17,9 @@
   // rust-analyzer stops at the first Cargo.toml it finds, so the MinkaDE
   // Cargo workspace (Cargo.toml here) would hide the projects with
   // workspaces of their own. List them beside it so they stay loaded.
-  // Through lspmux this only takes effect when VS Code is the instance's
-  // first client: if a Claude Code session started it, kill that
-  // rust-analyzer by its PID (lspmux status) and restart the server here.
+  // Claude Code's rust-analyzer-minka plugin (minka-local marketplace)
+  // sends the same list and settings to the shared lspmux instance, so it
+  // is the same whichever client starts it: change both together.
   "rust-analyzer.linkedProjects": [
     "Cargo.toml",
     "AntiWebUI/Cargo.toml",
