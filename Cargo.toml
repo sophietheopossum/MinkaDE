@@ -1,0 +1,69 @@
+# One Cargo workspace for MinkaDE's own Rust crates. They share one
+# Cargo.lock and one target/, so each dependency (AntiWebUI and the wgpu
+# stack above all) is built once instead of once per app. Run cargo from
+# here or from any member's directory: either way the binaries land in
+# target/<profile>/ at this level.
+#
+# Upstream projects keep workspaces of their own and stay out: ShojiWM,
+# xwayland-satellite, smithay, AntiWebUI, GitComet, Floorp and HyperCat.
+# MinkaPKG is excluded for the sources makepkg unpacks under it.
+[workspace]
+resolver = "3"
+members = [
+    "bartizan-lsp",
+    "MinkaCap",
+    "MinkaFX",
+    "MinkaIPC",
+    "MinkaLedger",
+    "MinkaMon",
+    "MinkaMon/sampler-rs",
+    "MinkaShell",
+    "MinkaSyu",
+    "MinkaSyu/gui",
+    "MinkaThermal",
+    "tools/keysend",
+    "tools/md3e-trial",
+]
+exclude = [
+    "AntiWebUI",
+    "GitComet",
+    "HyperCat-Agent",
+    "HyperCat-WebResearch",
+    "MinkaPKG",
+    "ShojiWM",
+    "floorp",
+    "smithay",
+    "xwayland-satellite",
+]
+
+# Cargo reads profiles only from here. Members share a dependency only
+# when it is built with the same settings, so there is one release profile.
+[profile.release]
+lto = "thin"
+
+# These three asked for opt-level 2 in their own manifests. It now applies
+# to their own code only; their dependencies are shared at the default.
+[profile.release.package.bartizan-lsp]
+opt-level = 2
+
+[profile.release.package.minka-ledger]
+opt-level = 2
+
+[profile.release.package.minka-syu]
+opt-level = 2
+
+# AntiWebUI's workspace patches wgpu to bea4dev's adapter-filter fork.
+# Cargo reads patch tables only from the workspace being built, so this one
+# carries the same patches, pinned to the fork revision in
+# AntiWebUI/Cargo.lock.
+[patch.crates-io]
+naga = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+naga-types = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+wgpu = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+wgpu-core = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+wgpu-core-deps-apple = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+wgpu-core-deps-emscripten = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+wgpu-core-deps-windows-linux-android = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+wgpu-hal = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+wgpu-naga-bridge = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+wgpu-types = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }

@@ -14,7 +14,7 @@ would, and runs its install.sh with stand-ins first on PATH:
   dependency prompt asks anything. stdin is closed, so a prompt would fail
   the test.
 - cargo, for --from-source, writes a stand-in for each binary where cargo puts
-  a release build's.
+  a release build's (src/target/ for MinkaDE's own workspace).
 HOME and the XDG dirs are temp dirs too.
 """
 
@@ -45,8 +45,8 @@ exec "$@"
 """
 
 # Where cargo puts a release build: target/release/examples/<name> for an
-# example, else target/release/<binary>. Binaries by package (-p) or, for a
-# plain build, by the crate's directory, as the real crates name them.
+# example, else target/release/<binary>. Binaries by package (each -p) or,
+# for a plain build, by the crate's directory, as the real crates name them.
 FAKE_CARGO = f"""#!{sys.executable}
 import json, os, sys
 args = sys.argv[1:]
@@ -54,18 +54,16 @@ here = os.path.relpath(os.getcwd(), os.environ["FAKE_CARGO_BASE"])
 with open(os.environ["FAKE_CARGO_LOG"], "a") as log:
     log.write(json.dumps([here, args]) + "\\n")
 if "--example" in args:
-    out = "target/release/examples/" + args[args.index("--example") + 1]
+    outs = ["target/release/examples/" + args[args.index("--example") + 1]]
 elif "-p" in args:
-    out = "target/release/" + args[args.index("-p") + 1]
+    outs = ["target/release/" + args[i + 1] for i, arg in enumerate(args) if arg == "-p"]
 else:
-    out = "target/release/" + {{"xwayland-satellite": "xwayland-satellite", "MinkaFX": "MinkaFX",
-                               "MinkaCap": "MinkaCap", "MinkaMon": "minkamon",
-                               "sampler-rs": "minkamon-sampler",
-                               "MinkaShell": "minkashell"}}[os.path.basename(here)]
-os.makedirs(os.path.dirname(out), exist_ok=True)
-with open(out, "w") as binary:
-    binary.write("built: " + " ".join(args) + " in " + here + "\\n")
-os.chmod(out, 0o755)
+    outs = ["target/release/" + {{"xwayland-satellite": "xwayland-satellite"}}[os.path.basename(here)]]
+for out in outs:
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, "w") as binary:
+        binary.write("built: " + " ".join(args) + " in " + here + "\\n")
+    os.chmod(out, 0o755)
 """
 
 # Each file install.sh installs on its own, from the unpacked tarball, with
@@ -97,11 +95,9 @@ CARGO_BUILDS = [
     ["src/ShojiWM", ["build", "--release", "-p", "shojiwm_rs", "--example", "default_config"]],
     ["src/ShojiWM", ["build", "--release", "-p", "xdg-desktop-portal-shojiwm"]],
     ["src/xwayland-satellite", ["build", "--release"]],
-    ["src/MinkaFX", ["build", "--release"]],
-    ["src/MinkaCap", ["build", "--release"]],
-    ["src/MinkaMon", ["build", "--release"]],
-    ["src/MinkaMon/sampler-rs", ["build", "--release"]],
-    ["src/MinkaShell", ["build", "--release"]],
+    # MinkaDE's own crates: one build of the workspace.
+    ["src", ["build", "--release", "-p", "MinkaFX", "-p", "MinkaCap", "-p", "minkamon",
+             "-p", "minkamon-sampler", "-p", "minkashell"]],
 ]
 
 
@@ -140,8 +136,15 @@ class Install(Checkout):
                         FAKE_SYSTEMCTL_LOG=self.systemctl_log, FAKE_CARGO_LOG=self.cargo_log)
 
     def unpack(self):
-        """Build the tarball and unpack it; self.unpacked is its root."""
-        tarball = self.build(VERSION)
+        """Build the tarball and unpack it; self.unpacked is its root. The
+        stand-ins on PATH are install.sh's: make-tarball.sh gets the real
+        tools (it reads Cargo.toml with python3)."""
+        stubbed = self.env["PATH"]
+        self.env["PATH"] = stubbed.removeprefix(self.bin + os.pathsep)
+        try:
+            tarball = self.build(VERSION)
+        finally:
+            self.env["PATH"] = stubbed
         out = os.path.join(self.tmp, "unpacked")
         os.makedirs(out)
         subprocess.run(["tar", "-xzf", tarball, "-C", out], check=True)
@@ -226,7 +229,7 @@ class Install(Checkout):
         for app, launcher in (("MinkaMon", "dist/minkamon"), ("MinkaShell", "dist/minkashell")):
             with open(os.path.join(REPO, app, launcher), "rb") as real:
                 self.write(f"{app}/{launcher}", real.read(), 0o755)
-        for binary in ("MinkaMon/target/release/minkamon", "MinkaShell/target/release/minkashell"):
+        for binary in ("target/release/minkamon", "target/release/minkashell"):
             self.write(binary, f'#!/bin/sh\necho "{os.path.basename(binary)} ran as $0"\n'.encode(),
                        0o755)
         self.install()
@@ -289,15 +292,16 @@ class Install(Checkout):
         self.install("--from-source")
         with open(self.cargo_log) as log:
             self.assertEqual([json.loads(line) for line in log], CARGO_BUILDS)
+        workspace = "-p MinkaFX -p MinkaCap -p minkamon -p minkamon-sampler -p minkashell in src"
         built = {
             "/usr/bin/shoji_wm": "-p shojiwm_rs --example default_config in src/ShojiWM",
             "/usr/bin/xdg-desktop-portal-shojiwm": "-p xdg-desktop-portal-shojiwm in src/ShojiWM",
             "/usr/lib/minka/xwayland-satellite": "in src/xwayland-satellite",
-            "/usr/bin/MinkaFX": "in src/MinkaFX",
-            "/usr/bin/MinkaCap": "in src/MinkaCap",
-            "/usr/share/minka/MinkaShell/minkashell": "in src/MinkaShell",
-            "/usr/share/minka/MinkaMon/minkamon": "in src/MinkaMon",
-            "/usr/share/minka/MinkaMon/minkamon-sampler": "in src/MinkaMon/sampler-rs",
+            "/usr/bin/MinkaFX": workspace,
+            "/usr/bin/MinkaCap": workspace,
+            "/usr/share/minka/MinkaShell/minkashell": workspace,
+            "/usr/share/minka/MinkaMon/minkamon": workspace,
+            "/usr/share/minka/MinkaMon/minkamon-sampler": workspace,
         }
         for path, build in built.items():
             with self.subTest(path=path):

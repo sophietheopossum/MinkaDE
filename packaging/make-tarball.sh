@@ -27,12 +27,13 @@ COMPOSITOR=ShojiWM/target/release/examples/default_config
 # and so where install.sh puts minka/shojiwm.
 ASSET_FALLBACK=/usr/share/minka/shojiwm
 
-# -> bin/
+# -> bin/. MinkaDE's own crates are one Cargo workspace (Cargo.toml at the
+# top), so their builds are in its target/, not in each crate's.
 BINARIES=(
     ShojiWM/target/release/xdg-desktop-portal-shojiwm
     xwayland-satellite/target/release/xwayland-satellite
-    MinkaFX/target/release/MinkaFX
-    MinkaCap/target/release/MinkaCap
+    target/release/MinkaFX
+    target/release/MinkaCap
 )
 
 # -> minka/shojiwm/, at the same paths under it as under ASSET_ROOT. The
@@ -54,23 +55,33 @@ QS_SHARED=(Proustite MinkaLink)
 # -> minka/<App>/, the top of each app's tree, where its launcher looks for
 # them: the AntiWebUI shell that dist/minkashell runs, and the AntiWebUI
 # MinkaMon that dist/minkamon runs, with the sampler it looks for beside
-# itself. The trees ship without their target/, so these are the only
-# builds of them in the tarball.
+# itself. Each entry is <App>:<build>. The trees ship without a target/, so
+# these are the only builds of them in the tarball.
 APP_BINARIES=(
-    MinkaShell/target/release/minkashell
-    MinkaMon/target/release/minkamon
-    MinkaMon/sampler-rs/target/release/minkamon-sampler
+    MinkaShell:target/release/minkashell
+    MinkaMon:target/release/minkamon
+    MinkaMon:target/release/minkamon-sampler
 )
 # -> minka/, at the same path: launchers the compositor runs from inside an
 # app's tree. (dist/ is otherwise left out of the trees; see the app trees
 # below.) Without it the session runs the Quickshell shell.
 APP_LAUNCHERS=(MinkaShell/dist/minkashell)
 
-# -> src/, for install.sh --from-source. MinkaIPC and smithay are path
-# dependencies (MinkaFX's, MinkaMon's and MinkaShell's, and ShojiWM's
-# `[patch]` on ../smithay), so they have to sit next to their dependents or
-# cargo cannot resolve the build.
-SOURCES=(ShojiWM xwayland-satellite MinkaFX MinkaCap MinkaMon MinkaShell MinkaIPC smithay)
+# -> src/, at the same paths, for install.sh --from-source. The workspace's
+# Cargo.toml and Cargo.lock ship with every member Cargo.toml lists (some
+# nested, as tools/keysend is), since cargo will not load the workspace
+# with one missing. AntiWebUI and smithay are path dependencies (of the
+# AntiWebUI apps, and ShojiWM's `[patch]` on ../smithay), so they have to
+# sit next to their dependents or cargo cannot resolve the build.
+WORKSPACE=(Cargo.toml Cargo.lock)
+# Read with a TOML parser, not by line: `cargo new` adds a member to the
+# end of the last member's line. An empty list prints nothing, so the
+# preflight below sees no members.
+mapfile -t MEMBERS < <([[ -e Cargo.toml ]] && python3 -I -c '
+import sys, tomllib
+with open("Cargo.toml", "rb") as f:
+    sys.stdout.write("".join(m + "\n" for m in tomllib.load(f)["workspace"]["members"]))')
+SOURCES=(ShojiWM xwayland-satellite smithay AntiWebUI "${WORKSPACE[@]}" "${MEMBERS[@]}")
 
 # -> dist/
 DIST_EXEC=(
@@ -96,7 +107,7 @@ TOP_DATA=(README.md)
 # stopping the build halfway through. An ASSETS pattern that matches
 # nothing stays as written, and is reported like a missing file.
 missing=()
-for f in "$COMPOSITOR" "${BINARIES[@]}" "${APP_BINARIES[@]}"; do
+for f in "$COMPOSITOR" "${BINARIES[@]}" "${APP_BINARIES[@]#*:}"; do
     [[ -x "$f" ]] || missing+=("$f (release binary)")
 done
 # Built from a ShojiWM commit older than the fallback, the compositor would
@@ -111,6 +122,10 @@ for f in "${ASSETS[@]}" "${QS_APPS[@]}" "${QS_SHARED[@]}" "${APP_LAUNCHERS[@]}" 
          "${TOP_EXEC[@]}" "${TOP_DATA[@]}"; do
     [[ -e "$f" ]] || missing+=("$f")
 done
+# A Cargo.toml that names no members would ship a workspace with none.
+if [[ -e Cargo.toml && ${#MEMBERS[@]} -eq 0 ]]; then
+    missing+=("Cargo.toml (lists no workspace members)")
+fi
 if [[ ${#missing[@]} -gt 0 ]]; then
     echo "missing from this checkout:" >&2
     printf '   - %s\n' "${missing[@]}" >&2
@@ -142,14 +157,16 @@ echo ">> app trees"
 rsync -a "${VCS_EXCLUDES[@]}" --exclude dist --exclude target "${QS_APPS[@]}" "$STAGE/minka/"
 rsync -a "${VCS_EXCLUDES[@]}" "${QS_SHARED[@]}" "$STAGE/minka/"
 for f in "${APP_BINARIES[@]}"; do
-    install -m755 "$f" "$STAGE/minka/${f%%/*}/"
+    install -m755 "${f#*:}" "$STAGE/minka/${f%%:*}/"
 done
 for f in "${APP_LAUNCHERS[@]}"; do
     install -Dm755 "$f" "$STAGE/minka/$f"
 done
 
 echo ">> sources (for --from-source)"
-rsync -a "${VCS_EXCLUDES[@]}" --exclude target --exclude node_modules \
+# -R keeps each source's path, so tools/keysend lands in src/tools/keysend.
+# A member inside another (MinkaMon/sampler-rs) is copied once.
+rsync -aR "${VCS_EXCLUDES[@]}" --exclude target --exclude node_modules \
     "${SOURCES[@]}" "$STAGE/src/"
 
 echo ">> dist files"

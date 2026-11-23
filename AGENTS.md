@@ -10,7 +10,7 @@ dual-screen "Duo" mode).
 | Submodule      | Lang                       | Role                                                                                                                                                                                                                 |
 |----------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **ShojiWM**    | Rust (smithay) + Rust config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
-| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` runs `target/release/minkashell` and logs to `~/.local/state/minka/minkashell.log`. The Quickshell tree (`shell.qml`) is the fallback: used when there is no binary, with `MINKA_SHELL_FRONTEND=quickshell`, or after a third crash in a minute. |
+| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` runs MinkaDE's `target/release/minkashell` and logs to `~/.local/state/minka/minkashell.log`. The Quickshell tree (`shell.qml`) is the fallback: used when there is no binary, with `MINKA_SHELL_FRONTEND=quickshell`, or after a third crash in a minute. |
 | **MinkaMon**   | AntiWebUI (Rust)           | System monitor. `sampler-rs/` (`minkamon-sampler`) streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows. The QML tree is the fallback (it runs sampler-rs too). |
 | **MinkaShot**  | Quickshell/QML             | Freeze-frame screenshot tool. Print → frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. Uses MinkaCap for occlusion-free per-window capture.                                      |
 | **MinkaConf**  | Quickshell/QML             | Settings utility.                                                                                                                                                                                                    |
@@ -43,8 +43,8 @@ XWayland bridge.
 Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWebUI:
 **Material 3 Expressive widgets and motion, in the Proustite palette.**
 
-- **Use `anti_webui_md3e` before hand-drawing a control.** The crate is part of AntiWebUI at
-  the revision the apps pin, so it needs no toolkit bump. `tools/md3e-trial` shows every widget
+- **Use `anti_webui_md3e` before hand-drawing a control.** The crate is part of the AntiWebUI
+  submodule the apps build, so it needs no toolkit bump. `tools/md3e-trial` shows every widget
   (`target/release/md3e-trial`, or `cargo run --release` there).
 - **Colours stay Proustite**, not Material's own purple scheme. `proustite_scheme()` in
   `tools/md3e-trial/src/main.rs` maps the Proustite tokens onto Material's colour roles; build an
@@ -71,9 +71,27 @@ Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWeb
 
 **AntiWebUI is the `AntiWebUI/` submodule** (Sophie's fork; `upstream` is bea4dev) since
 18/11/2026. Apps depend on it by path (`../AntiWebUI/src/anti-webui`, `.../anti-webui-md3e`), so
-they all build one revision, and a missing or awkward widget is fixed there. Each app still
-carries the `[patch.crates-io]` wgpu table, pinned to the revision in `AntiWebUI/Cargo.lock`.
-MinkaShell, MinkaMon and MinkaSyu are on it; `tools/md3e-trial` still pins the old git revision.
+they all build one revision, and a missing or awkward widget is fixed there. MinkaShell, MinkaMon,
+MinkaSyu and `tools/md3e-trial` are on it.
+
+**MinkaDE's own Rust crates are one Cargo workspace** (`Cargo.toml` at the top, 23/11/2026), so
+they share one `Cargo.lock` and one `target/`, and a dependency is built once for every app that
+uses it with the same features. Her rule: "if something can be deduplicated, i probably want it".
+- **Binaries are in `MinkaDE/target/<profile>/`**, whichever directory cargo runs from. A
+  member's own `target/` is no longer built or read: launchers, env vars, the bartizan plugin,
+  `MinkaLedger.desktop` and the PKGBUILD point at the shared one. A session started before
+  23/11/2026 still runs from the old dirs, so delete them only after a new login.
+- **Profiles and `[patch]` tables live only in the root `Cargo.toml`.** Cargo ignores them in a
+  member. The wgpu patch is pinned to the revision in `AntiWebUI/Cargo.lock`.
+- **A new crate of hers joins `members`.** A directory with a crate that is not hers (an upstream
+  project, or makepkg sources under MinkaPKG) goes in `exclude`. Otherwise cargo refuses to build
+  it ("believes it's in a workspace when it's not").
+- **Upstream workspaces stay separate:** ShojiWM, xwayland-satellite, smithay, AntiWebUI and
+  GitComet. `.vscode/settings.json` lists them in `rust-analyzer.linkedProjects`, because
+  rust-analyzer's discovery stops at the root `Cargo.toml`. Through lspmux the list only takes
+  effect when VS Code is the first client of the shared instance; Claude Code sends none.
+- **Each binary still links its Rust dependencies statically**, as every Rust package on Arch
+  does: Rust has no stable ABI, and AntiWebUI's own `anti-webui-dylib` says not to ship it.
 
 - **Compact sizes exist:** call `anti_webui_md3e::set_density(Density::Compact)` before the first
   view (28 px buttons and icon buttons, 36 px text fields, 32 px menu rows, a 40x24 switch, thin
@@ -122,9 +140,9 @@ env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
 env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
     cargo test -p shoji_wm --lib evaluator
 
-# Build the MinkaMon sampler. MinkaMon runs sampler-rs/target/release/minkamon-sampler
-# (or $MINKAMON_SAMPLER_BIN), so a debug build or `cargo test` changes nothing it runs.
-cargo build --release --manifest-path MinkaMon/sampler-rs/Cargo.toml
+# Build the MinkaMon sampler. MinkaMon runs the target/release/minkamon-sampler beside its
+# own binary (or $MINKAMON_SAMPLER_BIN), so a debug build or `cargo test` changes nothing it runs.
+cargo build --release -p minkamon-sampler
 
 # Run a Quickshell app — ALWAYS use an ABSOLUTE path (relative `.` breaks from other cwds)
 qs -p /home/seirra/Documents/src/MinkaDE/MinkaShell
@@ -132,14 +150,14 @@ qs -p /home/seirra/Documents/src/MinkaDE/MinkaShell
 # Test MinkaLedger against a THROWAWAY book, never the default one. The default
 # (~/.local/share/minka-ledger/book.db) is Sophie's real finances; a probe that
 # writes there leaves accounts and imported statements mixed into her data.
-env MINKA_LEDGER_BIN=$PWD/MinkaLedger/target/debug/minka-ledger \
+env MINKA_LEDGER_BIN=$PWD/target/debug/minka-ledger \
     MINKA_LEDGER_DB=$HOME/.cache/minka-ledger/test.db \
     qs -p /home/seirra/Documents/src/MinkaDE/MinkaLedger/ui
 # and for the core alone:
-./target/debug/minka-ledger --db ~/.cache/minka-ledger/test.db
+./target/debug/minka-ledger --db ~/.cache/minka-ledger/test.db    # from MinkaDE/
 
 # MinkaLedger ships a NEW CORE METHOD? cargo build --release, or her app will not have it.
-# Her launcher runs target/release/minka-ledger; `cargo build` and `cargo test` only touch
+# Her launcher runs MinkaDE's target/release/minka-ledger; `cargo build` and `cargo test` only touch
 # the debug binary, so a method added and tested against debug answers
 # "no such method: <name>" in her window. She must then RESTART MinkaLedger: the running
 # core holds the old inode (readlink /proc/<pid>/exe shows a trailing "(deleted)").
@@ -153,7 +171,7 @@ cargo build --release
   `ls -l /usr/bin/shoji_wm`, `ps -o lstart= -p $(pgrep -x shoji_wm)`, and
   `readlink /proc/<pid>/exe` — a trailing `(deleted)` means a rebuild has replaced the
   file and the process is still running the old one. Same for `bartizan-lsp`, which the
-  editor launches straight out of `target/release/` with no copy on `PATH`: every change
+  editor launches straight out of MinkaDE's `target/release/` with no copy on `PATH`: every change
   needs `cargo build --release` **and** an LSP restart. `cargo test` alone builds only
   the test binary and changes nothing that is running.
 - **The Rust config cannot reload in place: there is no Super+Shift+R.** An edit to the Rust

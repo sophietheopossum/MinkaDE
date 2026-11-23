@@ -60,6 +60,9 @@ jobs:
         working-directory: xwayland-satellite
         run: cargo build --release --locked
 
+      # MinkaDE's own crates are one Cargo workspace (Cargo.toml at the top,
+      # with the Cargo.lock --locked holds them to), so each build below
+      # lands in its target/release, where make-tarball.sh looks.
       - name: Build MinkaFX
         working-directory: MinkaFX
         run: cargo build --release --locked
@@ -72,7 +75,7 @@ jobs:
         working-directory: MinkaMon
         run: |
           cargo build --release --locked
-          cargo build --release --locked --manifest-path sampler-rs/Cargo.toml
+          cargo build --release --locked -p minkamon-sampler
 
       - name: Build MinkaShell (AntiWebUI)
         working-directory: MinkaShell

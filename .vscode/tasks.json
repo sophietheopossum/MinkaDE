@@ -42,7 +42,7 @@
     },
     {
       "label": "minkafx: build release",
-      "detail": "MINKA_FX_BIN points at target/release/MinkaFX. Restart MinkaFX (or the session) to pick it up.",
+      "detail": "MINKA_FX_BIN points at MinkaDE's target/release/MinkaFX (the Cargo workspace in Cargo.toml). Restart MinkaFX (or the session) to pick it up.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
       "options": {
@@ -55,7 +55,7 @@
     },
     {
       "label": "minkacap: build release",
-      "detail": "MINKA_CAP_BIN points at target/release/MinkaCap. MinkaShot runs it per capture, so the next capture uses it.",
+      "detail": "MINKA_CAP_BIN points at MinkaDE's target/release/MinkaCap (the Cargo workspace in Cargo.toml). MinkaShot runs it per capture, so the next capture uses it.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
       "options": {
@@ -68,7 +68,7 @@
     },
     {
       "label": "minkashell: build release",
-      "detail": "The session shell's launcher (MinkaShell/dist/minkashell) runs target/release/minkashell, so the build is the install. The running shell keeps the old binary: it changes at the next session start, or when the shell is restarted through the launcher.",
+      "detail": "The session shell's launcher (MinkaShell/dist/minkashell) runs MinkaDE's target/release/minkashell, so the build is the install. The running shell keeps the old binary: it changes at the next session start, or when the shell is restarted through the launcher.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
       "options": {
@@ -81,7 +81,7 @@
     },
     {
       "label": "minkamon: build release",
-      "detail": "MINKA_MON_BIN is MinkaMon/dist/minkamon, which runs target/release/minkamon, so the build is the install. Like MinkaShell it compiles the AntiWebUI submodule as it is checked out. The running MinkaMon keeps the old binary until the next session start or a restart through the launcher.",
+      "detail": "MINKA_MON_BIN is MinkaMon/dist/minkamon, which runs MinkaDE's target/release/minkamon, so the build is the install. Like MinkaShell it compiles the AntiWebUI submodule as it is checked out. The running MinkaMon keeps the old binary until the next session start or a restart through the launcher.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
       "options": {
@@ -94,7 +94,7 @@
     },
     {
       "label": "minkamon sampler: build release",
-      "detail": "MinkaMon spawns sampler-rs/target/release/minkamon-sampler (or $MINKAMON_SAMPLER_BIN). It is its own crate with its own target/, so building MinkaMon does not build it. Restart MinkaMon to pick it up.",
+      "detail": "MinkaMon spawns the minkamon-sampler beside its own binary in MinkaDE's target/release (or $MINKAMON_SAMPLER_BIN). It is a crate of its own, so building MinkaMon does not build it. Restart MinkaMon to pick it up.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
       "options": {
@@ -107,7 +107,7 @@
     },
     {
       "label": "minkaledger: build core release",
-      "detail": "The launcher runs target/release/minka-ledger. Restart MinkaLedger afterwards: the running core keeps the old inode.",
+      "detail": "The launcher (~/.local/share/applications/MinkaLedger.desktop) runs MinkaDE's target/release/minka-ledger. Restart MinkaLedger afterwards: the running core keeps the old inode.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
       "options": {
@@ -120,7 +120,7 @@
     },
     {
       "label": "bartizan-lsp: build release",
-      "detail": "The editor launches target/release/bartizan-lsp directly. Restart the LSP afterwards.",
+      "detail": "The editor launches MinkaDE's target/release/bartizan-lsp directly (the minka-local bartizan plugin). Restart the LSP afterwards.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
       "options": {
@@ -154,7 +154,7 @@
     },
     {
       "label": "session: rebuild everything the next session runs",
-      "detail": "Satellite, MinkaFX, MinkaCap, MinkaShell, MinkaMon and the MinkaMon sampler release builds, then the ShojiWM install with the Rust config (sudo prompt comes last). Sequential, so only one bounded scope is live at a time. AntiWebUI has no step of its own: it is a library, and MinkaShell and MinkaMon each compile the submodule's working tree (uncommitted changes included) into their own target/. MinkaSyu is a package, so its AntiWebUI changes need a pkgrel bump and `minkarepo publish minka-syu` instead.",
+      "detail": "Satellite, MinkaFX, MinkaCap, MinkaShell, MinkaMon and the MinkaMon sampler release builds, then the ShojiWM install with the Rust config (sudo prompt comes last). Sequential, so only one bounded scope is live at a time. AntiWebUI has no step of its own: it is a library that MinkaShell and MinkaMon compile from the submodule's working tree (uncommitted changes included). MinkaDE's own crates are one Cargo workspace (Cargo.toml), so they share one target/ and build each dependency once for every app that uses it with the same features. MinkaSyu is a package, so its AntiWebUI changes need a pkgrel bump and `minkarepo publish minka-syu` instead.",
       "dependsOrder": "sequence",
       "dependsOn": [
         "xwayland-satellite: build release",

@@ -3,7 +3,7 @@
     python3 packaging/test_make_tarball.py
 
 Nothing here reads or writes this checkout, except that one test reads the
-Rust config's source and asset files. Each test copies make-tarball.sh into a
+Rust config's source and asset files, and one reads the workspace's Cargo.toml. Each test copies make-tarball.sh into a
 stand-in checkout under a temp dir, so the script's own
 `cd "$(dirname "$0")/.."` lands there and the tarball it writes goes there too.
 It runs from a third directory, to show that it finds its checkout by itself.
@@ -11,10 +11,11 @@ TMPDIR points into the temp dir, so a staging dir the script failed to remove
 is caught.
 
 The stand-in holds one small file for each input the script names, plus what it
-must leave out: VCS and IDE state, cargo's target/ (but for the builds it
-names), the old TypeScript shoji_wm, node_modules, each app's dist/ (but for
-MinkaShell's launcher), a TypeScript file beside the shaders, and an app that
-does not ship. The session's MINKA_*/SHOJI_* overrides are left out of the
+must leave out: VCS and IDE state, cargo's target/ dirs (but for the builds it
+names, and the crates' own from before the workspace), the old TypeScript
+shoji_wm, node_modules, each app's dist/ (but for MinkaShell's launcher), a
+TypeScript file beside the shaders, an app that does not ship, and a tool that
+is not a workspace member. The session's MINKA_*/SHOJI_* overrides are left out of the
 environment, so nothing points back into a real checkout. Each file's
 contents name its own path, so a file shipped under the wrong name fails as
 well. install.sh and uninstall.sh are the real ones, because one test checks
@@ -28,6 +29,7 @@ import stat
 import subprocess
 import tarfile
 import tempfile
+import tomllib
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -40,6 +42,30 @@ ASSET_ROOT = "ShojiWM/src/shojiwm_rs/examples/default_config/assets"
 
 VERSION = "9.9-test"
 ROOT = f"minkade-{VERSION}"
+
+# The stand-in's Cargo workspace: each member, with the files it holds.
+MEMBERS = {
+    "bartizan-lsp": ("Cargo.toml", "src/main.rs"),
+    "MinkaCap": ("Cargo.toml", "src/main.rs"),
+    "MinkaFX": ("Cargo.toml", "src/main.rs"),
+    "MinkaIPC": ("Cargo.toml", "src/lib.rs"),
+    "MinkaLedger": ("Cargo.toml", "src/main.rs", "ui/shell.qml"),
+    "MinkaMon": ("Cargo.toml", "src/main.rs", "shell.qml", "assets/coastlines.json",
+                 "dist/minkamon", "dist/MinkaMon.desktop"),
+    "MinkaMon/sampler-rs": ("Cargo.toml", "src/main.rs"),
+    "MinkaShell": ("Cargo.toml", "src/main.rs", "shell.qml", "modules/bar/Bar.qml",
+                   "assets/mac-glass-minimize.svg", "scripts/app-mute.py", "dist/minkashell"),
+    "MinkaSyu": ("Cargo.toml", "src/main.rs"),
+    "MinkaSyu/gui": ("Cargo.toml", "src/main.rs"),
+    "MinkaThermal": ("Cargo.toml", "src/main.rs"),
+    "tools/keysend": ("Cargo.toml", "src/main.rs"),
+    "tools/md3e-trial": ("Cargo.toml", "src/main.rs"),
+}
+MEMBER_FILES = tuple(f"{member}/{name}" for member, names in MEMBERS.items() for name in names)
+# Laid out as the real one is: one quoted member to a line.
+CARGO_TOML = ("# fixture: Cargo.toml\n[workspace]\nresolver = \"3\"\nmembers = [\n"
+              + "".join(f'    "{member}",\n' for member in MEMBERS)
+              + ']\nexclude = [\n    "AntiWebUI",\n    "ShojiWM",\n]\n')
 
 # The stand-in checkout, besides REAL. Every file is mode 644 except these.
 CHECKOUT = (
@@ -70,47 +96,39 @@ CHECKOUT = (
     "xwayland-satellite/Cargo.toml",
     "xwayland-satellite/src/main.rs",
     "xwayland-satellite/target/release/xwayland-satellite",
-    "MinkaFX/.git",
-    "MinkaFX/Cargo.toml",
-    "MinkaFX/src/main.rs",
-    "MinkaFX/target/release/MinkaFX",
-    "MinkaCap/.git",
-    "MinkaCap/Cargo.toml",
-    "MinkaCap/src/main.rs",
-    "MinkaCap/target/release/MinkaCap",
+    # The Cargo workspace and its builds.
+    "Cargo.toml",
+    "Cargo.lock",
+    "target/release/MinkaFX",
+    "target/release/MinkaCap",
+    "target/release/minkashell",
+    "target/release/minkamon",
+    "target/release/minkamon-sampler",
+    "target/debug/minkashell",
+    *MEMBER_FILES,
+    # A submodule's .git is a file naming its gitdir, not a directory.
+    *(f"{member}/.git" for member in MEMBERS if member not in (
+        "MinkaMon/sampler-rs", "MinkaSyu/gui", "tools/md3e-trial")),
+    "MinkaShell/.idea/workspace.xml",
+    # The crates' own builds from before the workspace: never shipped.
     "MinkaCap/target/debug/MinkaCap",
-    "MinkaIPC/.git",
-    "MinkaIPC/Cargo.toml",
-    "MinkaIPC/src/lib.rs",
     "MinkaIPC/target/debug/libminka_ipc.rlib",
+    "MinkaShell/target/release/minkashell",
+    "MinkaShell/target/debug/minkashell",
+    "MinkaMon/sampler-rs/target/release/minkamon-sampler",
+    # Not a workspace member.
+    "tools/other/README.md",
+    "AntiWebUI/.git",
+    "AntiWebUI/Cargo.toml",
+    "AntiWebUI/src/anti-webui/Cargo.toml",
+    "AntiWebUI/src/anti-webui/src/lib.rs",
+    "AntiWebUI/target/debug/libanti_webui.rlib",
     "smithay/.git",
     "smithay/Cargo.toml",
     "smithay/src/lib.rs",
-    "MinkaShell/.git",
-    "MinkaShell/.idea/workspace.xml",
-    "MinkaShell/shell.qml",
-    "MinkaShell/modules/bar/Bar.qml",
-    "MinkaShell/Cargo.toml",
-    "MinkaShell/src/main.rs",
-    "MinkaShell/assets/mac-glass-minimize.svg",
-    "MinkaShell/scripts/app-mute.py",
-    "MinkaShell/target/release/minkashell",
-    "MinkaShell/target/debug/minkashell",
-    "MinkaShell/dist/minkashell",
     "MinkaConf/.git",
     "MinkaConf/shell.qml",
     "MinkaConf/dist/MinkaConf.desktop",
-    "MinkaMon/.git",
-    "MinkaMon/shell.qml",
-    "MinkaMon/Cargo.toml",
-    "MinkaMon/src/main.rs",
-    "MinkaMon/assets/coastlines.json",
-    "MinkaMon/sampler-rs/Cargo.toml",
-    "MinkaMon/sampler-rs/src/main.rs",
-    "MinkaMon/target/release/minkamon",
-    "MinkaMon/sampler-rs/target/release/minkamon-sampler",
-    "MinkaMon/dist/minkamon",
-    "MinkaMon/dist/MinkaMon.desktop",
     "Proustite/.git",
     "Proustite/qmldir",
     "Proustite/Proustite.qml",
@@ -120,7 +138,6 @@ CHECKOUT = (
     "MinkaShot/.git",
     "MinkaShot/shell.qml",
     "MinkaShot/services/ShotState.qml",
-    "MinkaLedger/ui/shell.qml",  # not a shipped app
 )
 EXECUTABLE = {
     "packaging/minka-session",
@@ -128,21 +145,26 @@ EXECUTABLE = {
     "ShojiWM/target/release/examples/default_config",
     "ShojiWM/target/release/xdg-desktop-portal-shojiwm",
     "xwayland-satellite/target/release/xwayland-satellite",
-    "MinkaFX/target/release/MinkaFX",
-    "MinkaCap/target/release/MinkaCap",
+    "target/release/MinkaFX",
+    "target/release/MinkaCap",
+    "target/release/minkashell",
+    "target/release/minkamon",
+    "target/release/minkamon-sampler",
+    "target/debug/minkashell",
     "MinkaCap/target/debug/MinkaCap",
     "MinkaShell/target/release/minkashell",
     "MinkaShell/target/debug/minkashell",
     "MinkaShell/dist/minkashell",
-    "MinkaMon/target/release/minkamon",
     "MinkaMon/sampler-rs/target/release/minkamon-sampler",
     "MinkaMon/dist/minkamon",
 }
 # Contents other than "fixture: <path>". The compositor's name its asset
-# fallback, as a real build's do: make-tarball.sh looks for it.
+# fallback, as a real build's do: make-tarball.sh looks for it. Cargo.toml
+# lists the members the script reads.
 CONTENTS = {
     "ShojiWM/target/release/examples/default_config":
         "fixture: the Rust config, falling back to /usr/share/minka/shojiwm\n",
+    "Cargo.toml": CARGO_TOML,
 }
 # Each app reaches the shared singletons through these, as in the real tree.
 CHECKOUT_LINKS = {
@@ -171,36 +193,21 @@ SHIPPED_SOURCES = (
     "ShojiWM/dist/xdg-desktop-portal-shojiwm.service",
     "xwayland-satellite/Cargo.toml",
     "xwayland-satellite/src/main.rs",
-    "MinkaFX/Cargo.toml",
-    "MinkaFX/src/main.rs",
-    "MinkaCap/Cargo.toml",
-    "MinkaCap/src/main.rs",
-    "MinkaShell/shell.qml",
-    "MinkaShell/modules/bar/Bar.qml",
-    "MinkaShell/Cargo.toml",
-    "MinkaShell/src/main.rs",
-    "MinkaShell/assets/mac-glass-minimize.svg",
-    "MinkaShell/scripts/app-mute.py",
-    "MinkaShell/dist/minkashell",
-    "MinkaMon/shell.qml",
-    "MinkaMon/Cargo.toml",
-    "MinkaMon/src/main.rs",
-    "MinkaMon/assets/coastlines.json",
-    "MinkaMon/sampler-rs/Cargo.toml",
-    "MinkaMon/sampler-rs/src/main.rs",
-    "MinkaMon/dist/minkamon",
-    "MinkaMon/dist/MinkaMon.desktop",
-    "MinkaIPC/Cargo.toml",
-    "MinkaIPC/src/lib.rs",
     "smithay/Cargo.toml",
     "smithay/src/lib.rs",
+    "AntiWebUI/Cargo.toml",
+    "AntiWebUI/src/anti-webui/Cargo.toml",
+    "AntiWebUI/src/anti-webui/src/lib.rs",
+    "Cargo.toml",
+    "Cargo.lock",
+    *MEMBER_FILES,
 )
 TARBALL = {
     "bin/shoji_wm": "ShojiWM/target/release/examples/default_config",
     "bin/xdg-desktop-portal-shojiwm": "ShojiWM/target/release/xdg-desktop-portal-shojiwm",
     "bin/xwayland-satellite": "xwayland-satellite/target/release/xwayland-satellite",
-    "bin/MinkaFX": "MinkaFX/target/release/MinkaFX",
-    "bin/MinkaCap": "MinkaCap/target/release/MinkaCap",
+    "bin/MinkaFX": "target/release/MinkaFX",
+    "bin/MinkaCap": "target/release/MinkaCap",
 
     "minka/shojiwm/shaders/liquid-glass.frag": f"{ASSET_ROOT}/shaders/liquid-glass.frag",
     "minka/shojiwm/shaders/backdrop-fade.frag": f"{ASSET_ROOT}/shaders/backdrop-fade.frag",
@@ -212,7 +219,7 @@ TARBALL = {
     "minka/MinkaShell/src/main.rs": "MinkaShell/src/main.rs",
     "minka/MinkaShell/assets/mac-glass-minimize.svg": "MinkaShell/assets/mac-glass-minimize.svg",
     "minka/MinkaShell/scripts/app-mute.py": "MinkaShell/scripts/app-mute.py",
-    "minka/MinkaShell/minkashell": "MinkaShell/target/release/minkashell",
+    "minka/MinkaShell/minkashell": "target/release/minkashell",
     "minka/MinkaShell/dist/minkashell": "MinkaShell/dist/minkashell",
     "minka/MinkaShot/shell.qml": "MinkaShot/shell.qml",
     "minka/MinkaShot/services/ShotState.qml": "MinkaShot/services/ShotState.qml",
@@ -223,8 +230,8 @@ TARBALL = {
     "minka/MinkaMon/assets/coastlines.json": "MinkaMon/assets/coastlines.json",
     "minka/MinkaMon/sampler-rs/Cargo.toml": "MinkaMon/sampler-rs/Cargo.toml",
     "minka/MinkaMon/sampler-rs/src/main.rs": "MinkaMon/sampler-rs/src/main.rs",
-    "minka/MinkaMon/minkamon": "MinkaMon/target/release/minkamon",
-    "minka/MinkaMon/minkamon-sampler": "MinkaMon/sampler-rs/target/release/minkamon-sampler",
+    "minka/MinkaMon/minkamon": "target/release/minkamon",
+    "minka/MinkaMon/minkamon-sampler": "target/release/minkamon-sampler",
     "minka/Proustite/qmldir": "Proustite/qmldir",
     "minka/Proustite/Proustite.qml": "Proustite/Proustite.qml",
     "minka/MinkaLink/qmldir": "MinkaLink/qmldir",
@@ -407,16 +414,17 @@ class MakeTarball(Checkout):
 
     def test_preflight_lists_every_missing_input_and_stages_nothing(self):
         for path in ("ShojiWM/target/release/examples/default_config",
-                     "MinkaShell/target/release/minkashell",
+                     "target/release/minkashell",
                      "MinkaShell/dist/minkashell",
-                     "MinkaMon/sampler-rs/target/release/minkamon-sampler",
+                     "target/release/minkamon-sampler",
                      f"{ASSET_ROOT}/shaders/liquid-glass.frag",
                      f"{ASSET_ROOT}/shaders/backdrop-fade.frag",
                      "MinkaMon/dist/MinkaMon.desktop",
                      "README.md"):
             os.remove(os.path.join(self.repo, path))
-        os.chmod(os.path.join(self.repo, "MinkaFX/target/release/MinkaFX"), 0o644)
+        os.chmod(os.path.join(self.repo, "target/release/MinkaFX"), 0o644)
         shutil.rmtree(os.path.join(self.repo, "MinkaLink"))
+        shutil.rmtree(os.path.join(self.repo, "tools/keysend"))  # a workspace member
         before = os.listdir(self.repo)
 
         done = self.run_script(VERSION)
@@ -426,12 +434,13 @@ class MakeTarball(Checkout):
         self.assertEqual(done.stderr,
                          "missing from this checkout:\n"
                          "   - ShojiWM/target/release/examples/default_config (release binary)\n"
-                         "   - MinkaFX/target/release/MinkaFX (release binary)\n"
-                         "   - MinkaShell/target/release/minkashell (release binary)\n"
-                         "   - MinkaMon/sampler-rs/target/release/minkamon-sampler (release binary)\n"
+                         "   - target/release/MinkaFX (release binary)\n"
+                         "   - target/release/minkashell (release binary)\n"
+                         "   - target/release/minkamon-sampler (release binary)\n"
                          f"   - {ASSET_ROOT}/shaders/*.frag\n"
                          "   - MinkaLink\n"
                          "   - MinkaShell/dist/minkashell\n"
+                         "   - tools/keysend\n"
                          "   - MinkaMon/dist/MinkaMon.desktop\n"
                          "   - README.md\n")
         self.assertNothingLeftBehind(before)
@@ -448,6 +457,59 @@ class MakeTarball(Checkout):
                          "   - ShojiWM/target/release/examples/default_config (has no "
                          "/usr/share/minka/shojiwm asset fallback: is the ShojiWM gitlink current?)\n")
         self.assertNothingLeftBehind(before)
+
+    def test_preflight_refuses_a_cargo_toml_with_no_members(self):
+        """A workspace with no members would ship a src/ that builds nothing."""
+        self.write("Cargo.toml", b'[workspace]\nmembers = []\n', 0o644)
+        before = os.listdir(self.repo)
+        done = self.run_script(VERSION)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stderr,
+                         "missing from this checkout:\n"
+                         "   - Cargo.toml (lists no workspace members)\n")
+        self.assertNothingLeftBehind(before)
+
+    def test_members_ship_however_the_list_is_laid_out(self):
+        """As `cargo new` leaves it (two members on the last line) and on one
+        line before an exclude list: every member ships, and nothing that is
+        only excluded does."""
+        self.write("MinkaPKG/PKGBUILD", b"fixture: MinkaPKG/PKGBUILD\n", 0o644)
+        quoted = [f'"{member}"' for member in MEMBERS]
+        layouts = {
+            "cargo new": "members = [\n" + "".join(f"    {q},\n" for q in quoted[:-2])
+                         + f"    {quoted[-2]}, {quoted[-1]},\n]\n",
+            "one line": f"members = [{', '.join(quoted)}]\n",
+        }
+        for name, members in layouts.items():
+            with self.subTest(name):
+                self.write("Cargo.toml", ("[workspace]\n" + members
+                                          + 'exclude = ["MinkaPKG", "ShojiWM"]\n').encode(),
+                           0o644)
+                with tarfile.open(self.build(VERSION)) as tar:
+                    shipped = set(tar.getnames())
+                os.remove(self.tarball())
+                self.assertEqual(sorted(m for m in MEMBERS
+                                        if f"{ROOT}/src/{m}/Cargo.toml" not in shipped), [])
+                self.assertNotIn(f"{ROOT}/src/MinkaPKG", shipped)
+
+    @unittest.skipUnless(os.path.isfile(os.path.join(REPO, "Cargo.toml")),
+                         "no workspace Cargo.toml beside this script")
+    def test_every_member_of_the_real_workspace_ships(self):
+        """Uses the real Cargo.toml, so a member added, or written in a way the
+        script does not read, is checked against what lands in src/."""
+        with open(os.path.join(REPO, "Cargo.toml"), "rb") as real:
+            manifest = real.read()
+        members = tomllib.loads(manifest.decode())["workspace"]["members"]
+        self.assertTrue(members)
+        self.write("Cargo.toml", manifest, 0o644)
+        for member in members:
+            if not os.path.exists(os.path.join(self.repo, member, "Cargo.toml")):
+                self.write(f"{member}/Cargo.toml", f"fixture: {member}/Cargo.toml\n".encode(),
+                           0o644)
+        with tarfile.open(self.build(VERSION)) as tar:
+            shipped = set(tar.getnames())
+        self.assertEqual(sorted(m for m in members
+                                if f"{ROOT}/src/{m}/Cargo.toml" not in shipped), [])
 
     def test_failure_after_staging_leaves_no_tarball_or_staging_dir(self):
         self.stub("tar", 'echo "tar: fake failure" >&2\nexit 2\n')

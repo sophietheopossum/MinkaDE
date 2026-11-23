@@ -1,7 +1,7 @@
 //! A window for trying the Material 3 Expressive widgets of AntiWebUI (`anti-webui-md3e`).
 //!
 //! ```sh
-//! cargo run --release                       # or target/release/md3e-trial
+//! cargo run --release                       # or MinkaDE's target/release/md3e-trial
 //! cargo run --release -- inputs             # start on a page
 //! cargo run --release -- --palette material
 //! ```

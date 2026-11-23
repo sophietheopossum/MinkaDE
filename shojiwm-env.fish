@@ -17,12 +17,14 @@ set -gx SHOJI_XWAYLAND_SATELLITE_PATH $HOME/Documents/src/MinkaDE/xwayland-satel
 # back to the tarball-install locations (/usr/share/minka, /usr/bin).
 set -gx MINKA_SHELL_DIR $HOME/Documents/src/MinkaDE/MinkaShell
 # The shell's launcher (MinkaShell/dist/minkashell) runs the AntiWebUI binary
-# from target/release. Uncomment to get the Quickshell shell back at the next
+# from target/release of the MinkaDE Cargo workspace. Uncomment to get the Quickshell shell back at the next
 # login instead:
 # set -gx MINKA_SHELL_FRONTEND quickshell
 set -gx MINKA_SHOT_DIR $HOME/Documents/src/MinkaDE/MinkaShot
-set -gx MINKA_FX_BIN $HOME/Documents/src/MinkaDE/MinkaFX/target/release/MinkaFX
-set -gx MINKA_CAP_BIN $HOME/Documents/src/MinkaDE/MinkaCap/target/release/MinkaCap
+# MinkaDE's own Rust crates are one Cargo workspace (Cargo.toml), so their
+# binaries are all in its target/.
+set -gx MINKA_FX_BIN $HOME/Documents/src/MinkaDE/target/release/MinkaFX
+set -gx MINKA_CAP_BIN $HOME/Documents/src/MinkaDE/target/release/MinkaCap
 # MinkaMon needs both: the wrapper (which owns the logging) and the config dir
 # it passes to qs. Its wrapper is not installed to /usr/bin in this checkout,
 # so without MINKA_MON_BIN the autostart guard finds nothing and skips.

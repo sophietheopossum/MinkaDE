@@ -72,24 +72,20 @@ if [[ $FROM_SOURCE -eq 1 ]]; then
         && cargo build --release -p xdg-desktop-portal-shojiwm)
     echo ">> building xwayland-satellite"
     (cd src/xwayland-satellite && cargo build --release)
-    echo ">> building MinkaFX"
-    (cd src/MinkaFX && cargo build --release)
-    echo ">> building MinkaCap"
-    (cd src/MinkaCap && cargo build --release)
-    echo ">> building MinkaMon + sampler"
-    (cd src/MinkaMon && cargo build --release)
-    (cd src/MinkaMon/sampler-rs && cargo build --release)
-    echo ">> building MinkaShell"
-    (cd src/MinkaShell && cargo build --release)
+    # MinkaDE's own crates are one Cargo workspace (src/Cargo.toml): one
+    # build makes them all, sharing what they depend on, into src/target/.
+    echo ">> building MinkaFX, MinkaCap, MinkaMon + sampler, MinkaShell"
+    (cd src && cargo build --release -p MinkaFX -p MinkaCap -p minkamon -p minkamon-sampler \
+        -p minkashell)
 
     SHOJI_BIN="src/ShojiWM/target/release/examples/default_config"
     PORTAL_BIN="src/ShojiWM/target/release/xdg-desktop-portal-shojiwm"
     SATELLITE_BIN="src/xwayland-satellite/target/release/xwayland-satellite"
-    MINKAFX_BIN="src/MinkaFX/target/release/MinkaFX"
-    MINKACAP_BIN="src/MinkaCap/target/release/MinkaCap"
-    MINKAMON_BIN="src/MinkaMon/target/release/minkamon"
-    SAMPLER_BIN="src/MinkaMon/sampler-rs/target/release/minkamon-sampler"
-    SHELL_BIN="src/MinkaShell/target/release/minkashell"
+    MINKAFX_BIN="src/target/release/MinkaFX"
+    MINKACAP_BIN="src/target/release/MinkaCap"
+    MINKAMON_BIN="src/target/release/minkamon"
+    SAMPLER_BIN="src/target/release/minkamon-sampler"
+    SHELL_BIN="src/target/release/minkashell"
 else
     for f in bin/shoji_wm bin/xdg-desktop-portal-shojiwm bin/xwayland-satellite bin/MinkaFX \
              bin/MinkaCap minka/MinkaMon/minkamon minka/MinkaMon/minkamon-sampler \

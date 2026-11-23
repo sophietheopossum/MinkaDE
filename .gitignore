@@ -4,6 +4,9 @@ minkade-*.tar.gz
 tools/__pycache__/
 tools/*/__pycache__/
 
+# The Cargo workspace's build output (Cargo.toml). The two below are from
+# before the workspace, kept ignored until those directories are deleted.
+/target/
 tools/keysend/target/
 tools/md3e-trial/target/
 

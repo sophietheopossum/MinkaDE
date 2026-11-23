@@ -6,26 +6,8 @@ description = "A window for trying AntiWebUI's Material 3 Expressive widgets"
 license = "MIT OR Apache-2.0"
 publish = false
 
-# The same AntiWebUI revision MinkaShell, MinkaMon and MinkaSyu build against,
-# so the widgets here are the ones those apps could use without a bump.
+# The AntiWebUI submodule MinkaShell, MinkaMon and MinkaSyu build against,
+# so the widgets here are the ones those apps have.
 [dependencies]
-anti-webui = { git = "https://github.com/bea4dev/AntiWebUI", rev = "25e82a1d2a7a08658f0eede14cde47b34cce40a6", default-features = false, features = ["wayland", "svg"] }
-anti-webui-md3e = { git = "https://github.com/bea4dev/AntiWebUI", rev = "25e82a1d2a7a08658f0eede14cde47b34cce40a6" }
-
-[profile.release]
-lto = "thin"
-
-# AntiWebUI's workspace patches wgpu to bea4dev's adapter-filter fork. Cargo
-# ignores patch tables from git dependencies, so the consuming crate has to
-# carry the same patches (pinned to the fork revision in AntiWebUI's lockfile).
-[patch.crates-io]
-naga = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-naga-types = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-wgpu = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-wgpu-core = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-wgpu-core-deps-apple = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-wgpu-core-deps-emscripten = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-wgpu-core-deps-windows-linux-android = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-wgpu-hal = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-wgpu-naga-bridge = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
-wgpu-types = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+anti-webui = { path = "../../AntiWebUI/src/anti-webui", default-features = false, features = ["wayland", "svg"] }
+anti-webui-md3e = { path = "../../AntiWebUI/src/anti-webui-md3e" }
