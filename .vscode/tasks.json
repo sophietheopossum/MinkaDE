@@ -80,6 +80,32 @@
       "problemMatcher": ["$rustc"]
     },
     {
+      "label": "minkamon: build release",
+      "detail": "MINKA_MON_BIN is MinkaMon/dist/minkamon, which runs target/release/minkamon, so the build is the install. Like MinkaShell it compiles the AntiWebUI submodule as it is checked out. The running MinkaMon keeps the old binary until the next session start or a restart through the launcher.",
+      "type": "shell",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
+      "options": {
+        "cwd": "${workspaceFolder}/MinkaMon",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "minkamon sampler: build release",
+      "detail": "MinkaMon spawns sampler-rs/target/release/minkamon-sampler (or $MINKAMON_SAMPLER_BIN). It is its own crate with its own target/, so building MinkaMon does not build it. Restart MinkaMon to pick it up.",
+      "type": "shell",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
+      "options": {
+        "cwd": "${workspaceFolder}/MinkaMon/sampler-rs",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
       "label": "minkaledger: build core release",
       "detail": "The launcher runs target/release/minka-ledger. Restart MinkaLedger afterwards: the running core keeps the old inode.",
       "type": "shell",
@@ -128,13 +154,15 @@
     },
     {
       "label": "session: rebuild everything the next session runs",
-      "detail": "Satellite, MinkaFX, MinkaCap and MinkaShell release builds, then the ShojiWM install with the Rust config (sudo prompt comes last). Sequential, so only one bounded scope is live at a time.",
+      "detail": "Satellite, MinkaFX, MinkaCap, MinkaShell, MinkaMon and the MinkaMon sampler release builds, then the ShojiWM install with the Rust config (sudo prompt comes last). Sequential, so only one bounded scope is live at a time. AntiWebUI has no step of its own: it is a library, and MinkaShell and MinkaMon each compile the submodule's working tree (uncommitted changes included) into their own target/. MinkaSyu is a package, so its AntiWebUI changes need a pkgrel bump and `minkarepo publish minka-syu` instead.",
       "dependsOrder": "sequence",
       "dependsOn": [
         "xwayland-satellite: build release",
         "minkafx: build release",
         "minkacap: build release",
         "minkashell: build release",
+        "minkamon: build release",
+        "minkamon sampler: build release",
         "shojiwm: install"
       ],
       "problemMatcher": []
