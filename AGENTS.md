@@ -73,7 +73,7 @@ Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWeb
 18/11/2026. Apps depend on it by path (`../AntiWebUI/src/anti-webui`, `.../anti-webui-md3e`), so
 they all build one revision, and a missing or awkward widget is fixed there. Each app still
 carries the `[patch.crates-io]` wgpu table, pinned to the revision in `AntiWebUI/Cargo.lock`.
-MinkaShell and MinkaMon are on it; MinkaSyu and `tools/md3e-trial` still pin the old git revision.
+MinkaShell, MinkaMon and MinkaSyu are on it; `tools/md3e-trial` still pins the old git revision.
 
 - **Compact sizes exist:** call `anti_webui_md3e::set_density(Density::Compact)` before the first
   view (28 px buttons and icon buttons, 36 px text fields, 32 px menu rows, a 40x24 switch, thin
