@@ -3,7 +3,7 @@
   "tasks": [
     {
       "label": "shojiwm: install typescript (rollback)",
-      "detail": "dist/install.sh --dev --no-config without --rust-config: puts the TypeScript-config build back in place of the Rust config. It replaces all of /usr/lib/shojiwm, so the fallbacks there (shoji_wm.previous, shoji_wm.typescript) are removed. Builds release-fast, then asks for sudo. Takes effect at the next session start; uncomment SHOJI_CONFIG in shojiwm-env.fish first. Runs in a memory-bounded transient scope (see 'build limits' below).",
+      "detail": "dist/install.sh --dev --no-config without --rust-config: puts the TypeScript-config build back in place of the Rust config. It writes over the minkade package's /usr/bin/shoji_wm link, so pacman will report that file as changed until the package is reinstalled; going back to an older minkade with `pacman -U` from its cache is the usual way back now. It replaces all of /usr/lib/shojiwm, so the fallbacks there (shoji_wm.previous, shoji_wm.typescript) are removed. Builds release-fast, then asks for sudo. Takes effect at the next session start; uncomment SHOJI_CONFIG in shojiwm-env.fish first. Runs in a memory-bounded transient scope (see 'build limits' below).",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install.sh --dev --no-config",
       "options": {
@@ -15,121 +15,30 @@
       "problemMatcher": []
     },
     {
-      "label": "shojiwm: install",
-      "detail": "dist/install.sh --dev --no-config --no-portal --rust-config --expect-runtime=minka: builds the compositor with the Minka Rust config (release-fast) and installs it with the session entry, refusing any other branch's build of the example. The TypeScript runtime files under /usr/lib/shojiwm are only installed when missing. The compositor serving the session you run this from is kept as /usr/lib/shojiwm/shoji_wm.previous (from a tty, the existing one is kept). --no-portal because the portal runs from target/release through ~/.config/systemd/user/xdg-desktop-portal-shojiwm.service.d/override.conf, and restarting it would end any screen share. Asks for sudo. Takes effect at the next session start. 'shojiwm: install typescript (rollback)' puts the TypeScript build back.",
+      "label": "minka: build (release-fast)",
+      "detail": "cargo build --profile release-fast -p minka: MinkaDE's one binary (minka/), with the compositor, its portal, xwayland-satellite, MinkaShell, MinkaMon and its sampler, MinkaFX, MinkaCap, MinkaSyu, MinkaThermal, MinkaLedger's core, bartizan-lsp and keysend in it, into target/release-fast/minka. No LTO and incremental, so an edit relinks in seconds. Nothing in the session changes: it runs the installed package. To try this build, run an app from it (`target/release-fast/minka minkamon`), or start the shell or MinkaMon through their launchers with MINKA_BIN set to it. AntiWebUI has no step of its own: the apps compile the submodule's working tree, uncommitted changes included.",
       "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- dist/install.sh --dev --no-config --no-portal --rust-config --expect-runtime=minka",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --profile release-fast -p minka",
       "options": {
-        "cwd": "${workspaceFolder}/ShojiWM",
+        "cwd": "${workspaceFolder}",
         "env": { "CARGO_BUILD_JOBS": "6" }
       },
       "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "minkade: publish package",
+      "detail": "minkarepo publish minkade: builds MinkaPKG/minkade (minka in the release profile, thin LTO over everything, then packaging/stage-usr.sh) and adds it to the [minka] repository. Install it with MinkaSyu or `sudo pacman -Syu`: the compositor and the portal change at the next session start, the other apps when they are restarted. A rebuild of an unchanged commit needs a pkgrel bump in the PKGBUILD first (or `minkarepo update minkade`). The previous package stays in pacman's cache, so `pacman -U` with it is the way back.",
+      "type": "shell",
+      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- minkarepo publish minkade",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": { "CARGO_BUILD_JOBS": "6" }
+      },
+      "group": "build",
       "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "clear": true },
       "problemMatcher": []
-    },
-    {
-      "label": "xwayland-satellite: build release",
-      "detail": "The compositor spawns target/release/xwayland-satellite via SHOJI_XWAYLAND_SATELLITE_PATH, so the build is the install. Takes effect at the next session start.",
-      "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
-      "options": {
-        "cwd": "${workspaceFolder}/xwayland-satellite",
-        "env": { "CARGO_BUILD_JOBS": "6" }
-      },
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
-      "problemMatcher": ["$rustc"]
-    },
-    {
-      "label": "minkafx: build release",
-      "detail": "MINKA_FX_BIN points at MinkaDE's target/release/MinkaFX (the Cargo workspace in Cargo.toml). Restart MinkaFX (or the session) to pick it up.",
-      "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
-      "options": {
-        "cwd": "${workspaceFolder}/MinkaFX",
-        "env": { "CARGO_BUILD_JOBS": "6" }
-      },
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
-      "problemMatcher": ["$rustc"]
-    },
-    {
-      "label": "minkacap: build release",
-      "detail": "MINKA_CAP_BIN points at MinkaDE's target/release/MinkaCap (the Cargo workspace in Cargo.toml). MinkaShot runs it per capture, so the next capture uses it.",
-      "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
-      "options": {
-        "cwd": "${workspaceFolder}/MinkaCap",
-        "env": { "CARGO_BUILD_JOBS": "6" }
-      },
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
-      "problemMatcher": ["$rustc"]
-    },
-    {
-      "label": "minkashell: build release",
-      "detail": "The session shell's launcher (MinkaShell/dist/minkashell) runs MinkaDE's target/release/minkashell, so the build is the install. The running shell keeps the old binary: it changes at the next session start, or when the shell is restarted through the launcher.",
-      "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
-      "options": {
-        "cwd": "${workspaceFolder}/MinkaShell",
-        "env": { "CARGO_BUILD_JOBS": "6" }
-      },
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
-      "problemMatcher": ["$rustc"]
-    },
-    {
-      "label": "minkamon: build release",
-      "detail": "MINKA_MON_BIN is MinkaMon/dist/minkamon, which runs MinkaDE's target/release/minkamon, so the build is the install. Like MinkaShell it compiles the AntiWebUI submodule as it is checked out. The running MinkaMon keeps the old binary until the next session start or a restart through the launcher.",
-      "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
-      "options": {
-        "cwd": "${workspaceFolder}/MinkaMon",
-        "env": { "CARGO_BUILD_JOBS": "6" }
-      },
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
-      "problemMatcher": ["$rustc"]
-    },
-    {
-      "label": "minkamon sampler: build release",
-      "detail": "MinkaMon spawns the minkamon-sampler beside its own binary in MinkaDE's target/release (or $MINKAMON_SAMPLER_BIN). It is a crate of its own, so building MinkaMon does not build it. Restart MinkaMon to pick it up.",
-      "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
-      "options": {
-        "cwd": "${workspaceFolder}/MinkaMon/sampler-rs",
-        "env": { "CARGO_BUILD_JOBS": "6" }
-      },
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
-      "problemMatcher": ["$rustc"]
-    },
-    {
-      "label": "minkaledger: build core release",
-      "detail": "The launcher (~/.local/share/applications/MinkaLedger.desktop) runs MinkaDE's target/release/minka-ledger. Restart MinkaLedger afterwards: the running core keeps the old inode.",
-      "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
-      "options": {
-        "cwd": "${workspaceFolder}/MinkaLedger",
-        "env": { "CARGO_BUILD_JOBS": "6" }
-      },
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
-      "problemMatcher": ["$rustc"]
-    },
-    {
-      "label": "bartizan-lsp: build release",
-      "detail": "The editor launches MinkaDE's target/release/bartizan-lsp directly (the minka-local bartizan plugin). Restart the LSP afterwards.",
-      "type": "shell",
-      "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --release",
-      "options": {
-        "cwd": "${workspaceFolder}/bartizan-lsp",
-        "env": { "CARGO_BUILD_JOBS": "6" }
-      },
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
-      "problemMatcher": ["$rustc"]
     },
     {
       "label": "floorp: build and install package from local clones",
@@ -154,17 +63,8 @@
     },
     {
       "label": "session: rebuild everything the next session runs",
-      "detail": "Satellite, MinkaFX, MinkaCap, MinkaShell, MinkaMon and the MinkaMon sampler release builds, then the ShojiWM install with the Rust config (sudo prompt comes last). Sequential, so only one bounded scope is live at a time. AntiWebUI has no step of its own: it is a library that MinkaShell and MinkaMon compile from the submodule's working tree (uncommitted changes included). MinkaDE's own crates are one Cargo workspace (Cargo.toml), so they share one target/ and build each dependency once for every app that uses it with the same features. MinkaSyu is a package, so its AntiWebUI changes need a pkgrel bump and `minkarepo publish minka-syu` instead.",
-      "dependsOrder": "sequence",
-      "dependsOn": [
-        "xwayland-satellite: build release",
-        "minkafx: build release",
-        "minkacap: build release",
-        "minkashell: build release",
-        "minkamon: build release",
-        "minkamon sampler: build release",
-        "shojiwm: install"
-      ],
+      "detail": "The minkade package: the session runs nothing else of MinkaDE's. Same as 'minkade: publish package'; install it with MinkaSyu or `sudo pacman -Syu`, then start a new session.",
+      "dependsOn": ["minkade: publish package"],
       "problemMatcher": []
     }
   ]

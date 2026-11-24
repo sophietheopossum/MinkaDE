@@ -5,36 +5,40 @@
 Nothing here needs root or touches the machine. Each test builds a tarball
 from test_make_tarball's stand-in checkout, unpacks it with tar as a tester
 would, and runs its install.sh with stand-ins first on PATH:
-- sudo runs the command as this user, with every /usr path moved under a temp
-  root. A /usr path inside a longer argument stops it, and the tests refuse
-  to run as root, so a path it missed reaches the real /usr only as an
-  ordinary user, and fails.
+- sudo runs the command as this user, with /usr and every path in it moved
+  under a temp root, which has a usr/ as a system does. A /usr path inside a longer
+  argument stops it, and the tests refuse to run as root, so a path it
+  missed reaches the real /usr only as an ordinary user, and fails.
 - systemctl only logs, so the session's real portal is never restarted.
 - qs, Xwayland, kitty, pipewire and python3 (with Pillow) exist, so no
   dependency prompt asks anything. stdin is closed, so a prompt would fail
   the test.
-- cargo, for --from-source, writes a stand-in for each binary where cargo puts
-  a release build's (src/target/ for MinkaDE's own workspace).
-HOME and the XDG dirs are temp dirs too.
+- cargo, for --from-source, writes a stand-in for each package it is asked
+  for where cargo puts a release build's (src/target/release/).
+The minka installed is test_make_tarball's stand-in, and MINKA_BIN points the
+launchers at it, so a real /usr/bin/minka never runs. HOME and the XDG dirs
+are temp dirs too.
 """
 
 import json
 import os
 import re
+import shutil
 import stat
 import subprocess
 import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from test_make_tarball import REPO, ROOT, RUST_CONFIG, VERSION, Checkout  # noqa: E402
+from test_make_tarball import (  # noqa: E402
+    NAMES, REPO, ROOT, RUST_CONFIG, VERSION, Checkout, minka_script)
 
 SUDO = """\
 n=$#
 for arg do
     case $arg in
-        /usr/*) arg=$FAKE_ROOT$arg ;;
-        *=/usr/*|*' /usr/'*|*'"/usr/'*|*"'/usr/"*)
+        /usr|/usr/*) arg=$FAKE_ROOT$arg ;;
+        *=/usr|*=/usr/*|*' /usr/'*|*'"/usr/'*|*"'/usr/"*)
             echo "fake sudo: a /usr path inside an argument: $arg" >&2
             exit 99 ;;
     esac
@@ -44,61 +48,67 @@ shift "$n"
 exec "$@"
 """
 
-# Where cargo puts a release build: target/release/examples/<name> for an
-# example, else target/release/<binary>. Binaries by package (each -p) or,
-# for a plain build, by the crate's directory, as the real crates name them.
+# Where cargo puts a release build of each -p: target/release/<package>,
+# which is the binary's name for minka.
 FAKE_CARGO = f"""#!{sys.executable}
 import json, os, sys
 args = sys.argv[1:]
 here = os.path.relpath(os.getcwd(), os.environ["FAKE_CARGO_BASE"])
 with open(os.environ["FAKE_CARGO_LOG"], "a") as log:
     log.write(json.dumps([here, args]) + "\\n")
-if "--example" in args:
-    outs = ["target/release/examples/" + args[args.index("--example") + 1]]
-elif "-p" in args:
-    outs = ["target/release/" + args[i + 1] for i, arg in enumerate(args) if arg == "-p"]
-else:
-    outs = ["target/release/" + {{"xwayland-satellite": "xwayland-satellite"}}[os.path.basename(here)]]
-for out in outs:
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    with open(out, "w") as binary:
-        binary.write("built: " + " ".join(args) + " in " + here + "\\n")
-    os.chmod(out, 0o755)
+for i, arg in enumerate(args):
+    if arg == "-p":
+        out = "target/release/" + args[i + 1]
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "w") as binary:
+            binary.write("built: " + " ".join(args) + " in " + here + "\\n")
+        os.chmod(out, 0o755)
 """
 
-# Each file install.sh installs on its own, from the unpacked tarball, with
-# its mode. The app trees and assets under minka/ are copied whole.
-INSTALLED = {
-    "/usr/bin/shoji_wm": ("bin/shoji_wm", 0o755),
-    "/usr/bin/MinkaFX": ("bin/MinkaFX", 0o755),
-    "/usr/bin/MinkaCap": ("bin/MinkaCap", 0o755),
-    "/usr/lib/minka/xwayland-satellite": ("bin/xwayland-satellite", 0o755),
-    "/usr/bin/xdg-desktop-portal-shojiwm": ("bin/xdg-desktop-portal-shojiwm", 0o755),
-    "/usr/bin/minka-session": ("dist/minka-session", 0o755),
-    "/usr/bin/minkamon": ("dist/minkamon", 0o755),
-    "/usr/share/wayland-sessions/minka.desktop": ("dist/minka.desktop", 0o644),
-    "/usr/share/applications/MinkaConf.desktop": ("dist/MinkaConf.desktop", 0o644),
-    "/usr/share/applications/MinkaMon.desktop": ("dist/MinkaMon.desktop", 0o644),
-    "/usr/share/xdg-desktop-portal/portals/shojiwm.portal": ("dist/shojiwm.portal", 0o644),
-    "/usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service":
-        ("dist/org.freedesktop.impl.portal.desktop.shojiwm.service", 0o644),
-    "/usr/lib/systemd/user/xdg-desktop-portal-shojiwm.service":
-        ("dist/xdg-desktop-portal-shojiwm.service", 0o644),
-    "/usr/share/minka/MinkaMon/minkamon": ("minka/MinkaMon/minkamon", 0o755),
-    "/usr/share/minka/MinkaMon/minkamon-sampler": ("minka/MinkaMon/minkamon-sampler", 0o755),
-    "/usr/share/minka/MinkaShell/minkashell": ("minka/MinkaShell/minkashell", 0o755),
-    "/usr/share/minka/MinkaShell/dist/minkashell": ("minka/MinkaShell/dist/minkashell", 0o755),
-}
+# The binary's source in minka/src/main.rs, whose apps! list holds its names.
+MINKA_MAIN = os.path.join(REPO, "minka/src/main.rs")
 
-# What --from-source asks cargo for, in order, and from where.
-CARGO_BUILDS = [
-    ["src/ShojiWM", ["build", "--release", "-p", "shojiwm_rs", "--example", "default_config"]],
-    ["src/ShojiWM", ["build", "--release", "-p", "xdg-desktop-portal-shojiwm"]],
-    ["src/xwayland-satellite", ["build", "--release"]],
-    # MinkaDE's own crates: one build of the workspace.
-    ["src", ["build", "--release", "-p", "MinkaFX", "-p", "MinkaCap", "-p", "minkamon",
-             "-p", "minkamon-sampler", "-p", "minkashell"]],
-]
+# What --no-portal leaves out, under the fake root.
+PORTAL = (
+    "usr/bin/xdg-desktop-portal-shojiwm",
+    "usr/share/xdg-desktop-portal/portals/shojiwm.portal",
+    "usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service",
+    "usr/lib/systemd/user/xdg-desktop-portal-shojiwm.service",
+)
+
+# What tarballs from before minka installed, as regular files (with one in
+# each tree): binaries one by one, the per-app builds inside the trees, and
+# before that the TypeScript runtime and config.
+OLDER_INSTALL = (
+    "usr/bin/shoji_wm",
+    "usr/bin/MinkaFX",
+    "usr/bin/MinkaCap",
+    "usr/bin/minka-session",
+    "usr/bin/minkamon",
+    "usr/bin/xdg-desktop-portal-shojiwm",
+    "usr/lib/minka/xwayland-satellite",
+    "usr/share/wayland-sessions/minka.desktop",
+    "usr/share/applications/MinkaConf.desktop",
+    "usr/share/applications/MinkaMon.desktop",
+    "usr/share/xdg-desktop-portal/portals/shojiwm.portal",
+    "usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service",
+    "usr/lib/systemd/user/xdg-desktop-portal-shojiwm.service",
+    "usr/share/minka/shojiwm/shaders/removed.frag",
+    "usr/share/minka/MinkaShell/minkashell",
+    "usr/share/minka/MinkaMon/minkamon",
+    "usr/share/minka/MinkaMon/minkamon-sampler",
+)
+TYPESCRIPT_INSTALL = (
+    "usr/lib/shojiwm/runtime/index.js",
+    "usr/share/shojiwm/config/index.tsx",
+)
+# Files of the system's own, beside MinkaDE's: never removed.
+UNRELATED = (
+    "usr/bin/kitty",
+    "usr/share/applications/kitty.desktop",
+    "usr/lib/systemd/user/pipewire.service",
+    "usr/share/doc/kitty/README",
+)
 
 
 def tree(top):
@@ -111,6 +121,20 @@ def tree(top):
     return found
 
 
+def umask():
+    mask = os.umask(0)
+    os.umask(mask)
+    return mask
+
+
+def real_names():
+    """The names the real minka answers to: its apps! list."""
+    with open(MINKA_MAIN) as main_rs:
+        names = re.findall(r'(?m)^\s*"([^"]+)"\s*=>', main_rs.read())
+    assert "shoji_wm" in names, "minka/src/main.rs: the apps! pattern is stale"
+    return names
+
+
 class Install(Checkout):
     def setUp(self):
         if os.geteuid() == 0:
@@ -118,7 +142,7 @@ class Install(Checkout):
         super().setUp()
         self.root = os.path.join(self.tmp, "root")
         self.home = os.path.join(self.tmp, "home")
-        os.makedirs(self.root)
+        os.makedirs(os.path.join(self.root, "usr"))
         os.makedirs(self.home)
         self.systemctl_log = os.path.join(self.tmp, "systemctl.log")
         self.cargo_log = os.path.join(self.tmp, "cargo.log")
@@ -133,6 +157,7 @@ class Install(Checkout):
         self.env.update(FAKE_ROOT=self.root, HOME=self.home,
                         XDG_CONFIG_HOME=os.path.join(self.home, ".config"),
                         XDG_STATE_HOME=os.path.join(self.home, ".local/state"),
+                        MINKA_BIN=self.at("/usr/bin/minka"),
                         FAKE_SYSTEMCTL_LOG=self.systemctl_log, FAKE_CARGO_LOG=self.cargo_log)
 
     def unpack(self):
@@ -170,24 +195,40 @@ class Install(Checkout):
         with open(path, "rb") as handle:
             return handle.read()
 
-    def test_prebuilt_install_puts_each_file_in_place(self):
-        self.install()
-        minka = os.path.join(self.unpacked, "minka")
-        expected = {path.lstrip("/") for path in INSTALLED}
-        expected |= {f"usr/share/minka/{path}" for path in tree(minka)}
-        self.assertEqual(sorted(tree(self.root)), sorted(expected))
+    def put(self, paths):
+        """Files already in the fake root, each naming its own path."""
+        for path in paths:
+            os.makedirs(os.path.dirname(self.at(path)), exist_ok=True)
+            with open(self.at(path), "w") as out:
+                out.write(f"already here: {path}\n")
 
-        for path, (source, mode) in INSTALLED.items():
+    def shipped(self):
+        """Every file and link the tarball's usr/ holds, as fake-root paths."""
+        return {f"usr/{path}" for path in tree(os.path.join(self.unpacked, "usr"))}
+
+    def test_prebuilt_install_copies_the_tarballs_usr(self):
+        self.install()
+        usr = os.path.join(self.unpacked, "usr")
+        self.assertEqual(sorted(tree(self.root)), sorted(self.shipped()))
+        mask = umask()
+        for path in tree(usr):
+            source, installed = os.path.join(usr, path), self.at(f"/usr/{path}")
             with self.subTest(path=path):
-                self.assertEqual(self.read(self.at(path)),
-                                 self.read(os.path.join(self.unpacked, source)))
-                self.assertEqual(oct(stat.S_IMODE(os.stat(self.at(path)).st_mode)), oct(mode))
-        for path in tree(minka):
-            if not os.path.islink(os.path.join(minka, path)):
-                with self.subTest(path=path):
-                    self.assertEqual(self.read(self.at(f"/usr/share/minka/{path}")),
-                                     self.read(os.path.join(minka, path)))
-        for app in ("MinkaShell", "MinkaConf", "MinkaMon"):
+                if os.path.islink(source):
+                    self.assertEqual(os.readlink(installed), os.readlink(source))
+                    continue
+                self.assertFalse(os.path.islink(installed))
+                self.assertEqual(self.read(installed), self.read(source))
+                mode = 0o755 if os.stat(source).st_mode & 0o111 else 0o644
+                self.assertEqual(oct(stat.S_IMODE(os.stat(installed).st_mode)), oct(mode & ~mask))
+        # Every name reaches the binary.
+        minka = os.path.realpath(self.at("/usr/bin/minka"))
+        for name in NAMES:
+            if name != "minkamon":
+                where = ("/usr/lib/minka/" if name == "xwayland-satellite" else "/usr/bin/") + name
+                with self.subTest(name=name):
+                    self.assertEqual(os.path.realpath(self.at(where)), minka)
+        for app in ("MinkaShell", "MinkaConf", "MinkaMon", "MinkaShot", "MinkaLedger"):
             with self.subTest(app=app):
                 self.assertTrue(os.path.isfile(self.at(f"/usr/share/minka/{app}/Proustite/qmldir")))
 
@@ -217,45 +258,42 @@ class Install(Checkout):
             match = re.search(r'const INSTALLED_ASSETS: &str = "([^"]+)";', session_rs.read())
         assert match is not None, "minka/session.rs no longer names INSTALLED_ASSETS"
         self.install()
-        shipped = os.path.join(self.unpacked, "minka/shojiwm")
+        shipped = os.path.join(self.unpacked, match.group(1).lstrip("/"))
         installed = self.at(match.group(1))
         self.assertEqual(sorted(tree(installed)), sorted(tree(shipped)))
         self.assertTrue(os.path.isdir(os.path.join(installed, "shaders")))
 
     def test_launchers_start_the_installed_apps(self):
         """The real dist/minkamon and dist/minkashell, run as the session runs
-        them, against installed trees whose binaries report how they were
-        started and exit."""
+        them, start the installed minka (which says how it was started and
+        exits) under their app's name."""
         for app, launcher in (("MinkaMon", "dist/minkamon"), ("MinkaShell", "dist/minkashell")):
             with open(os.path.join(REPO, app, launcher), "rb") as real:
                 self.write(f"{app}/{launcher}", real.read(), 0o755)
-        for binary in ("target/release/minkamon", "target/release/minkashell"):
-            self.write(binary, f'#!/bin/sh\necho "{os.path.basename(binary)} ran as $0"\n'.encode(),
-                       0o755)
         self.install()
+        minka = self.at("/usr/bin/minka")
         runs = (("/usr/bin/minkamon", "MinkaMon", "minkamon"),
                 ("/usr/share/minka/MinkaShell/dist/minkashell", "MinkaShell", "minkashell"))
-        for command, app, binary in runs:
+        for command, app, name in runs:
             with self.subTest(app=app):
-                tree_dir = self.at(f"/usr/share/minka/{app}")
-                done = subprocess.run([self.at(command), tree_dir], env=self.env,
-                                      stdin=subprocess.DEVNULL, capture_output=True, text=True,
-                                      timeout=30)
+                done = subprocess.run([self.at(command), self.at(f"/usr/share/minka/{app}")],
+                                      env=self.env, stdin=subprocess.DEVNULL,
+                                      capture_output=True, text=True, timeout=30)
                 self.assertEqual(done.returncode, 0, done.stderr)
-                with open(os.path.join(self.home, f".local/state/minka/{binary}.log")) as log:
-                    self.assertIn(f"{binary} ran as {tree_dir}/{binary}\n", log.read())
-        # MinkaMon looks for its sampler beside itself (MinkaMon/src/state.rs).
-        self.assertTrue(os.access(self.at("/usr/share/minka/MinkaMon/minkamon-sampler"), os.X_OK))
+                with open(os.path.join(self.home, f".local/state/minka/{name}.log")) as log:
+                    self.assertIn(f"minka ran as {minka}: {name}\n", log.read())
 
-    @unittest.skipUnless(os.path.isdir(RUST_CONFIG), "no Rust config checkout beside this script")
+    @unittest.skipUnless(os.path.isdir(RUST_CONFIG) and os.path.isfile(MINKA_MAIN),
+                         "no Rust config or minka checkout beside this script")
     def test_the_session_finds_what_was_installed(self):
         """minka-session, the Rust config's defaults, the launchers and the apps
         name /usr paths, which a tester's environment does not override: each
-        must be one install.sh fills."""
+        must be one install.sh fills. minka answers to its real names here."""
         launchers = ("MinkaMon/dist/minkamon", "MinkaShell/dist/minkashell")
         for path in ("packaging/minka-session", *launchers, "MinkaShot/services/ShotState.qml"):
             with open(os.path.join(REPO, path), "rb") as real:
                 self.write(path, real.read(), 0o755)
+        self.write("target/release/minka", minka_script(real_names()).encode(), 0o755)
         self.install()
         with open(self.at("/usr/bin/minka-session")) as session:
             wrapper = session.read()
@@ -268,9 +306,10 @@ class Install(Checkout):
         named = set(re.findall(r"/usr/[\w./-]+", wrapper))
         with open(os.path.join(RUST_CONFIG, "minka/session.rs")) as session_rs:
             named |= set(re.findall(r'\$\{MINKA_\w+:-(/usr/[^}"\\]+)\}', session_rs.read()))
+        # The launchers' default tree and the minka they run.
         for launcher in launchers:
             with open(os.path.join(REPO, launcher)) as script:
-                named |= set(re.findall(r'\$\{1:-(/usr/[^}"]+)\}', script.read()))
+                named |= {path.rstrip(".") for path in re.findall(r"/usr/[\w./-]+", script.read())}
         # MinkaShot's default for MinkaCap: env("MINKA_CAP_BIN") || "/usr/bin/MinkaCap".
         with open(os.path.join(REPO, "MinkaShot/services/ShotState.qml")) as qml:
             named |= set(re.findall(r'\|\|\s*"(/usr/[^"]+)"', qml.read()))
@@ -282,7 +321,7 @@ class Install(Checkout):
                 with open(os.path.join(REPO, app, "src", name)) as source:
                     named |= set(re.findall(r'"(/usr/share/minka/[^"]+)"', source.read()))
         for path in ("/usr/share/minka/MinkaShell", "/usr/share/minka/MinkaShot",
-                     "/usr/bin/MinkaCap", "/usr/share/minka/MinkaShell/assets"):
+                     "/usr/bin/MinkaCap", "/usr/bin/minka", "/usr/share/minka/MinkaShell/assets"):
             self.assertIn(path, named, "the patterns are stale")
         self.assertEqual(sorted(p for p in named if not os.path.exists(self.at(p))), [])
         # The session runs the shell's launcher only if it is executable.
@@ -291,43 +330,79 @@ class Install(Checkout):
     def test_from_source_installs_what_cargo_built(self):
         self.install("--from-source")
         with open(self.cargo_log) as log:
-            self.assertEqual([json.loads(line) for line in log], CARGO_BUILDS)
-        workspace = "-p MinkaFX -p MinkaCap -p minkamon -p minkamon-sampler -p minkashell in src"
-        built = {
-            "/usr/bin/shoji_wm": "-p shojiwm_rs --example default_config in src/ShojiWM",
-            "/usr/bin/xdg-desktop-portal-shojiwm": "-p xdg-desktop-portal-shojiwm in src/ShojiWM",
-            "/usr/lib/minka/xwayland-satellite": "in src/xwayland-satellite",
-            "/usr/bin/MinkaFX": workspace,
-            "/usr/bin/MinkaCap": workspace,
-            "/usr/share/minka/MinkaShell/minkashell": workspace,
-            "/usr/share/minka/MinkaMon/minkamon": workspace,
-            "/usr/share/minka/MinkaMon/minkamon-sampler": workspace,
-        }
-        for path, build in built.items():
-            with self.subTest(path=path):
-                self.assertEqual(self.read(self.at(path)).decode(), f"built: build --release {build}\n")
+            self.assertEqual([json.loads(line) for line in log],
+                             [["src", ["build", "--release", "-p", "minka"]]])
+        installed = self.at("/usr/bin/minka")
+        self.assertEqual(self.read(installed).decode(), "built: build --release -p minka in src\n")
+        self.assertEqual(oct(stat.S_IMODE(os.stat(installed).st_mode)), oct(0o755 & ~umask()))
+        # The rest is the tarball's, the links to the binary among it.
+        self.assertEqual(sorted(tree(self.root)), sorted(self.shipped()))
+        self.assertEqual(os.readlink(self.at("/usr/bin/shoji_wm")), "minka")
+
+    def test_no_portal_leaves_out_the_portal_backend(self):
+        self.install("--no-portal")
+        installed = tree(self.root)
+        self.assertEqual(sorted(self.shipped() - installed), sorted(PORTAL))
+        self.assertEqual(sorted(installed - self.shipped()), [])
+        self.assertFalse(os.path.exists(
+            os.path.join(self.home, ".config/xdg-desktop-portal/shojiwm-portals.conf")))
 
     def test_reinstalling_replaces_every_tree(self):
         """A file an older install left in a tree must not outlive the next
         install, or a removed QML file keeps loading."""
         self.install()
-        trees = sorted(os.listdir(self.at("/usr/share/minka")))
-        for name in trees:
-            with open(self.at(f"/usr/share/minka/{name}/stale.qml"), "w") as stale:
-                stale.write("// from an older install\n")
+        stale = []
+        for parent, dirs, _ in os.walk(self.at("/usr")):
+            for name in dirs:
+                path = os.path.join(parent, name)
+                below = os.path.relpath(path, self.at("/usr")).split(os.sep)
+                if not os.path.islink(path) and any(p.startswith("minka") for p in below):
+                    stale.append(os.path.join(path, "stale.qml"))
+        self.assertIn(self.at("/usr/share/minka/MinkaShell/stale.qml"), stale)
+        self.assertIn(self.at("/usr/share/minka-syu/ui/stale.qml"), stale)
+        for path in stale:
+            with open(path, "w") as out:
+                out.write("// from an older install\n")
         done = self.run_unpacked("install.sh")
         self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
-        self.assertEqual([n for n in trees if os.path.exists(self.at(f"/usr/share/minka/{n}/stale.qml"))],
-                         [])
+        self.assertEqual([p for p in stale if os.path.exists(p)], [])
+
+    def test_install_replaces_an_older_tarballs_files(self):
+        """Binaries are links now where they were files, and the trees hold
+        no binaries. The TypeScript runtime is named, not removed."""
+        self.put(OLDER_INSTALL + TYPESCRIPT_INSTALL + UNRELATED)
+        self.install()
+        self.assertEqual(sorted(tree(self.root)),
+                         sorted(self.shipped() | set(TYPESCRIPT_INSTALL) | set(UNRELATED)))
+        self.assertEqual(os.readlink(self.at("/usr/bin/shoji_wm")), "minka")
+        self.assertEqual(os.readlink(self.at("/usr/lib/minka/xwayland-satellite")),
+                         "../../bin/minka")
 
     def test_uninstall_removes_everything_install_put_there(self):
+        self.put(UNRELATED)
         self.install()
         done = self.run_unpacked("uninstall.sh")
         self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
-        self.assertEqual(sorted(tree(self.root)), [])
+        self.assertEqual(sorted(tree(self.root)), sorted(UNRELATED))
         self.assertFalse(os.path.exists(
             os.path.join(self.home, ".config/xdg-desktop-portal/shojiwm-portals.conf")))
         self.assertIn("minka-settings.json was kept", done.stdout)
+
+    def test_uninstall_removes_an_older_tarballs_install(self):
+        self.put(OLDER_INSTALL + TYPESCRIPT_INSTALL + UNRELATED)
+        self.unpack()
+        done = self.run_unpacked("uninstall.sh")
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        self.assertEqual(sorted(tree(self.root)), sorted(UNRELATED))
+
+    def test_uninstall_needs_the_usr_tree_beside_it(self):
+        self.put(UNRELATED)
+        self.unpack()
+        shutil.rmtree(os.path.join(self.unpacked, "usr"))
+        done = self.run_unpacked("uninstall.sh")
+        self.assertEqual(done.returncode, 1)
+        self.assertIn("no usr/ beside uninstall.sh", done.stderr)
+        self.assertEqual(sorted(tree(self.root)), sorted(UNRELATED))
 
     def test_uninstall_points_at_an_older_tarballs_config(self):
         self.unpack()

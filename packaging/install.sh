@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
 # MinkaDE tester install script.
 #
-# Installs the Minka desktop environment: the ShojiWM compositor with Minka's
-# config compiled in (plus the shaders and icons it reads), the ScreenCast
-# portal backend, the patched xwayland-satellite, the MinkaFX overlay, the
-# MinkaShell shell (AntiWebUI, with its Quickshell tree as the fallback), the
-# MinkaConf settings app, the MinkaShot screenshot tool and its MinkaCap
-# window capturer, the MinkaMon system monitor, the shared Proustite /
-# MinkaLink singletons, a "Minka" Wayland session entry for your display
-# manager, and launchers for the settings and system-monitor apps.
+# Installs the Minka desktop environment. Most of it is one binary, minka,
+# which is the ShojiWM compositor with Minka's config compiled in, its
+# ScreenCast portal backend, the patched xwayland-satellite, the MinkaFX
+# overlay, MinkaCap, the MinkaShell shell, the MinkaMon system monitor and
+# the other Minka apps, each run through a link named after it. Beside it go
+# the compositor's shaders and icons, the QML apps (MinkaConf, MinkaShot and
+# the shell's Quickshell fallback) with the shared Proustite / MinkaLink
+# singletons, a "Minka" Wayland session entry for your display manager, and
+# the apps' launchers.
 #
 # Usage:
-#   ./install.sh                 install the prebuilt x86_64 binaries (default)
-#   ./install.sh --from-source   build everything here first (needs rust)
+#   ./install.sh                 install the prebuilt x86_64 binary (default)
+#   ./install.sh --from-source   build minka here first (needs rust)
 #   ./install.sh --no-portal     skip the ScreenCast portal backend
 #
-# System files go to /usr (sudo is requested for that step only). Per-user
-# files go to ~/.config. Re-running is safe; your settings in
-# ~/.config/minka-settings.json are never touched.
+# System files go to /usr (sudo is requested for that step only): the
+# tarball's usr/ tree, as it stands. Per-user files go to ~/.config.
+# Re-running is safe; your settings in ~/.config/minka-settings.json are
+# never touched.
 
 set -euo pipefail
 
@@ -62,95 +64,51 @@ if [[ ${#missing[@]} -gt 0 ]]; then
     [[ "$reply" == y* || "$reply" == Y* ]] || exit 1
 fi
 
-# ── resolve binaries ─────────────────────────────────────────────────────
+# ── minka ────────────────────────────────────────────────────────────────
+# The prebuilt binary is in usr/, with everything else that goes to /usr.
+# --from-source builds one from src/ to install in its place.
+if [[ ! -x usr/bin/minka ]]; then
+    echo "usr/bin/minka is missing from the tarball: re-download it" >&2
+    exit 1
+fi
 if [[ $FROM_SOURCE -eq 1 ]]; then
-    # The compositor is shojiwm_rs's default_config example: Minka's config
-    # compiled in. --example limits a build to examples, so the portal gets
-    # a build of its own.
-    echo ">> building ShojiWM + portal (this can take a while)"
-    (cd src/ShojiWM && cargo build --release -p shojiwm_rs --example default_config \
-        && cargo build --release -p xdg-desktop-portal-shojiwm)
-    echo ">> building xwayland-satellite"
-    (cd src/xwayland-satellite && cargo build --release)
-    # MinkaDE's own crates are one Cargo workspace (src/Cargo.toml): one
-    # build makes them all, sharing what they depend on, into src/target/.
-    echo ">> building MinkaFX, MinkaCap, MinkaMon + sampler, MinkaShell"
-    (cd src && cargo build --release -p MinkaFX -p MinkaCap -p minkamon -p minkamon-sampler \
-        -p minkashell)
-
-    SHOJI_BIN="src/ShojiWM/target/release/examples/default_config"
-    PORTAL_BIN="src/ShojiWM/target/release/xdg-desktop-portal-shojiwm"
-    SATELLITE_BIN="src/xwayland-satellite/target/release/xwayland-satellite"
-    MINKAFX_BIN="src/target/release/MinkaFX"
-    MINKACAP_BIN="src/target/release/MinkaCap"
-    MINKAMON_BIN="src/target/release/minkamon"
-    SAMPLER_BIN="src/target/release/minkamon-sampler"
-    SHELL_BIN="src/target/release/minkashell"
-else
-    for f in bin/shoji_wm bin/xdg-desktop-portal-shojiwm bin/xwayland-satellite bin/MinkaFX \
-             bin/MinkaCap minka/MinkaMon/minkamon minka/MinkaMon/minkamon-sampler \
-             minka/MinkaShell/minkashell minka/MinkaShell/dist/minkashell; do
-        if [[ ! -e "$f" ]]; then
-            echo "prebuilt file missing from tarball: $f (re-download, or use --from-source)" >&2
-            exit 1
-        fi
-    done
-    SHOJI_BIN="bin/shoji_wm"
-    PORTAL_BIN="bin/xdg-desktop-portal-shojiwm"
-    SATELLITE_BIN="bin/xwayland-satellite"
-    MINKAFX_BIN="bin/MinkaFX"
-    MINKACAP_BIN="bin/MinkaCap"
-    MINKAMON_BIN="minka/MinkaMon/minkamon"
-    SAMPLER_BIN="minka/MinkaMon/minkamon-sampler"
-    SHELL_BIN="minka/MinkaShell/minkashell"
+    # minka links the compositor, its portal, xwayland-satellite and every
+    # Minka app. Its crates are one Cargo workspace (src/Cargo.toml), which
+    # reaches ShojiWM, xwayland-satellite, smithay and AntiWebUI by path.
+    echo ">> building minka (this can take a while)"
+    (cd src && cargo build --release -p minka)
 fi
 
 # ── system install (sudo) ────────────────────────────────────────────────
 echo ">> installing system files (sudo)"
-sudo install -Dm755 "$SHOJI_BIN" /usr/bin/shoji_wm
-sudo install -Dm755 "$MINKAFX_BIN" /usr/bin/MinkaFX
-# MinkaShot runs it from exactly here (its services/ShotState.qml).
-sudo install -Dm755 "$MINKACAP_BIN" /usr/bin/MinkaCap
-sudo install -Dm755 "$SATELLITE_BIN" /usr/lib/minka/xwayland-satellite
-sudo install -Dm755 dist/minka-session /usr/bin/minka-session
-sudo install -Dm644 dist/minka.desktop /usr/share/wayland-sessions/minka.desktop
+# The directories named minka* (/usr/share/minka, /usr/lib/minka and the
+# like) are MinkaDE's alone. They go first, so a file an older install left
+# in one does not outlive this one: a removed QML file would keep loading.
+mapfile -t trees < <(find usr -type d -name 'minka*' -prune -printf '/%p\n')
+sudo rm -rf "${trees[@]}"
 
-sudo rm -rf /usr/share/minka/MinkaShell /usr/share/minka/MinkaConf \
-    /usr/share/minka/MinkaMon /usr/share/minka/MinkaShot \
-    /usr/share/minka/Proustite /usr/share/minka/MinkaLink /usr/share/minka/shojiwm
-sudo mkdir -p /usr/share/minka
-# The compositor's shaders and icons. It reads them from the checkout it was
-# built from while that exists, and from here otherwise.
-sudo cp -a minka/shojiwm /usr/share/minka/
-sudo cp -a minka/MinkaShell /usr/share/minka/
-sudo cp -a minka/MinkaConf /usr/share/minka/
-sudo cp -a minka/MinkaMon /usr/share/minka/
-sudo cp -a minka/MinkaShot /usr/share/minka/
-# Shared singletons must land as siblings: each app tree carries a
-# `Proustite`/`MinkaLink` symlink to `../Proustite`, which only resolves from
-# /usr/share/minka/<app>/ if these sit next to it.
-sudo cp -a minka/Proustite /usr/share/minka/
-sudo cp -a minka/MinkaLink /usr/share/minka/
-# The AntiWebUI apps sit at the top of their trees, where their launchers
-# look for them, and MinkaMon looks for its sampler beside itself. A source
-# build replaces the prebuilt ones that came with the trees.
-sudo install -m755 "$SHELL_BIN" /usr/share/minka/MinkaShell/
-sudo install -m755 "$MINKAMON_BIN" "$SAMPLER_BIN" /usr/share/minka/MinkaMon/
-
-# Application launchers (the session entry is separate, in wayland-sessions).
-sudo install -Dm644 dist/MinkaConf.desktop /usr/share/applications/MinkaConf.desktop
-sudo install -Dm644 dist/MinkaMon.desktop /usr/share/applications/MinkaMon.desktop
-# MinkaMon.desktop execs this rather than the binary directly, so its output
-# reaches a log file instead of /dev/null.
-sudo install -Dm755 dist/minkamon /usr/bin/minkamon
-
-if [[ $INSTALL_PORTAL -eq 1 ]]; then
-    sudo install -Dm755 "$PORTAL_BIN" /usr/bin/xdg-desktop-portal-shojiwm
-    sudo install -Dm644 dist/shojiwm.portal /usr/share/xdg-desktop-portal/portals/shojiwm.portal
-    sudo install -Dm644 dist/org.freedesktop.impl.portal.desktop.shojiwm.service \
-        /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service
-    sudo install -Dm644 dist/xdg-desktop-portal-shojiwm.service \
-        /usr/lib/systemd/user/xdg-desktop-portal-shojiwm.service
+# --no-portal leaves out the portal backend: its link, the portal file
+# xdg-desktop-portal reads, and the D-Bus and systemd files that start it.
+skip=()
+if [[ $INSTALL_PORTAL -eq 0 ]]; then
+    for f in bin/xdg-desktop-portal-shojiwm share/xdg-desktop-portal/portals/shojiwm.portal \
+             share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service \
+             lib/systemd/user/xdg-desktop-portal-shojiwm.service; do
+        skip+=("--exclude=./$f")
+    done
+fi
+# usr/ is copied as it stands, links and all, through tar rather than cp.
+# tar replaces a file in use (cp fails on /usr/bin/minka with "Text file
+# busy" in a running Minka session) and one an older tarball installed where
+# a link goes now. --mode gives every file and directory 755 or 644,
+# whatever umask the tarball was unpacked with, --no-same-owner makes them
+# root's, and --no-overwrite-dir leaves /usr's own directories as they are
+# (cp -a would give /usr itself the unpacking user's owner and mode).
+tar -C usr --mode=u=rwX,go=rX "${skip[@]}" -cf - . \
+    | sudo tar -C /usr -xf - --no-same-owner --no-overwrite-dir
+if [[ $FROM_SOURCE -eq 1 ]]; then
+    # In place of the prebuilt one. The links to it are the same.
+    sudo install -m755 src/target/release/minka /usr/bin/minka
 fi
 
 # ── per-user setup (no sudo) ─────────────────────────────────────────────

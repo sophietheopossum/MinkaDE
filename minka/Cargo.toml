@@ -1,0 +1,30 @@
+[package]
+name = "minka"
+version = "0.1.0"
+edition = "2024"
+description = "MinkaDE's one binary: the compositor, its helpers, the shell and every Minka app, each run under its own name"
+publish = false
+
+[[bin]]
+name = "minka"
+path = "src/main.rs"
+
+# Each of these is a library whose `main` this binary runs. Anything they
+# share is linked in once, so it is on disk and in memory once for every
+# process of the desktop.
+[dependencies]
+shojiwm_minka = { path = "../ShojiWM/src/shojiwm_minka" }
+xdg-desktop-portal-shojiwm = { path = "../ShojiWM/src/xdg-desktop-portal-shojiwm" }
+xwayland-satellite = { path = "../xwayland-satellite" }
+MinkaFX = { path = "../MinkaFX" }
+MinkaCap = { path = "../MinkaCap" }
+minkashell = { path = "../MinkaShell" }
+minkamon = { path = "../MinkaMon" }
+minkamon-sampler = { path = "../MinkaMon/sampler-rs" }
+minka-syu = { path = "../MinkaSyu" }
+minka-syu-gui = { path = "../MinkaSyu/gui" }
+minka-thermal = { path = "../MinkaThermal" }
+minka-ledger = { path = "../MinkaLedger" }
+bartizan-lsp = { path = "../bartizan-lsp" }
+keysend = { path = "../tools/keysend" }
+libc = "0.2"

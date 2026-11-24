@@ -10,13 +10,13 @@ dual-screen "Duo" mode).
 | Submodule      | Lang                       | Role                                                                                                                                                                                                                 |
 |----------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **ShojiWM**    | Rust (smithay) + Rust config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
-| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` runs MinkaDE's `target/release/minkashell` and logs to `~/.local/state/minka/minkashell.log`. The Quickshell tree (`shell.qml`) is the fallback: used when there is no binary, with `MINKA_SHELL_FRONTEND=quickshell`, or after a third crash in a minute. |
+| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` runs it from MinkaDE's one binary (`minka minkashell`) and logs to `~/.local/state/minka/minkashell.log`. The Quickshell tree (`shell.qml`) is the fallback: used when there is no binary, with `MINKA_SHELL_FRONTEND=quickshell`, or after a third crash in a minute. |
 | **MinkaMon**   | AntiWebUI (Rust)           | System monitor. `sampler-rs/` (`minkamon-sampler`) streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows. The QML tree is the fallback (it runs sampler-rs too). |
 | **MinkaShot**  | Quickshell/QML             | Freeze-frame screenshot tool. Print → frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. Uses MinkaCap for occlusion-free per-window capture.                                      |
 | **MinkaConf**  | Quickshell/QML             | Settings utility.                                                                                                                                                                                                    |
 | **MinkaCap**   | Rust                       | Per-window Wayland capture via ext-image-copy-capture (occlusion-free toplevel screenshots). Consumed by MinkaShot.                                                                                                  |
 | **MinkaFX**    | Rust (wgpu)                | Guido-style overlay process (snap preview, future OSDs).                                                                                                                                                             |
-| **Proustite**  | QML singleton              | **Shared palette.** Named after "ruby silver" mineral (scarlet that light tarnishes black) — spiritual successor to Eternal Darkness theme.                                                                          |
+| **Proustite**  | QML singleton + Rust crate | **Shared palette.** Named after "ruby silver" mineral (scarlet that light tarnishes black) — spiritual successor to Eternal Darkness theme. The `proustite` crate gives the AntiWebUI apps the same tokens, read from `Proustite.qml` at build time.                                                                          |
 | **MinkaLink**  | QML singleton              | Shared NDJSON IPC client (`ShojiClient`) for ShojiWM socket. QML sibling of MinkaIPC.                                                                                                                                |
 | **MinkaIPC**   | Rust                       | Non-blocking NDJSON client crate for the ShojiWM IPC socket.                                                                                                                                                         |
 | **bartizan-lsp** | Rust                     | Companion LSP supplying Rust code actions clippy and rust-analyzer leave unfilled (upstream froze IDE assists Dec 2025). A dev tool, not a desktop component. Uses `ra_ap_syntax`, so fixes port to upstream assists later. |
@@ -46,9 +46,9 @@ Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWeb
 - **Use `anti_webui_md3e` before hand-drawing a control.** The crate is part of the AntiWebUI
   submodule the apps build, so it needs no toolkit bump. `tools/md3e-trial` shows every widget
   (`target/release/md3e-trial`, or `cargo run --release` there).
-- **Colours stay Proustite**, not Material's own purple scheme. `proustite_scheme()` in
-  `tools/md3e-trial/src/main.rs` maps the Proustite tokens onto Material's colour roles; build an
-  app's `ColorScheme` the same way, from tokens. Near-black text on red is fine with her "for
+- **Colours stay Proustite**, not Material's own purple scheme. `proustite::scheme()`
+  (`Proustite/src/lib.rs`) maps the Proustite tokens onto Material's colour roles, and every app
+  installs it (`proustite::install()`), md3e-trial included. Near-black text on red is fine with her "for
   some parts of ui" (17/11/2026); the error colours in that mapping are Material's and undecided.
 - **Widgets she named:** animated buttons, switches and checkboxes, sliders, chips, the animated
   progress bars (she singled these out), shapes, drag and drop, the sortable list and row, the
@@ -76,26 +76,52 @@ MinkaSyu and `tools/md3e-trial` are on it.
 
 **MinkaDE's own Rust crates are one Cargo workspace** (`Cargo.toml` at the top, 23/11/2026), so
 they share one `Cargo.lock` and one `target/`, and a dependency is built once for every app that
-uses it with the same features. Her rule: "if something can be deduplicated, i probably want it".
-- **Binaries are in `MinkaDE/target/<profile>/`**, whichever directory cargo runs from. A
-  member's own `target/` is no longer built or read: launchers, env vars, the bartizan plugin,
-  `MinkaLedger.desktop` and the PKGBUILD point at the shared one. A session started before
-  23/11/2026 still runs from the old dirs, so delete them only after a new login.
+uses it. Her rule: "if something can be deduplicated, i probably want it".
+- **MinkaDE is one binary, `minka`** (`minka/`, 23/11/2026, her call). The apps are libraries,
+  and `minka/src/main.rs` links them with the compositor (`shojiwm_minka`, a library crate in
+  ShojiWM that builds the config example's files), the portal backend and xwayland-satellite.
+  ShojiWM's built-in satellite is patched to the submodule too, so there is one satellite.
+  Each process is one app, picked by the name it was started as: `/usr/bin/shoji_wm`,
+  `/usr/bin/minkashell` and the rest are links to `/usr/bin/minka`. `minka <name> [args]` runs
+  an app for a caller that cannot set argv[0] (a terminal, `/proc/self/exe`), and anything else
+  only lists the names. It is still one process per app, so a stalled app cannot stall the
+  compositor; what is shared is the code, on disk and in memory.
+- **NEVER run a `minka` binary as `shoji_wm`** (a link of that name, or `minka shoji_wm`): it
+  starts a compositor, as running a ShojiWM build did on 8/10/2026. Run the app you mean
+  (`target/release-fast/minka minkamon`); `minka --names` lists the names and starts nothing.
+- **An app that starts another runs the same binary**: MinkaMon's sampler, MinkaSyu's window
+  and core, and MinkaThermal's load test start `/proc/self/exe` under the other name. That is
+  the build already running, even after an upgrade replaced the file.
+- **Installed by the minkade package** (`MinkaPKG/minkade`, `minkarepo publish minkade`, then
+  MinkaSyu or `pacman -Syu`), which replaces minka-syu. `packaging/stage-usr.sh` is the one
+  description of what lands under `/usr`. The session runs only the package, so a change reaches
+  it at the next install and restart; the previous package in pacman's cache is the way back.
+  While working, `cargo build --profile release-fast -p minka` (no LTO, incremental) builds
+  `target/release-fast/minka`; the shell's and MinkaMon's launchers run it instead of
+  `/usr/bin/minka` when `MINKA_BIN` names it. The package builds the release profile (thin LTO).
+- **Proustite is a Rust crate too** (`Proustite/`): its `build.rs` reads `Proustite.qml`, so
+  the palette is written once for the QML and the AntiWebUI apps. Each app's `theme.rs` keeps
+  only its own tokens. `proustite::scheme()` and `proustite::widget_theme()` are the Material
+  and toolkit themes every app installs.
 - **Profiles and `[patch]` tables live only in the root `Cargo.toml`.** Cargo ignores them in a
-  member. The wgpu patch is pinned to the revision in `AntiWebUI/Cargo.lock`.
-- **A new crate of hers joins `members`.** A directory with a crate that is not hers (an upstream
+  member, and in ShojiWM's workspace when minka builds its crates. The wgpu patch is pinned to
+  the revision in `AntiWebUI/Cargo.lock`; the smithay patch mirrors ShojiWM's own.
+- **A new crate of hers joins `members`**, and a new app joins the table in `minka/src/main.rs`
+  as a library with a `pub fn main`. A directory with a crate that is not hers (an upstream
   project, or makepkg sources under MinkaPKG) goes in `exclude`. Otherwise cargo refuses to build
   it ("believes it's in a workspace when it's not").
 - **Upstream workspaces stay separate:** ShojiWM, xwayland-satellite, smithay, AntiWebUI and
-  GitComet. `.vscode/settings.json` lists them in `rust-analyzer.linkedProjects`, because
-  rust-analyzer's discovery stops at the root `Cargo.toml`. Claude Code sends the same list, and
-  VS Code's clippy and cache-priming settings, through the `rust-analyzer-minka` plugin
-  (`~/.claude/plugins/marketplaces/minka-local`, installed at local scope here, with the official
-  `rust-analyzer-lsp` disabled in this checkout). Its `workspaceFolder` is the MinkaDE root, so
-  every session joins VS Code's lspmux instance and it is the same whichever client starts it.
-  The list lives in both places: change them together.
-- **Each binary still links its Rust dependencies statically**, as every Rust package on Arch
-  does: Rust has no stable ABI, and AntiWebUI's own `anti-webui-dylib` says not to ship it.
+  GitComet; minka reaches the crates it needs by path. `.vscode/settings.json` lists them in
+  `rust-analyzer.linkedProjects`, because rust-analyzer's discovery stops at the root
+  `Cargo.toml`. Claude Code sends the same list, and VS Code's clippy and cache-priming settings,
+  through the `rust-analyzer-minka` plugin (`~/.claude/plugins/marketplaces/minka-local`,
+  installed at local scope here). The official `rust-analyzer-lsp` and `bartizan` are disabled
+  in this checkout: Claude Code gives `.rs` to the first plugin that claims it. The plugin's
+  `workspaceFolder` is the MinkaDE root, so every session joins VS Code's lspmux instance and it
+  is the same whichever client starts it. The list lives in both places: change them together.
+- **Rust dependencies are linked statically**, as in every Rust package on Arch: Rust has no
+  stable ABI, and AntiWebUI's own `anti-webui-dylib` says not to ship it. One binary is how
+  they are shared instead.
 
 - **Compact sizes exist:** call `anti_webui_md3e::set_density(Density::Compact)` before the first
   view (28 px buttons and icon buttons, 36 px text fields, 32 px menu rows, a 40x24 switch, thin
@@ -144,9 +170,11 @@ env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
 env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
     cargo test -p shoji_wm --lib evaluator
 
-# Build the MinkaMon sampler. MinkaMon runs the target/release/minkamon-sampler beside its
-# own binary (or $MINKAMON_SAMPLER_BIN), so a debug build or `cargo test` changes nothing it runs.
-cargo build --release -p minkamon-sampler
+# Build MinkaDE's one binary for trying a change: the compositor, the shell and every app.
+# The session runs the installed package, so this changes nothing running; try an app with
+# `target/release-fast/minka <name>` (never `shoji_wm`), or set MINKA_BIN to it for the shell's
+# and MinkaMon's launchers. `cargo test -p <crate>` tests one app's library.
+cargo build --profile release-fast -p minka
 
 # Run a Quickshell app — ALWAYS use an ABSOLUTE path (relative `.` breaks from other cwds)
 qs -p /home/seirra/Documents/src/MinkaDE/MinkaShell
@@ -157,34 +185,34 @@ qs -p /home/seirra/Documents/src/MinkaDE/MinkaShell
 env MINKA_LEDGER_BIN=$PWD/target/debug/minka-ledger \
     MINKA_LEDGER_DB=$HOME/.cache/minka-ledger/test.db \
     qs -p /home/seirra/Documents/src/MinkaDE/MinkaLedger/ui
-# and for the core alone:
+# and for the core alone (target/debug/minka-ledger is the crate's own small binary,
+# which exists for its tests and for this; `cargo build -p minka-ledger` makes it):
 ./target/debug/minka-ledger --db ~/.cache/minka-ledger/test.db    # from MinkaDE/
 
-# MinkaLedger ships a NEW CORE METHOD? cargo build --release, or her app will not have it.
-# Her launcher runs MinkaDE's target/release/minka-ledger; `cargo build` and `cargo test` only touch
-# the debug binary, so a method added and tested against debug answers
-# "no such method: <name>" in her window. She must then RESTART MinkaLedger: the running
-# core holds the old inode (readlink /proc/<pid>/exe shows a trailing "(deleted)").
-cargo build --release
+# MinkaLedger ships a NEW CORE METHOD? Her window runs the package's /usr/bin/minka-ledger,
+# so a method added and tested against a checkout build answers "no such method: <name>"
+# there until the minkade package is published and installed. She must then RESTART
+# MinkaLedger: the running core holds the old inode (readlink /proc/<pid>/exe shows
+# /usr/bin/minka with a trailing "(deleted)").
+minkarepo publish minkade
 ```
 
-- **The running compositor is not the worktree.** `/usr/bin/shoji_wm` is whatever was
-  last installed (`/usr/bin/shoji_wm --version` ends in `(minka)` for the Rust config
-  build), and the session holds that inode for its whole life — so HEAD can be
-  days ahead of what is actually running. Check before drawing conclusions from source:
-  `ls -l /usr/bin/shoji_wm`, `ps -o lstart= -p $(pgrep -x shoji_wm)`, and
-  `readlink /proc/<pid>/exe` — a trailing `(deleted)` means a rebuild has replaced the
+- **The running compositor is not the worktree.** `/usr/bin/shoji_wm` is a link to
+  `/usr/bin/minka`, the last minkade package installed, and the session holds that inode for
+  its whole life — so HEAD can be days ahead of what is actually running. Check before
+  drawing conclusions from source: `pacman -Qi minkade`, `ls -l /usr/bin/minka`,
+  `ps -o lstart= -p $(pgrep -x shoji_wm)`, and `readlink /proc/<pid>/exe` (`/usr/bin/minka`
+  for every MinkaDE process) — a trailing `(deleted)` means an upgrade has replaced the
   file and the process is still running the old one. Same for `bartizan-lsp`, which the
-  editor launches straight out of MinkaDE's `target/release/` with no copy on `PATH`: every change
-  needs `cargo build --release` **and** an LSP restart. `cargo test` alone builds only
-  the test binary and changes nothing that is running.
+  editor launches as `/usr/bin/bartizan-lsp`: every change needs the package **and** an LSP
+  restart. A `cargo build` or `cargo test` changes nothing that is running.
 - **The Rust config cannot reload in place: there is no Super+Shift+R.** An edit to the Rust
   under `ShojiWM/src/shojiwm_rs/examples/default_config/` (not its `assets/`, which are read
-  from disk, see below) takes effect only after
-  `dist/install.sh --dev --no-config --no-portal --rust-config --expect-runtime=minka`
-  (VS Code task "shojiwm: install") and a new session. The compositor serving the session it runs from
-  is kept as `/usr/lib/shojiwm/shoji_wm.previous` (from a tty, the existing one is kept). The portal is not part of it: it runs
-  from `ShojiWM/target/release` through a systemd user `override.conf`. Its shaders and icons are read at runtime from
+  from disk, see below) takes effect only after the minkade package is published and
+  installed (VS Code task "minkade: publish package") and a new session. The way back is the
+  previous package in pacman's cache. ShojiWM's own `dist/install.sh` is no longer how the
+  session is installed: it writes over the package's `/usr/bin/shoji_wm`. The portal comes
+  from the package too. Its shaders and icons are read at runtime from
   `ShojiWM/src/shojiwm_rs/examples/default_config/assets` (an asset root compiled in from the
   build path; a build from before the move to it reads `ShojiWM/packages/config`), so keep the
   checkout where it is. `dist/install.sh --dev` without `--rust-config` puts the
@@ -199,12 +227,15 @@ cargo build --release
 ## Config paths & environment
 
 - **Live ShojiWM config = the Rust port in `ShojiWM/src/shojiwm_rs/examples/default_config/`**
-  (`main.rs` plus `minka/*.rs`), compiled into `/usr/bin/shoji_wm` since 6/10/2026.
+  (`main.rs` plus `minka/*.rs`), compiled into the compositor since 6/10/2026 and into
+  `minka` (as the `shojiwm_minka` library) since 23/11/2026.
   `ShojiWM/packages/config/src` (TypeScript) is the rollback config: only the TypeScript
   build reads it, through `$SHOJI_CONFIG`, and the Rust build ignores that variable.
 - `shojiwm-env.fish` (symlinked to fish conf.d as `shojiwm.fish`) exports the
-  repo-checkout overrides: `MINKA_SHELL_DIR`, `MINKA_SHOT_DIR`, `MINKA_FX_BIN`,
-  `MINKA_CAP_BIN`, `MINKA_MON_BIN`, `MINKA_MON_DIR`, `SHOJI_XWAYLAND_SATELLITE_PATH`.
+  repo-checkout overrides for the QML trees and launchers (`MINKA_SHELL_DIR`,
+  `MINKA_SHOT_DIR`, `MINKA_MON_BIN`, `MINKA_MON_DIR`) and points
+  `SHOJI_XWAYLAND_SATELLITE_PATH` at the package's `/usr/lib/minka/xwayland-satellite`.
+  The binaries themselves are the package's.
   Its `SHOJI_CONFIG` line is commented out, for a TypeScript rollback.
 - The ShojiWM IPC is an NDJSON Unix socket at
   `$XDG_RUNTIME_DIR/shojiwm-$WAYLAND_DISPLAY.sock`. Query it live with `wayland-info`

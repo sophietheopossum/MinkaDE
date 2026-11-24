@@ -57,65 +57,12 @@ const PALETTES: [(&str, &str); 3] = [
     ("red", "Red seed"),
 ];
 
-/// Proustite's tokens, as in `../../Proustite/Proustite.qml`.
-mod proustite {
-    pub const GROUND: u32 = 0x0a0709;
-    pub const SURFACE: u32 = 0x161013;
-    pub const SURFACE_RAISED: u32 = 0x1e161a;
-    pub const LINE: u32 = 0x2e2228;
-    pub const TEXT: u32 = 0xece5e7;
-    pub const TEXT_MUTED: u32 = 0xa3959b;
-    pub const TEXT_FAINT: u32 = 0x6e6167;
-    pub const RED: u32 = 0xff0000;
-    pub const RED_DIM: u32 = 0x8f1e2d;
-    pub const PURPLE: u32 = 0xa488c9;
-    pub const PURPLE_DIM: u32 = 0x4c3a63;
-    pub const GAUGE_DIM: u32 = 0x3a1219;
-    pub const WARN_AMBER: u32 = 0xe0a026;
-}
-
-/// Proustite's tokens in Material's color roles. The roles Proustite has no token for (the error
-/// ones and the scrim) are the ones Material grows from Proustite's red.
-fn proustite_scheme() -> ColorScheme {
-    use proustite::*;
-    ColorScheme {
-        primary: rgb(RED),
-        on_primary: rgb(GROUND),
-        primary_container: rgb(RED_DIM),
-        on_primary_container: rgb(TEXT),
-        secondary: rgb(PURPLE),
-        on_secondary: rgb(GROUND),
-        secondary_container: rgb(PURPLE_DIM),
-        on_secondary_container: rgb(TEXT),
-        tertiary: rgb(WARN_AMBER),
-        on_tertiary: rgb(GROUND),
-        tertiary_container: rgb(GAUGE_DIM),
-        on_tertiary_container: rgb(TEXT),
-        surface: rgb(GROUND),
-        surface_dim: rgb(GROUND),
-        surface_bright: rgb(LINE),
-        surface_variant: rgb(SURFACE_RAISED),
-        on_surface: rgb(TEXT),
-        on_surface_variant: rgb(TEXT_MUTED),
-        inverse_surface: rgb(TEXT),
-        inverse_on_surface: rgb(GROUND),
-        inverse_primary: rgb(RED_DIM),
-        surface_container_lowest: rgb(GROUND),
-        surface_container_low: rgb(SURFACE),
-        surface_container: rgb(SURFACE),
-        surface_container_high: rgb(SURFACE_RAISED),
-        surface_container_highest: rgb(LINE),
-        outline: rgb(TEXT_FAINT),
-        outline_variant: rgb(LINE),
-        ..ColorScheme::from_seed(rgb(RED), true)
-    }
-}
-
-/// The scheme of a palette. Proustite has no light scheme, so in light it is the one Material
-/// grows from its red, as "Red seed" is in both.
+/// The scheme of a palette: Proustite's is the `proustite` crate's, which every MinkaDE app draws
+/// with. Proustite has no light scheme, so in light it is the one Material grows from its red, as
+/// "Red seed" is in both.
 fn scheme(palette: usize, dark: bool) -> ColorScheme {
     match (PALETTES[palette].0, dark) {
-        ("proustite", true) => proustite_scheme(),
+        ("proustite", true) => proustite::scheme(),
         ("proustite" | "red", _) => ColorScheme::from_seed(rgb(proustite::RED), dark),
         (_, true) => ColorScheme::dark(),
         (_, false) => ColorScheme::light(),

@@ -16,10 +16,9 @@ breaks, along with `~/.local/state/minka/minkashell.log` and
 
 | path            | contents                                                        |
 |-----------------|-----------------------------------------------------------------|
-| `bin/`          | prebuilt x86_64 binaries (shoji_wm with Minka's config compiled in, portal, xwayland-satellite, MinkaFX, MinkaCap) |
-| `minka/`        | MinkaShell (prebuilt, plus its Quickshell fallback), MinkaConf + MinkaShot (Quickshell QML), MinkaMon (prebuilt), the compositor's shaders and icons (`shojiwm/`) |
+| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaCap and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps (MinkaConf, MinkaShot, the shell's Quickshell fallback) and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
 | `src/`          | full sources, for `--from-source` installs                      |
-| `dist/`         | session entry, wrappers, portal service files                   |
+| `install.sh`, `uninstall.sh` | the installer, and its undo, which removes what `usr/` holds |
 
 ## Requirements
 
@@ -43,9 +42,8 @@ Required at runtime:
   shell's font; without it another is substituted
 - shared libraries most desktops already have: libinput, libgbm, libxkbcommon,
   lcms2, xcb-util-cursor, fontconfig and the Vulkan loader.
-  `ldd bin/* minka/MinkaShell/minkashell minka/MinkaMon/minkamon` names any
-  that are missing, except the Vulkan loader, which is loaded at run time:
-  `vulkaninfo --summary` checks that one.
+  `ldd usr/bin/minka` names any that are missing, except the Vulkan loader,
+  which is loaded at run time: `vulkaninfo --summary` checks that one.
 
 Optional (specific features degrade gracefully without them):
 
@@ -69,23 +67,24 @@ development packages). The `apt-get install` line in
 `.github/workflows/release.yml`, which builds the release, is the complete
 list for Debian/Ubuntu.
 
-The prebuilt binaries are x86_64, built on Ubuntu 24.04, so they need glibc
-2.39 or newer. If they fail to start on your distro, use
-`./install.sh --from-source`.
+The prebuilt binary is x86_64, built on Ubuntu 24.04, so it needs glibc
+2.39 or newer. If it fails to start on your distro, use
+`./install.sh --from-source`, which builds it from `src/`.
 
 ## Install
 
 ```sh
 tar xf minkade-*.tar.gz
 cd minkade-*/
-./install.sh                 # prebuilt binaries
+./install.sh                 # the prebuilt binary
 # or: ./install.sh --from-source
 ```
 
 Then **log out and pick the "Minka" session** in your display manager.
 
-Uninstall with `./uninstall.sh` (keeps your settings in
-`~/.config/minka-settings.json`, and the logs).
+Uninstall with the unpacked tarball's `./uninstall.sh`: it removes what its
+`usr/` holds (and what older tarballs installed), and keeps your settings in
+`~/.config/minka-settings.json`, and the logs.
 
 ## First steps
 
@@ -107,7 +106,7 @@ qs -p /usr/share/minka/MinkaConf
 ```
 
 They are saved to `~/.config/minka-settings.json`, which the installer never
-touches. The compositor config itself is compiled into `shoji_wm`: to change
+touches. The compositor config itself is compiled into `minka`: to change
 it, edit `src/ShojiWM/src/shojiwm_rs/examples/default_config/`, reinstall
 with `./install.sh --from-source`, and start a new session (there is no live
 reload).

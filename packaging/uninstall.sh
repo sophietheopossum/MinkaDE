@@ -1,15 +1,35 @@
 #!/usr/bin/env bash
-# Remove a MinkaDE tester install. Leaves what it wrote in your home
-# directory: your settings (~/.config/minka-settings.json), the compositor's
-# logs (~/shoji_wm/), the shell's and MinkaMon's logs (~/.local/state/minka/),
-# MinkaConf's cursor previews (~/.cache/minkaconf/) and your screenshots
-# (~/Pictures/Screenshots/). Delete those yourself for a full wipe.
+# Remove a MinkaDE tester install: what the usr/ tree beside this script
+# put in /usr, and what older tarballs put there. Leaves what it wrote in
+# your home directory: your settings (~/.config/minka-settings.json), the
+# compositor's logs (~/shoji_wm/), the shell's and MinkaMon's logs
+# (~/.local/state/minka/), MinkaConf's cursor previews (~/.cache/minkaconf/)
+# and your screenshots (~/Pictures/Screenshots/). Delete those yourself for
+# a full wipe.
 
 set -euo pipefail
 
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
 
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$HERE"
+
+if [[ ! -d usr ]]; then
+    echo "no usr/ beside uninstall.sh: run it from the unpacked tarball" >&2
+    exit 1
+fi
+
 echo ">> removing system files (sudo)"
+# What install.sh copied is what usr/ holds. The directories named minka*
+# are MinkaDE's alone and go whole, with anything an older install left in
+# them; outside them, each file and link goes on its own.
+mapfile -t trees < <(find usr -type d -name 'minka*' -prune -printf '/%p\n')
+mapfile -t files < <(find usr -type d -name 'minka*' -prune -o ! -type d -printf '/%p\n')
+sudo rm -rf "${trees[@]}"
+sudo rm -f "${files[@]}"
+# What older tarballs installed: the binaries one by one, and in
+# /usr/lib/shojiwm and /usr/share/shojiwm the TypeScript runtime and
+# default config.
 sudo rm -f /usr/bin/shoji_wm /usr/bin/MinkaFX /usr/bin/MinkaCap /usr/bin/minka-session \
     /usr/bin/minkamon /usr/bin/xdg-desktop-portal-shojiwm \
     /usr/share/wayland-sessions/minka.desktop \
@@ -18,8 +38,6 @@ sudo rm -f /usr/bin/shoji_wm /usr/bin/MinkaFX /usr/bin/MinkaCap /usr/bin/minka-s
     /usr/share/xdg-desktop-portal/portals/shojiwm.portal \
     /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service \
     /usr/lib/systemd/user/xdg-desktop-portal-shojiwm.service
-# /usr/lib/shojiwm and /usr/share/shojiwm hold the TypeScript runtime and
-# default config that older tarballs installed.
 sudo rm -rf /usr/lib/shojiwm /usr/lib/minka /usr/share/minka /usr/share/shojiwm
 
 echo ">> removing user portal preference"

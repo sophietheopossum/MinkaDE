@@ -11,3 +11,5 @@ publish = false
 [dependencies]
 anti-webui = { path = "../../AntiWebUI/src/anti-webui", default-features = false, features = ["wayland", "svg"] }
 anti-webui-md3e = { path = "../../AntiWebUI/src/anti-webui-md3e" }
+# MinkaDE's palette (generated from Proustite.qml), shared by every app.
+proustite = { path = "../../Proustite" }

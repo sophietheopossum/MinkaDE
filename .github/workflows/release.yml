@@ -1,13 +1,13 @@
 # Tag → GitHub release with the tester tarball attached.
 #
 # Pushing a version tag (e.g. `git tag 0.9.1 && git push origin 0.9.1`)
-# builds the release binaries from the submodules pinned by that tag (the
-# compositor is the Rust config, shojiwm_rs's default_config example),
-# assembles minkade-<tag>-linux-x86_64.tar.gz via packaging/make-tarball.sh,
-# and publishes it as a GitHub release with auto-generated notes.
+# builds minka, MinkaDE's one binary, from the submodules pinned by that tag
+# (the compositor in it is the Rust config), assembles
+# minkade-<tag>-linux-x86_64.tar.gz via packaging/make-tarball.sh, and
+# publishes it as a GitHub release with auto-generated notes.
 #
 # Pinned to ubuntu-24.04 (glibc 2.39) rather than ubuntu-latest so the
-# prebuilt binaries' baseline doesn't silently move when GitHub rolls the
+# prebuilt binary's baseline doesn't silently move when GitHub rolls the
 # runner image forward.
 name: Release
 
@@ -36,6 +36,7 @@ jobs:
         with:
           submodules: recursive
 
+      # rsync copies the trees for make-tarball.sh and stage-usr.sh.
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -49,37 +50,12 @@ jobs:
             libxcb1-dev libxcb-cursor-dev \
             libfontconfig-dev
 
-      # --example limits a build to examples, so the portal is built apart.
-      - name: Build ShojiWM (compositor with the Rust config + portal)
-        working-directory: ShojiWM
-        run: |
-          cargo build --release --locked -p shojiwm_rs --example default_config
-          cargo build --release --locked -p xdg-desktop-portal-shojiwm
-
-      - name: Build xwayland-satellite
-        working-directory: xwayland-satellite
-        run: cargo build --release --locked
-
-      # MinkaDE's own crates are one Cargo workspace (Cargo.toml at the top,
-      # with the Cargo.lock --locked holds them to), so each build below
-      # lands in its target/release, where make-tarball.sh looks.
-      - name: Build MinkaFX
-        working-directory: MinkaFX
-        run: cargo build --release --locked
-
-      - name: Build MinkaCap
-        working-directory: MinkaCap
-        run: cargo build --release --locked
-
-      - name: Build MinkaMon + sampler
-        working-directory: MinkaMon
-        run: |
-          cargo build --release --locked
-          cargo build --release --locked -p minkamon-sampler
-
-      - name: Build MinkaShell (AntiWebUI)
-        working-directory: MinkaShell
-        run: cargo build --release --locked
+      # The compositor (Minka's config), its portal, xwayland-satellite and
+      # every Minka app are libraries linked into minka. It is a member of the
+      # Cargo workspace at the top, with the Cargo.lock --locked holds the
+      # build to, so it lands in target/release, where make-tarball.sh looks.
+      - name: Build minka
+        run: cargo build --release --locked -p minka
 
       # Against the submodules this tag pins: among other things, that every
       # asset the Rust config names ships, and lands where it looks.

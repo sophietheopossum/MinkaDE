@@ -2,29 +2,32 @@
 # ly's setup.sh runs a fish login shell and imports its exports into the
 # session, so everything here reaches the compositor at startup.
 
-# The session runs the Rust config (dist/install.sh --rust-config), which is
-# compiled into /usr/bin/shoji_wm and ignores SHOJI_CONFIG. Uncomment this when
-# rolling back to the TypeScript build (dist/install.sh --dev without
-# --rust-config), so it loads the repo checkout instead of the installed copy
-# in ~/.config/shojiwm (super+shift+r reloads from here).
+# The session runs the Rust config, compiled into MinkaDE's one binary (the
+# minkade package's /usr/bin/minka; /usr/bin/shoji_wm is a link to it), which
+# ignores SHOJI_CONFIG. Uncomment this when rolling back to the TypeScript
+# build (ShojiWM's dist/install.sh --dev without --rust-config), so it loads
+# the repo checkout instead of the installed copy in ~/.config/shojiwm
+# (super+shift+r reloads from here).
 # set -gx SHOJI_CONFIG $HOME/Documents/src/MinkaDE/ShojiWM/packages/config/src/index.tsx
 
-# Uncomment to run the submodule build of xwayland-satellite instead of the
-# distro package (fixes non-(0,0) layout origins; upstream 33c344f, > 0.8.1):
-set -gx SHOJI_XWAYLAND_SATELLITE_PATH $HOME/Documents/src/MinkaDE/xwayland-satellite/target/release/xwayland-satellite
+# The submodule's xwayland-satellite (fixes non-(0,0) layout origins; upstream
+# 33c344f, > 0.8.1), as a process of its own: part of minka, and installed by
+# the minkade package out of PATH, so it never shadows a distro
+# xwayland-satellite. Without this, ShojiWM runs the copy built into it on a
+# thread.
+set -gx SHOJI_XWAYLAND_SATELLITE_PATH /usr/lib/minka/xwayland-satellite
 
 # Run the Minka apps from the repo checkouts. Without these the config falls
 # back to the tarball-install locations (/usr/share/minka, /usr/bin).
 set -gx MINKA_SHELL_DIR $HOME/Documents/src/MinkaDE/MinkaShell
-# The shell's launcher (MinkaShell/dist/minkashell) runs the AntiWebUI binary
-# from target/release of the MinkaDE Cargo workspace. Uncomment to get the Quickshell shell back at the next
-# login instead:
+# The shell's launcher (MinkaShell/dist/minkashell) runs the AntiWebUI shell
+# from the installed /usr/bin/minka (MINKA_BIN names another build to try).
+# Uncomment to get the Quickshell shell back at the next login instead:
 # set -gx MINKA_SHELL_FRONTEND quickshell
 set -gx MINKA_SHOT_DIR $HOME/Documents/src/MinkaDE/MinkaShot
-# MinkaDE's own Rust crates are one Cargo workspace (Cargo.toml), so their
-# binaries are all in its target/.
-set -gx MINKA_FX_BIN $HOME/Documents/src/MinkaDE/target/release/MinkaFX
-set -gx MINKA_CAP_BIN $HOME/Documents/src/MinkaDE/target/release/MinkaCap
+# MinkaFX and MinkaCap are part of minka too: the config and MinkaShot run
+# the package's /usr/bin/MinkaFX and /usr/bin/MinkaCap unless MINKA_FX_BIN or
+# MINKA_CAP_BIN names something else.
 # MinkaMon needs both: the wrapper (which owns the logging) and the config dir
 # it passes to qs. Its wrapper is not installed to /usr/bin in this checkout,
 # so without MINKA_MON_BIN the autostart guard finds nothing and skips.

@@ -1,12 +1,19 @@
 # One Cargo workspace for MinkaDE's own Rust crates. They share one
 # Cargo.lock and one target/, so each dependency (AntiWebUI and the wgpu
 # stack above all) is built once instead of once per app. Run cargo from
-# here or from any member's directory: either way the binaries land in
+# here or from any member's directory: either way what it builds lands in
 # target/<profile>/ at this level.
+#
+# The apps are libraries, and minka/ is MinkaDE's one binary: it links them
+# all, with the compositor (ShojiWM's shojiwm_minka, Minka's config), its
+# portal backend and xwayland-satellite, and runs each under its own name.
+# `cargo build --profile release-fast -p minka` while working; the minkade
+# package (MinkaPKG/minkade) builds the release profile.
 #
 # Upstream projects keep workspaces of their own and stay out: ShojiWM,
 # xwayland-satellite, smithay, AntiWebUI, GitComet, Floorp and HyperCat.
-# MinkaPKG is excluded for the sources makepkg unpacks under it.
+# minka/ reaches the crates it needs from ShojiWM and xwayland-satellite by
+# path. MinkaPKG is excluded for the sources makepkg unpacks under it.
 [workspace]
 resolver = "3"
 members = [
@@ -21,6 +28,8 @@ members = [
     "MinkaSyu",
     "MinkaSyu/gui",
     "MinkaThermal",
+    "Proustite",
+    "minka",
     "tools/keysend",
     "tools/md3e-trial",
 ]
@@ -36,10 +45,20 @@ exclude = [
     "xwayland-satellite",
 ]
 
-# Cargo reads profiles only from here. Members share a dependency only
-# when it is built with the same settings, so there is one release profile.
+# Cargo reads profiles only from here, and link-time optimisation is one
+# setting for the whole of minka. The release profile is the package's: thin
+# LTO over everything, the compositor included.
 [profile.release]
 lto = "thin"
+
+# For working: no LTO and incremental, so an edit to one app relinks the
+# binary in seconds. ShojiWM's own release-fast, which its installs used.
+[profile.release-fast]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true
+debug = "line-tables-only"
 
 # These three asked for opt-level 2 in their own manifests. It now applies
 # to their own code only; their dependencies are shared at the default.
@@ -67,3 +86,18 @@ wgpu-core-deps-windows-linux-android = { git = "https://github.com/bea4dev/wgpu"
 wgpu-hal = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
 wgpu-naga-bridge = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
 wgpu-types = { git = "https://github.com/bea4dev/wgpu", rev = "ff143aeeb126dce521b87f47547565c4b6a6da1e" }
+
+# ShojiWM's workspace points smithay at Sophie's fork by git and patches that
+# to the smithay submodule. minka builds ShojiWM's crates from here, where
+# ShojiWM's patch table is not read, so this one does the same.
+[patch."https://github.com/sophietheopossum/smithay.git"]
+smithay = { path = "smithay" }
+smithay-drm-extras = { path = "smithay/smithay-drm-extras" }
+
+# ShojiWM links its own xwayland-satellite (bea4dev's fork merged with
+# upstream, at a git revision) to run it on a thread when
+# SHOJI_XWAYLAND_SATELLITE_PATH is unset. minka
+# already has the submodule's, which the session runs as a process, so the
+# built-in one is the same code instead of a second copy.
+[patch."https://github.com/harveywuk/xwayland-satellite.git"]
+xwayland-satellite = { path = "xwayland-satellite" }
