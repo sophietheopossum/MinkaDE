@@ -2,8 +2,7 @@
 
 A high-performance Wayland desktop environment built around the
 [ShojiWM](https://github.com/bea4dev/ShojiWM) compositor, with a shell
-(MinkaShell, built on AntiWebUI, with its Quickshell version as the
-fallback), a settings app (MinkaConf), a freeze-frame screenshot tool
+(MinkaShell, built on AntiWebUI), a settings app (MinkaConf), a freeze-frame screenshot tool
 (MinkaShot), a system monitor (MinkaMon), a wgpu overlay process (MinkaFX),
 HDR output support, and a compositor config written in Rust and compiled
 into the compositor.
@@ -16,7 +15,7 @@ breaks, along with `~/.local/state/minka/minkashell.log` and
 
 | path            | contents                                                        |
 |-----------------|-----------------------------------------------------------------|
-| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaCap and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps (MinkaConf, MinkaShot, the shell's Quickshell fallback) and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
+| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaCap and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps not yet ported to AntiWebUI (MinkaConf, MinkaShot, MinkaLedger's window), the shell's and MinkaMon's assets, and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
 | `src/`          | full sources, for `--from-source` installs                      |
 | `install.sh`, `uninstall.sh` | the installer, and its undo, which removes what `usr/` holds |
 
@@ -25,7 +24,7 @@ breaks, along with `~/.local/state/minka/minkashell.log` and
 Required at runtime:
 
 - **quickshell** (`qs`), with its screen-capture support — renders MinkaConf,
-  MinkaShot and the shell's fallback
+  MinkaShot and MinkaLedger's window, until they move to AntiWebUI
   (Arch: AUR `quickshell`; Fedora COPR / Nix packages exist; otherwise build from source)
 - **pipewire + wireplumber** — audio and screen sharing
 - **xorg-xwayland** — X11 app support
@@ -129,10 +128,9 @@ reload).
   after a crash, and you then get its popups for the rest of the session
   (`minkashell.log` says "notifications unavailable"). Uninstall it to keep
   Minka's.
-- If the shell crashes three times in a minute, its Quickshell version takes
-  over for the rest of the session. To use that one from the start, add
-  `export MINKA_SHELL_FRONTEND=quickshell` to `~/.profile` (the compositor
-  starts the shell through a login shell, which reads it) and log in again.
+- If the shell crashes, its launcher starts it again: after 1 s, then 2, 4,
+  8 and 16 s, then every 30 s while it keeps crashing. `minkashell.log` says
+  why it died.
 - Logs: compositor `~/shoji_wm/logs/latest.log`, shell
   `~/.local/state/minka/minkashell.log`, monitor
   `~/.local/state/minka/minkamon.log`, screenshots `/tmp/minkashot.log`,

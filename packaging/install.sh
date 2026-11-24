@@ -7,9 +7,9 @@
 # overlay, MinkaCap, the MinkaShell shell, the MinkaMon system monitor and
 # the other Minka apps, each run through a link named after it. Beside it go
 # the compositor's shaders and icons, the QML apps (MinkaConf, MinkaShot and
-# the shell's Quickshell fallback) with the shared Proustite / MinkaLink
-# singletons, a "Minka" Wayland session entry for your display manager, and
-# the apps' launchers.
+# MinkaLedger's window) with the shared Proustite / MinkaLink singletons, a
+# "Minka" Wayland session entry for your display manager, and the apps'
+# launchers.
 #
 # Usage:
 #   ./install.sh                 install the prebuilt x86_64 binary (default)
@@ -45,7 +45,7 @@ done
 # ── dependency sanity check ──────────────────────────────────────────────
 missing=()
 need() { command -v "$1" >/dev/null 2>&1 || missing+=("$1${2:+ ($2)}"); }
-need qs "quickshell - renders MinkaConf, MinkaShot and the shell's fallback"
+need qs "quickshell - renders MinkaConf, MinkaShot and MinkaLedger's window"
 need python3 "MinkaShell's per-app mute and MinkaConf's cursor previews"
 if command -v python3 >/dev/null 2>&1 && ! python3 -c 'import PIL' 2>/dev/null; then
     missing+=("python Pillow (MinkaConf's cursor previews; without it no cursor themes are listed)")
@@ -86,6 +86,9 @@ echo ">> installing system files (sudo)"
 # in one does not outlive this one: a removed QML file would keep loading.
 mapfile -t trees < <(find usr -type d -name 'minka*' -prune -printf '/%p\n')
 sudo rm -rf "${trees[@]}"
+# And the ones older tarballs installed that this one no longer has:
+# MinkaSyu's QML window, up to 0.92.0.
+sudo rm -rf /usr/share/minka-syu
 
 # --no-portal leaves out the portal backend: its link, the portal file
 # xdg-desktop-portal reads, and the D-Bus and systemd files that start it.

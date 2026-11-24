@@ -81,12 +81,12 @@ MEMBERS = {
     "MinkaIPC": ("Cargo.toml", "src/lib.rs"),
     "MinkaLedger": ("Cargo.toml", "src/lib.rs", "src/main.rs", "ui/shell.qml",
                     "dist/MinkaLedger.desktop"),
-    "MinkaMon": ("Cargo.toml", "src/lib.rs", "shell.qml", "assets/coastlines.json",
+    "MinkaMon": ("Cargo.toml", "src/lib.rs", "assets/coastlines.json",
                  "dist/minkamon", "dist/MinkaMon.desktop"),
     "MinkaMon/sampler-rs": ("Cargo.toml", "src/lib.rs"),
-    "MinkaShell": ("Cargo.toml", "src/lib.rs", "shell.qml", "modules/bar/Bar.qml",
-                   "assets/mac-glass-minimize.svg", "scripts/app-mute.py", "dist/minkashell"),
-    "MinkaSyu": ("Cargo.toml", "src/lib.rs", "README.md", "ui/shell.qml",
+    "MinkaShell": ("Cargo.toml", "src/lib.rs", "assets/mac-glass-minimize.svg",
+                   "scripts/app-mute.py", "dist/minkashell"),
+    "MinkaSyu": ("Cargo.toml", "src/lib.rs", "README.md",
                  "dist/minka-syu.desktop", "dist/minka-syu-check.service",
                  "dist/minka-syu-check.timer"),
     "MinkaSyu/gui": ("Cargo.toml", "src/lib.rs"),
@@ -190,28 +190,19 @@ CONTENTS = {
     "target/release/minka": minka_script(),
     "Cargo.toml": CARGO_TOML,
 }
-# Each app reaches the shared singletons through these, as in the real tree.
+# Each QML app reaches the shared singletons through these, as in the real tree.
 CHECKOUT_LINKS = {
-    "MinkaShell/Proustite": "../Proustite",
-    "MinkaShell/MinkaLink": "../MinkaLink",
     "MinkaConf/Proustite": "../Proustite",
-    "MinkaMon/Proustite": "../Proustite",
-    "MinkaMon/MinkaLink": "../MinkaLink",
     "MinkaShot/Proustite": "../Proustite",
     "MinkaShot/MinkaLink": "../MinkaLink",
     "MinkaLedger/ui/Proustite": "../../Proustite",
     "MinkaLedger/ui/MinkaLink": "../../MinkaLink",
-    "MinkaSyu/ui/Proustite": "../../Proustite",
-    "MinkaSyu/ui/MinkaLink": "../../MinkaLink",
 }
 # Where each QML tree is installed, from where in the checkout.
 QML_APPS = {
-    "usr/share/minka/MinkaShell": "MinkaShell",
     "usr/share/minka/MinkaConf": "MinkaConf",
-    "usr/share/minka/MinkaMon": "MinkaMon",
     "usr/share/minka/MinkaShot": "MinkaShot",
     "usr/share/minka/MinkaLedger": "MinkaLedger/ui",
-    "usr/share/minka-syu/ui": "MinkaSyu/ui",
 }
 # Each installed singleton link, as installed/<link>.
 APP_LINKS = tuple(f"{installed}/{link.removeprefix(source + '/')}"

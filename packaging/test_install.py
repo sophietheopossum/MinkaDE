@@ -97,6 +97,8 @@ OLDER_INSTALL = (
     "usr/share/minka/MinkaShell/minkashell",
     "usr/share/minka/MinkaMon/minkamon",
     "usr/share/minka/MinkaMon/minkamon-sampler",
+    # MinkaSyu's QML window, installed up to 0.92.0.
+    "usr/share/minka-syu/ui/shell.qml",
 )
 TYPESCRIPT_INSTALL = (
     "usr/lib/shojiwm/runtime/index.js",
@@ -228,7 +230,7 @@ class Install(Checkout):
                 where = ("/usr/lib/minka/" if name == "xwayland-satellite" else "/usr/bin/") + name
                 with self.subTest(name=name):
                     self.assertEqual(os.path.realpath(self.at(where)), minka)
-        for app in ("MinkaShell", "MinkaConf", "MinkaMon", "MinkaShot", "MinkaLedger"):
+        for app in ("MinkaConf", "MinkaShot", "MinkaLedger"):
             with self.subTest(app=app):
                 self.assertTrue(os.path.isfile(self.at(f"/usr/share/minka/{app}/Proustite/qmldir")))
 
@@ -359,7 +361,6 @@ class Install(Checkout):
                 if not os.path.islink(path) and any(p.startswith("minka") for p in below):
                     stale.append(os.path.join(path, "stale.qml"))
         self.assertIn(self.at("/usr/share/minka/MinkaShell/stale.qml"), stale)
-        self.assertIn(self.at("/usr/share/minka-syu/ui/stale.qml"), stale)
         for path in stale:
             with open(path, "w") as out:
                 out.write("// from an older install\n")

@@ -20,17 +20,16 @@ set -gx SHOJI_XWAYLAND_SATELLITE_PATH /usr/lib/minka/xwayland-satellite
 # Run the Minka apps from the repo checkouts. Without these the config falls
 # back to the tarball-install locations (/usr/share/minka, /usr/bin).
 set -gx MINKA_SHELL_DIR $HOME/Documents/src/MinkaDE/MinkaShell
-# The shell's launcher (MinkaShell/dist/minkashell) runs the AntiWebUI shell
-# from the installed /usr/bin/minka (MINKA_BIN names another build to try).
-# Uncomment to get the Quickshell shell back at the next login instead:
-# set -gx MINKA_SHELL_FRONTEND quickshell
+# The shell's launcher (MinkaShell/dist/minkashell) runs the shell from the
+# installed /usr/bin/minka (MINKA_BIN names another build to try).
 set -gx MINKA_SHOT_DIR $HOME/Documents/src/MinkaDE/MinkaShot
 # MinkaFX and MinkaCap are part of minka too: the config and MinkaShot run
 # the package's /usr/bin/MinkaFX and /usr/bin/MinkaCap unless MINKA_FX_BIN or
 # MINKA_CAP_BIN names something else.
-# MinkaMon needs both: the wrapper (which owns the logging) and the config dir
-# it passes to qs. Its wrapper is not installed to /usr/bin in this checkout,
-# so without MINKA_MON_BIN the autostart guard finds nothing and skips.
+# MinkaMon's launcher (which owns the logging) from the checkout, and the
+# directory it is given, from which it finds a checkout build to try
+# ($MINKA_MON_DIR/../target/...) when MINKA_BIN is unset and there is no
+# /usr/bin/minka. The package installs the same launcher as /usr/bin/minkamon.
 set -gx MINKA_MON_BIN $HOME/Documents/src/MinkaDE/MinkaMon/dist/minkamon
 set -gx MINKA_MON_DIR $HOME/Documents/src/MinkaDE/MinkaMon
 

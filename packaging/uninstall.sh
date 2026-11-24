@@ -27,9 +27,10 @@ mapfile -t trees < <(find usr -type d -name 'minka*' -prune -printf '/%p\n')
 mapfile -t files < <(find usr -type d -name 'minka*' -prune -o ! -type d -printf '/%p\n')
 sudo rm -rf "${trees[@]}"
 sudo rm -f "${files[@]}"
-# What older tarballs installed: the binaries one by one, and in
+# What older tarballs installed: the binaries one by one, in
 # /usr/lib/shojiwm and /usr/share/shojiwm the TypeScript runtime and
-# default config.
+# default config, and up to 0.92.0 MinkaSyu's QML window in
+# /usr/share/minka-syu.
 sudo rm -f /usr/bin/shoji_wm /usr/bin/MinkaFX /usr/bin/MinkaCap /usr/bin/minka-session \
     /usr/bin/minkamon /usr/bin/xdg-desktop-portal-shojiwm \
     /usr/share/wayland-sessions/minka.desktop \
@@ -38,7 +39,8 @@ sudo rm -f /usr/bin/shoji_wm /usr/bin/MinkaFX /usr/bin/MinkaCap /usr/bin/minka-s
     /usr/share/xdg-desktop-portal/portals/shojiwm.portal \
     /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.shojiwm.service \
     /usr/lib/systemd/user/xdg-desktop-portal-shojiwm.service
-sudo rm -rf /usr/lib/shojiwm /usr/lib/minka /usr/share/minka /usr/share/shojiwm
+sudo rm -rf /usr/lib/shojiwm /usr/lib/minka /usr/share/minka /usr/share/shojiwm \
+    /usr/share/minka-syu
 
 echo ">> removing user portal preference"
 rm -f "$XDG_CONFIG_HOME/xdg-desktop-portal/shojiwm-portals.conf"

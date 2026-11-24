@@ -10,8 +10,8 @@ dual-screen "Duo" mode).
 | Submodule      | Lang                       | Role                                                                                                                                                                                                                 |
 |----------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **ShojiWM**    | Rust (smithay) + Rust config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
-| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` runs it from MinkaDE's one binary (`minka minkashell`) and logs to `~/.local/state/minka/minkashell.log`. The Quickshell tree (`shell.qml`) is the fallback: used when there is no binary, with `MINKA_SHELL_FRONTEND=quickshell`, or after a third crash in a minute. |
-| **MinkaMon**   | AntiWebUI (Rust)           | System monitor. `sampler-rs/` (`minkamon-sampler`) streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows. The QML tree is the fallback (it runs sampler-rs too). |
+| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` runs it from MinkaDE's one binary (`minka minkashell`), logs to `~/.local/state/minka/minkashell.log`, and restarts it when it dies (after 1, 2, 4, 8, 16, then every 30 s). There is no Quickshell fallback (24/11/2026). |
+| **MinkaMon**   | AntiWebUI (Rust)           | System monitor. `sampler-rs/` (`minkamon-sampler`) streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows. |
 | **MinkaShot**  | Quickshell/QML             | Freeze-frame screenshot tool. Print → frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. Uses MinkaCap for occlusion-free per-window capture.                                      |
 | **MinkaConf**  | Quickshell/QML             | Settings utility.                                                                                                                                                                                                    |
 | **MinkaCap**   | Rust                       | Per-window Wayland capture via ext-image-copy-capture (occlusion-free toplevel screenshots). Consumed by MinkaShot.                                                                                                  |
@@ -28,11 +28,11 @@ XWayland bridge.
 ## Theming (Proustite)
 
 - **No literal colors in widgets** — every color goes through `Theme` token. Each
-  app's `services/Theme.qml` is a thin facade re-exporting `Proustite` tokens plus
-  app-specific extras (MinkaShell barBg/barHeight, MinkaMon seriesPalette, MinkaShot scrim).
+  AntiWebUI app's `theme.rs` adds its own tokens to the `proustite` crate's; each QML
+  app still to be ported has a `services/Theme.qml` facade doing the same (MinkaShot scrim).
 - `red` is `#FF0000`; the old MinkaMon `glow` token merged into `red`.
-- **Shared submodules are consumed via symlink into each app's config root**
-  (`MinkaShell/Proustite -> ../Proustite`, same for MinkaLink). Quickshell only honours
+- **Shared submodules are consumed via symlink into each QML app's config root**
+  (`MinkaShot/Proustite -> ../Proustite`, same for MinkaLink). Quickshell only honours
   qmldir singleton registration for paths *inside* the shell root, so `import "../Proustite"`
   works but `import "../../Proustite"` loads files as plain components (undefined tokens).
 - **Never name shared singleton after a Qt type** — QtQuick's built-in `Palette`
@@ -59,8 +59,11 @@ Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWeb
 - **Restyle and retire Quickshell (17/11/2026):** "i would like restyling and for quickshell to
   become obsolete please, i think antiwebui has proven itself enough". MinkaShell, MinkaMon and
   MinkaSyu get restyled this way; MinkaLedger, MinkaShot and MinkaConf move to AntiWebUI. Write
-  no new QML. An app's QML tree stays as its fallback until the port is proven in use; deleting
-  it is Sophie's call.
+  no new QML.
+- **No more Quickshell (24/11/2026, her call):** "port the unported apps to antiwebui, no more
+  quickshell". MinkaShot, MinkaConf and MinkaLedger's window are being ported, and then every QML
+  tree, fallback path and Quickshell dependency goes, MinkaShell's included ("minkashell should not
+  fallback to quickshell").
 - **Font: Roboto Flex everywhere** (17/11/2026: "let's go with roboto flex everywhere"), for
   all proportional text in MinkaDE's own UI. Monospace text stays monospace. Noto Sans remains
   the fallback, and Noto's CJK and emoji fonts still cover what Roboto Flex lacks.
@@ -143,16 +146,16 @@ uses it. Her rule: "if something can be deduplicated, i probably want it".
 ## Build / lint / run
 
 ```sh
-# Lint QML (from the app's dir — MinkaLedger's is ui/). ABSOLUTE path: qt5-declarative
-# owned /usr/bin/qmllint and was removed 29/8/2026, so there is no qmllint on PATH at
-# all now. Never pipe this: like cargo below, `| head` makes $? report head, and the
+# Lint QML (MinkaConf, MinkaShot and MinkaLedger's ui/ until their ports land; from the
+# app's dir). ABSOLUTE path: qt5-declarative owned /usr/bin/qmllint and was removed
+# 29/8/2026, so there is no qmllint on PATH at all now. Never pipe this: like cargo below, `| head` makes $? report head, and the
 # Qt5 binary that used to be first on PATH failed with a BARE 255 and no message.
-# `find`, not globs: MinkaShell keeps its modules in modules/<sub>/, so `modules/*.qml`
-# matches nothing there (fish refuses to run it; bash lints 6 of 26 files, exits 255).
+# `find`, not globs: an app that keeps its modules in modules/<sub>/ has no `modules/*.qml`
+# (fish refuses to run the glob; bash lints a fraction of the files and exits 255).
 # `--absolute-path` is hidden from --help but real: without it Qt 6.12 prints a FALSE
 # "not declared as singleton in qmldir" for most `pragma Singleton` files (10/10/2026).
 # Qt 6.12's TEXT output also drops every warning a file logged before a function or
-# binding with a loop in it (MinkaShell prints 17 of its 28): add `--json -` after
+# binding with a loop in it (the old QML shell printed 17 of its 28): add `--json -` after
 # `-I .` for the complete list. Warnings alone exit 0; a syntax error exits 1.
 find shell.qml services modules -name '*.qml' \
     -exec /usr/lib/qt6/bin/qmllint --absolute-path -I . {} +
@@ -181,8 +184,9 @@ env -u WAYLAND_DISPLAY XDG_RUNTIME_DIR=$HOME/.cache/claude-builds/xdg-test \
 # and MinkaMon's launchers. `cargo test -p <crate>` tests one app's library.
 cargo build --profile release-fast -p minka
 
-# Run a Quickshell app — ALWAYS use an ABSOLUTE path (relative `.` breaks from other cwds)
-qs -p /home/seirra/Documents/src/MinkaDE/MinkaShell
+# Run a Quickshell app still to be ported — ALWAYS use an ABSOLUTE path (relative `.`
+# breaks from other cwds)
+qs -p /home/seirra/Documents/src/MinkaDE/MinkaConf
 
 # Test MinkaLedger against a THROWAWAY book, never the default one. The default
 # (~/.local/share/minka-ledger/book.db) is Sophie's real finances; a probe that

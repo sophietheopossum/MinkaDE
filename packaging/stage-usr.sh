@@ -18,12 +18,14 @@
 #   /usr/bin/minka-session, /usr/share/wayland-sessions/minka.desktop
 #   /usr/share/minka/shojiwm        the compositor's shaders and icons, read
 #                                   once the checkout it was built from is gone
-#   /usr/share/minka/<App>          the QML trees (the shell's and MinkaMon's
-#                                   fallbacks, MinkaConf, MinkaShot, MinkaLedger's
-#                                   window) beside Proustite and MinkaLink, which
-#                                   their symlinks reach as ../Proustite
-#   the portal backend's D-Bus, portal and systemd files, MinkaSyu's window
-#   tree and units, MinkaThermal's unit, and the apps' desktop entries.
+#   /usr/share/minka/<App>          the shell's and MinkaMon's assets (and the
+#                                   shell's scripts and launcher), and the QML
+#                                   trees of the apps not yet ported to AntiWebUI
+#                                   (MinkaConf, MinkaShot, MinkaLedger's window)
+#                                   beside Proustite and MinkaLink, which their
+#                                   symlinks reach as ../Proustite
+#   the portal backend's D-Bus, portal and systemd files, MinkaSyu's units,
+#   MinkaThermal's unit, and the apps' desktop entries.
 set -euo pipefail
 
 DEST="${1:?usage: packaging/stage-usr.sh DEST [MINKA]}"
@@ -62,27 +64,26 @@ ASSET_ROOT=ShojiWM/src/shojiwm_rs/examples/default_config/assets
 install -d "$SHARE/shojiwm"
 (cd "$ASSET_ROOT" && cp --parents shaders/*.frag icons/*.svg "$SHARE/shojiwm/")
 
-echo ">> QML trees"
-# dist/ is left out (what is needed from it is installed below), and so is
-# the Rust of the apps that are in minka. Anchored patterns: each tree's own
-# top level only.
+echo ">> app trees"
+# The shell's and MinkaMon's trees now hold only what the Rust apps read at
+# run time (assets/, the shell's scripts/); MinkaConf's and MinkaShot's are
+# still QML. dist/ is left out (what is needed from it is installed below),
+# and so is the Rust of the apps that are in minka. Anchored patterns: each
+# tree's own top level only.
 RUST=(--exclude '/*/src' --exclude '/*/sampler-rs' --exclude '/*/Cargo.toml' --exclude '/*/build.rs')
 rsync -a "${EXCLUDES[@]}" "${RUST[@]}" --exclude '/*/dist' \
     MinkaShell MinkaConf MinkaMon MinkaShot "$SHARE/"
 rsync -a "${EXCLUDES[@]}" "${RUST[@]}" Proustite "$SHARE/"
 rsync -a "${EXCLUDES[@]}" MinkaLink "$SHARE/"
 install -Dm755 MinkaShell/dist/minkashell "$SHARE/MinkaShell/dist/minkashell"
-# MinkaLedger's and MinkaSyu's windows sit elsewhere than beside the shared
-# singletons, so -L copies what their Proustite/MinkaLink links point at.
+# MinkaLedger's window sits elsewhere than beside the shared singletons, so
+# -L copies what its Proustite/MinkaLink links point at.
 cp -rL MinkaLedger/ui "$SHARE/MinkaLedger"
-install -d "$USR/share/minka-syu"
-cp -rL MinkaSyu/ui "$USR/share/minka-syu/ui"
-find "$SHARE/MinkaLedger" "$USR/share/minka-syu/ui" -name .git -delete
-# Their Proustite copies came with the crate that minka builds from it.
-rm -rf "$SHARE/MinkaLedger/Proustite/"{Cargo.toml,build.rs,src} \
-    "$USR/share/minka-syu/ui/Proustite/"{Cargo.toml,build.rs,src}
-find "$SHARE/MinkaLedger" "$USR/share/minka-syu/ui" -type d -exec chmod 755 {} +
-find "$SHARE/MinkaLedger" "$USR/share/minka-syu/ui" -type f -exec chmod 644 {} +
+find "$SHARE/MinkaLedger" -name .git -delete
+# Its Proustite copy came with the crate that minka builds from it.
+rm -rf "$SHARE/MinkaLedger/Proustite/"{Cargo.toml,build.rs,src}
+find "$SHARE/MinkaLedger" -type d -exec chmod 755 {} +
+find "$SHARE/MinkaLedger" -type f -exec chmod 644 {} +
 
 echo ">> desktop entries, units, portal"
 APPS="$USR/share/applications"
