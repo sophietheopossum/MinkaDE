@@ -1,0 +1,10 @@
+[package]
+name = "minka-note"
+version = "0.1.0"
+edition = "2024"
+description = "One log line, one write(2): the stderr line every MinkaDE app logs with"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+doctest = false

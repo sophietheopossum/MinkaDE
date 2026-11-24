@@ -6,6 +6,7 @@ version = 4
 name = "MinkaCap"
 version = "0.1.0"
 dependencies = [
+ "minka-note",
  "png 0.17.16",
  "rustix 0.38.44",
  "wayland-client",
@@ -19,6 +20,7 @@ dependencies = [
  "MinkaIPC",
  "calloop 0.14.5",
  "calloop-wayland-source 0.4.1",
+ "minka-note",
  "pollster 0.4.0",
  "raw-window-handle",
  "serde_json",
@@ -3068,6 +3070,7 @@ dependencies = [
  "keysend",
  "libc",
  "minka-ledger",
+ "minka-note",
  "minka-syu",
  "minka-syu-gui",
  "minka-thermal",
@@ -3085,6 +3088,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "csv",
+ "minka-note",
  "rrule",
  "rusqlite",
  "serde",
@@ -3092,9 +3096,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "minka-note"
+version = "0.1.0"
+
+[[package]]
 name = "minka-syu"
 version = "0.6.0"
 dependencies = [
+ "minka-note",
  "serde",
  "serde_json",
 ]
@@ -3105,6 +3114,7 @@ version = "0.1.0"
 dependencies = [
  "anti-webui",
  "anti-webui-md3e",
+ "minka-note",
  "proustite",
  "serde",
  "serde_json",
@@ -3115,6 +3125,7 @@ name = "minka-thermal"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "minka-note",
  "serde",
  "serde_json",
 ]
@@ -3126,6 +3137,7 @@ dependencies = [
  "MinkaIPC",
  "anti-webui",
  "calloop 0.14.5",
+ "minka-note",
  "proustite",
  "serde_json",
 ]
@@ -3137,6 +3149,7 @@ dependencies = [
  "flate2",
  "libc",
  "libloading",
+ "minka-note",
  "serde_json",
 ]
 
@@ -3148,6 +3161,7 @@ dependencies = [
  "anti-webui",
  "anti-webui-md3e",
  "calloop 0.14.5",
+ "minka-note",
  "proustite",
  "serde_json",
  "zbus",

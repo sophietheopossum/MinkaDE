@@ -68,7 +68,7 @@ fn main() -> ExitCode {
                 .arg0(&name)
                 .args(args)
                 .exec();
-            eprintln!("minka: cannot start {}: {err}", name.to_string_lossy());
+            minka_note::note!("minka: cannot start {}: {err}", name.to_string_lossy());
             ExitCode::FAILURE
         }
         other => {

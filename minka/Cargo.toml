@@ -13,6 +13,8 @@ path = "src/main.rs"
 # share is linked in once, so it is on disk and in memory once for every
 # process of the desktop.
 [dependencies]
+# MinkaDE's log line (minka-note/, at the top of the checkout): one write(2) each.
+minka-note = { path = "../minka-note" }
 shojiwm_minka = { path = "../ShojiWM/src/shojiwm_minka" }
 xdg-desktop-portal-shojiwm = { path = "../ShojiWM/src/xdg-desktop-portal-shojiwm" }
 xwayland-satellite = { path = "../xwayland-satellite" }

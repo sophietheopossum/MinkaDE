@@ -110,6 +110,11 @@ uses it. Her rule: "if something can be deduplicated, i probably want it".
   as a library with a `pub fn main`. A directory with a crate that is not hers (an upstream
   project, or makepkg sources under MinkaPKG) goes in `exclude`. Otherwise cargo refuses to build
   it ("believes it's in a workspace when it's not").
+- **Log with `minka_note::note!`** (`minka-note/`, 24/11/2026). It takes what `eprintln!` takes
+  and writes the line with one write(2); `eprintln!` makes one per piece, costs about four times
+  as much, and lets another writer to the file split its line. `log::` and `tracing::` macros
+  print nothing in the AntiWebUI apps, which install no logger. The compositor and its Rust
+  config log with `tracing`.
 - **Upstream workspaces stay separate:** ShojiWM, xwayland-satellite, smithay, AntiWebUI and
   GitComet; minka reaches the crates it needs by path. `.vscode/settings.json` lists them in
   `rust-analyzer.linkedProjects`, because rust-analyzer's discovery stops at the root
