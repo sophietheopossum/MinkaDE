@@ -30,6 +30,7 @@ members = [
     "MinkaThermal",
     "Proustite",
     "minka",
+    "minka-instance",
     "minka-note",
     "tools/keysend",
     "tools/md3e-trial",

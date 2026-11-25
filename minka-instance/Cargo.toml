@@ -1,0 +1,14 @@
+[package]
+name = "minka-instance"
+version = "0.1.0"
+edition = "2024"
+description = "One instance of a MinkaDE app per session, and one line of conversation with it"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+doctest = false
+
+[dependencies]
+# MinkaDE's log line (minka-note/, beside this one): one write(2) each.
+minka-note = { path = "../minka-note" }

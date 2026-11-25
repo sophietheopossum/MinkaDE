@@ -3072,6 +3072,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "minka-instance"
+version = "0.1.0"
+dependencies = [
+ "minka-note",
+]
+
+[[package]]
 name = "minka-ledger"
 version = "0.1.0"
 dependencies = [
@@ -3103,6 +3110,7 @@ version = "0.1.0"
 dependencies = [
  "anti-webui",
  "anti-webui-md3e",
+ "minka-instance",
  "minka-note",
  "proustite",
  "serde",
@@ -3126,6 +3134,7 @@ dependencies = [
  "MinkaIPC",
  "anti-webui",
  "calloop 0.14.5",
+ "minka-instance",
  "minka-note",
  "proustite",
  "serde_json",
@@ -3150,6 +3159,7 @@ dependencies = [
  "anti-webui",
  "anti-webui-md3e",
  "calloop 0.14.5",
+ "minka-instance",
  "minka-note",
  "proustite",
  "serde_json",
@@ -3163,6 +3173,7 @@ dependencies = [
  "MinkaIPC",
  "anti-webui",
  "libc",
+ "minka-instance",
  "minka-note",
  "serde_json",
 ]
