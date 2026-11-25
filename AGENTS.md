@@ -10,7 +10,7 @@ dual-screen "Duo" mode).
 | Submodule      | Lang                       | Role                                                                                                                                                                                                                 |
 |----------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **ShojiWM**    | Rust (smithay) + Rust config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
-| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` runs it from MinkaDE's one binary (`minka minkashell`), logs to `~/.local/state/minka/minkashell.log`, and restarts it when it dies (after 1, 2, 4, 8, 16, then every 30 s). There is no Quickshell fallback (24/11/2026). |
+| **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` execs `minka-keep minkashell`, which runs it from MinkaDE's one binary (`minka minkashell`), logs to `~/.local/state/minka/minkashell.log`, and restarts it when it dies (after 1, 2, 4, 8, 16, then every 30 s). There is no Quickshell fallback (24/11/2026). |
 | **MinkaMon**   | AntiWebUI (Rust)           | System monitor. `sampler-rs/` (`minkamon-sampler`) streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows. |
 | **MinkaShot**  | Quickshell/QML + Rust      | Screenshot tool, being ported. Print arms its daemon: frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. The Rust crate is the command line, `minkashot full\|region\|win\|list` (`minka minkashot ...`): no overlay, no input, an exit status for each failure. `win` captures a window's own buffer through the toolkit's ext-image-copy-capture (occlusion-free, no raising). MinkaCap, its own crate until 25/11/2026, is folded in: `MinkaCap grab\|list` is a name for `win`/`list`, kept while the QML daemon calls it. `minkashot daemon` is the Rust daemon to replace the QML one (25/11/2026): it holds `$XDG_RUNTIME_DIR/minkashot.lock`, hears Print and answers `minkashot interactive\|cancel\|status` (exit 5 when none runs). It has the whole overlay now: each output frozen under its own layer, drag, loupe, window pick, the compact md3e toolbar (delay, Window, retry, copy to the clipboard as `image/png`), the countdown, and a snackbar when a save or copy fails. The session config starts the Rust daemon through `/usr/lib/minka/minka-keep` (log `~/.local/state/minka/minkashot.log`, restarted like the shell) from the next minkade package; the session running now keeps the QML daemon until that package is installed and she logs in again. The QML tree stays installed until it is deleted. |
 | **MinkaConf**  | Quickshell/QML             | Settings utility.                                                                                                                                                                                                    |
@@ -99,8 +99,9 @@ uses it. Her rule: "if something can be deduplicated, i probably want it".
   description of what lands under `/usr`. The session runs only the package, so a change reaches
   it at the next install and restart; the previous package in pacman's cache is the way back.
   While working, `cargo build --profile release-fast -p minka` (no LTO, incremental) builds
-  `target/release-fast/minka`; the shell's and MinkaMon's launchers run it instead of
-  `/usr/bin/minka` when `MINKA_BIN` names it. The package builds the release profile (thin LTO).
+  `target/release-fast/minka`; `minka-keep`, and so the shell's and MinkaMon's launchers, run
+  it instead of `/usr/bin/minka` when `MINKA_BIN` names it. The package builds the release
+  profile (thin LTO).
 - **Proustite is a Rust crate too** (`Proustite/`): its `build.rs` reads `Proustite.qml`, so
   the palette is written once for the QML and the AntiWebUI apps. Each app's `theme.rs` keeps
   only its own tokens. `proustite::scheme()` and `proustite::widget_theme()` are the Material
@@ -122,12 +123,19 @@ uses it. Her rule: "if something can be deduplicated, i probably want it".
   launch exits. The holder hears that launch as `Event::TurnedAway` (MinkaMon and MinkaSyu raise
   their window), and `minka_instance::request` sends it one line and reads one back.
 - **Session apps are kept running by `packaging/minka-keep`** (25/11/2026), installed as
-  `/usr/lib/minka/minka-keep`. The session config execs `minka-keep NAME [ARG...]`, which runs
-  `minka NAME ARG...` (`$MINKA_BIN` first), logs to `~/.local/state/minka/NAME.log` and restarts
-  it as the shell's launcher does. MinkaShot's daemon starts through it. MinkaShell's own
-  launcher keeps its own loop while a package without minka-keep (0.93.0 and older) can still
-  be the way back: every package's config runs the shell's launcher from the checkout, so a
-  launcher that execs minka-keep leaves a rolled-back session with no shell.
+  `/usr/lib/minka/minka-keep`. `minka-keep NAME [ARG...]` runs `minka NAME ARG...` (`$MINKA_BIN`,
+  else `/usr/bin/minka`, else a build in the checkout it sits in), logs to
+  `~/.local/state/minka/NAME.log` (rolled at 2 MB) and restarts it after 1, 2, 4, 8, 16, then
+  every 30 s, until a clean exit or the compositor is gone. `--once` execs the app instead, with
+  no restarting. The session config execs it for MinkaShot's daemon, and the shell's and
+  MinkaMon's launchers (`dist/minkashell`, `dist/minkamon`, which is also `/usr/bin/minkamon`)
+  are wrappers that exec it, `--once` for MinkaMon. They must exec: the keeper takes its parent
+  for the compositor. Each wrapper looks for the keeper beside itself first
+  (`../../packaging/minka-keep`, the checkout's), then `/usr/lib/minka/minka-keep`: the session
+  runs the checkout's launchers with whatever package is installed, and 0.93.0 and older have no
+  `/usr/lib/minka/minka-keep`, while an installed launcher comes from the same package as the
+  installed keeper. `$MINKA_KEEP` names another keeper, for the packaging tests. With no keeper
+  a wrapper notes it in its app's log and exits 127.
 - **Upstream workspaces stay separate:** ShojiWM, xwayland-satellite, smithay, AntiWebUI and
   GitComet; minka reaches the crates it needs by path. `.vscode/settings.json` lists them in
   `rust-analyzer.linkedProjects`, because rust-analyzer's discovery stops at the root

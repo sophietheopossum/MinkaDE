@@ -16,7 +16,10 @@ would, and runs its install.sh with stand-ins first on PATH:
 - cargo, for --from-source, writes a stand-in for each package it is asked
   for where cargo puts a release build's (src/target/release/).
 The minka installed is test_make_tarball's stand-in, and MINKA_BIN points the
-launchers at it, so a real /usr/bin/minka never runs. HOME and the XDG dirs
+launchers at it, so a real /usr/bin/minka never runs. MINKA_KEEP points the
+shell's and MinkaMon's launchers at the minka-keep installed with it, so a
+real /usr/lib/minka/minka-keep never runs either. The one test that leaves
+it unset puts a stand-in keeper beside the launchers. HOME and the XDG dirs
 are temp dirs too.
 """
 
@@ -160,6 +163,7 @@ class Install(Checkout):
                         XDG_CONFIG_HOME=os.path.join(self.home, ".config"),
                         XDG_STATE_HOME=os.path.join(self.home, ".local/state"),
                         MINKA_BIN=self.at("/usr/bin/minka"),
+                        MINKA_KEEP=self.at("/usr/lib/minka/minka-keep"),
                         FAKE_SYSTEMCTL_LOG=self.systemctl_log, FAKE_CARGO_LOG=self.cargo_log)
 
     def unpack(self):
@@ -268,7 +272,10 @@ class Install(Checkout):
     def test_launchers_start_the_installed_apps(self):
         """The real dist/minkamon, dist/minkashell and minka-keep, run as the
         session runs them, start the installed minka (which says how it was
-        started and exits) under their app's name."""
+        started and exits) under their app's name. MINKA_KEEP stands in for
+        the launchers' /usr/lib/minka/minka-keep, a path the fake root cannot
+        move, and names the minka-keep installed here. The next test runs
+        their own lookup."""
         for path in ("MinkaMon/dist/minkamon", "MinkaShell/dist/minkashell",
                      "packaging/minka-keep"):
             with open(os.path.join(REPO, path), "rb") as real:
@@ -290,6 +297,52 @@ class Install(Checkout):
                 self.assertEqual(done.returncode, 0, done.stderr)
                 with open(os.path.join(self.home, f".local/state/minka/{name}.log")) as log:
                     self.assertIn(f"minka ran as {minka}: {ran}\n", log.read())
+
+    def test_checkout_launchers_exec_the_keeper_beside_them(self):
+        """The session runs a checkout's dist/minkashell and dist/minkamon
+        with whatever package is installed, and packages up to 0.93.0 have
+        no /usr/lib/minka/minka-keep. So with no MINKA_KEEP each must find
+        the minka-keep beside it, packaging/ in the checkout, and exec it:
+        the keeper takes its parent for the compositor. A stand-in keeper
+        here says its PID and how it was started. MINKA_BIN names the
+        checkout's stand-in minka, in case a launcher reaches a real
+        installed keeper instead."""
+        launchers = (("MinkaShell", "minkashell", "minkashell"),
+                     ("MinkaMon", "minkamon", "--once minkamon"))
+        for app, launcher, _ in launchers:
+            path = f"{app}/dist/{launcher}"
+            with open(os.path.join(REPO, path), "rb") as real:
+                self.write(path, real.read(), 0o755)
+        self.write("packaging/minka-keep",
+                   b'#!/bin/sh\nprintf "%s %s %s\\n" "$$" "$0" "$*" >> "$FAKE_KEEPER_LOG"\n',
+                   0o755)
+        env = dict(self.env, MINKA_BIN=os.path.join(self.repo, "target/release/minka"))
+        del env["MINKA_KEEP"]
+        for app, launcher, args in launchers:
+            with self.subTest(launcher=launcher):
+                directory = os.path.join(self.repo, app)
+                env["FAKE_KEEPER_LOG"] = os.path.join(self.tmp, f"{launcher}.keeper")
+                # As the session config starts it.
+                proc = subprocess.Popen([os.path.join(directory, "dist", launcher), directory],
+                                        cwd=self.cwd, env=env, stdin=subprocess.DEVNULL,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                out, err = proc.communicate(timeout=30)
+                # With no keeper, the launcher says why in its app's log.
+                log = os.path.join(self.home, f".local/state/minka/{launcher}.log")
+                self.assertEqual(proc.returncode, 0,
+                                 out + err + (self.read(log).decode() if os.path.exists(log) else ""))
+                self.assertTrue(os.path.exists(env["FAKE_KEEPER_LOG"]),
+                                "the keeper beside it never ran")
+                # The launcher's own PID: it exec'd the keeper.
+                keeper = f"{directory}/dist/../../packaging/minka-keep"
+                self.assertEqual(self.read(env["FAKE_KEEPER_LOG"]).decode(),
+                                 f"{proc.pid} {keeper} {args}\n")
+                # The installed keeper is tried after it. A fake root cannot
+                # move that path, so read it from the script.
+                with open(os.path.join(directory, "dist", launcher)) as script:
+                    loop = re.search(r"(?m)^for KEEP in (.+); do$", script.read())
+                self.assertIsNotNone(loop, "the keeper loop is stale")
+                self.assertEqual(loop.group(1).split()[-1], "/usr/lib/minka/minka-keep")
 
     @unittest.skipUnless(os.path.isdir(RUST_CONFIG) and os.path.isfile(MINKA_MAIN),
                          "no Rust config or minka checkout beside this script")
@@ -318,7 +371,7 @@ class Install(Checkout):
         named |= set(re.findall(r'\$\{MINKA_\w+:-(/usr/[^}"\\]+)\}', config))
         # What it execs by its full path, such as minka-keep.
         named |= set(re.findall(r'"exec (/usr/[\w./-]+)', config))
-        # The launchers' default tree and the minka they run.
+        # The keeper the launchers exec, and the minka it runs.
         for launcher in launchers:
             with open(os.path.join(REPO, launcher)) as script:
                 named |= {path.rstrip(".") for path in re.findall(r"/usr/[\w./-]+", script.read())}

@@ -2,16 +2,26 @@
 # minka-keep: runs one of minka's apps with its output captured, and starts
 # it again if it dies.
 #
-# Usage: minka-keep NAME [ARG...]
+# Usage: minka-keep [--once] NAME [ARG...]
 #
 # It runs `minka NAME ARG...`, from $MINKA_BIN when set (a build to try,
 # such as a checkout's target/release-fast/minka), else from the installed
-# /usr/bin/minka. With neither, this logs why and exits 127. The session
-# config starts it, by exec, for the session's apps (MinkaShot's daemon is
-# `minka-keep minkashot daemon`), so its parent is the compositor.
+# /usr/bin/minka, else from a build in the checkout this script sits in
+# (target/release-fast, then target/release). An installed keeper has no
+# checkout around it. With no binary this logs why and exits 127.
+#
+# The session config starts it, by exec, for the session's apps (MinkaShot's
+# daemon is `minka-keep minkashot daemon`), so its parent is the compositor.
+# The shell's and MinkaMon's launchers (MinkaShell/dist/minkashell and
+# MinkaMon/dist/minkamon) exec it too.
 #
 # Output is appended to ~/.local/state/minka/NAME.log, so what an app printed
 # before it died is still there after the next login.
+#
+# --once runs the app once, logged the same way, and is done: it execs the
+# app, so the app's exit status is the keeper's. MinkaMon's launcher uses
+# it: MinkaMon opens from the start menu as well as with the session, and
+# is never restarted.
 #
 # Restarting: the compositor starts the app once per session, and a Rust
 # panic or a Wayland or GPU error ends it. So this script stays as its parent
@@ -22,11 +32,18 @@
 # this script, not the binary: it passes the signal on and exits.
 set -eu
 
+USAGE="usage: minka-keep [--once] NAME [ARG...]"
+ONCE=
+if [ "${1:-}" = --once ]; then
+    ONCE=1
+    shift
+fi
 NAME="${1:-}"
-# The name names the log, so it is one file name.
+# The name names the log, so it is one file name. One that starts with a
+# dash is a mistyped option.
 case "$NAME" in
-    "" | */*)
-        echo "usage: minka-keep NAME [ARG...]" >&2
+    "" | */* | -*)
+        echo "$USAGE" >&2
         exit 2
         ;;
 esac
@@ -46,32 +63,43 @@ note() {
     printf '\n=== %s %s: %s ===\n' "$NAME" "$1" "$(date -Is)" 2> /dev/null >> "$LOG" || true
 }
 
-# Roll at 2MB keeping one generation, as the shell's and MinkaMon's
-# launchers do.
+# Roll at 2MB keeping one generation. A log left to grow is not harmless:
+# this project has already had a log directory reach 71GB.
 if log_ok && [ "$(wc -c < "$LOG")" -gt 2097152 ]; then
     mv -f "$LOG" "$LOG.1" 2> /dev/null || true
 fi
 
+# A checkout keeps this script in packaging/, beside target/.
+CHECKOUT="$(dirname "$0")/.."
 BIN=
-for candidate in "${MINKA_BIN:-}" /usr/bin/minka; do
+for candidate in "${MINKA_BIN:-}" /usr/bin/minka \
+    "$CHECKOUT/target/release-fast/minka" "$CHECKOUT/target/release/minka"; do
     if [ -n "$candidate" ] && [ -x "$candidate" ]; then
         BIN=$candidate
         break
     fi
 done
 if [ -z "$BIN" ]; then
-    note "no minka binary (MINKA_BIN or /usr/bin/minka), not starting"
+    note "no minka binary (MINKA_BIN, /usr/bin/minka, or a build in $CHECKOUT/target), not starting"
     exit 127
 fi
 
 note "starting ($BIN $NAME${*:+ $*})"
 
+if [ -n "$ONCE" ]; then
+    out=/dev/null
+    if log_ok; then
+        out=$LOG
+    fi
+    exec "$BIN" "$NAME" "$@" >> "$out" 2>&1
+fi
+
 # Once the compositor is gone the session is over, and an app that exited
 # because of that must not be started again. Its socket going is not enough
 # to tell: a compositor that crashes (or aborts on its watchdog) leaves the
 # socket file behind. But the session starts this script as the compositor's
-# own child (session.rs execs it), so being handed to another parent means
-# the compositor has died.
+# own child (session.rs execs it, or a launcher that execs it), so being
+# handed to another parent means the compositor has died.
 case "${WAYLAND_DISPLAY:-wayland-0}" in
     /*) SOCKET="${WAYLAND_DISPLAY}" ;;
     *) SOCKET="${XDG_RUNTIME_DIR:-/nonexistent}/${WAYLAND_DISPLAY:-wayland-0}" ;;

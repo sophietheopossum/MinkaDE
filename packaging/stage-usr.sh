@@ -10,7 +10,8 @@
 #   /usr/bin/minka                  the binary: compositor, portal, satellite, apps
 #   /usr/bin/<name>                 a link to it for every name it answers to
 #                                   (`minka --names`), except these two:
-#   /usr/bin/minkamon               MinkaMon's launcher, which logs its output
+#   /usr/bin/minkamon               MinkaMon's launcher, which execs
+#                                   minka-keep --once to log its output
 #   /usr/lib/minka/xwayland-satellite
 #                                   out of PATH, so it never shadows a distro
 #                                   xwayland-satellite (minka-session and
@@ -19,7 +20,9 @@
 #   /usr/lib/minka/minka-keep       the launcher that logs a session app's
 #                                   output and restarts it if it dies (the
 #                                   session config starts MinkaShot's daemon
-#                                   through it)
+#                                   through it, and the shell's and
+#                                   MinkaMon's launchers installed here exec
+#                                   it)
 #   /usr/share/minka/shojiwm        the compositor's shaders and icons, read
 #                                   once the checkout it was built from is gone
 #   /usr/share/minka/<App>          the shell's and MinkaMon's assets (and the
