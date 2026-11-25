@@ -5,12 +5,11 @@
 # which is the ShojiWM compositor with Minka's config compiled in, its
 # ScreenCast portal backend, the patched xwayland-satellite, the MinkaFX
 # overlay, the MinkaShell shell, the MinkaMon system monitor, MinkaShot's
-# screenshot commands and the other Minka apps, each run through a link
-# named after it. Beside it go
-# the compositor's shaders and icons, the QML apps (MinkaConf, MinkaShot and
-# MinkaLedger's window) with the shared Proustite / MinkaLink singletons, a
-# "Minka" Wayland session entry for your display manager, and the apps'
-# launchers.
+# screenshot daemon and commands and the other Minka apps, each run through
+# a link named after it. Beside it go the compositor's shaders and icons,
+# the QML apps (MinkaConf and MinkaLedger's window, and MinkaShot's old
+# tree) with the shared Proustite / MinkaLink singletons, a "Minka" Wayland
+# session entry for your display manager, and the apps' launchers.
 #
 # Usage:
 #   ./install.sh                 install the prebuilt x86_64 binary (default)
@@ -46,7 +45,7 @@ done
 # ── dependency sanity check ──────────────────────────────────────────────
 missing=()
 need() { command -v "$1" >/dev/null 2>&1 || missing+=("$1${2:+ ($2)}"); }
-need qs "quickshell - renders MinkaConf, MinkaShot and MinkaLedger's window"
+need qs "quickshell - renders MinkaConf and MinkaLedger's window"
 need python3 "MinkaShell's per-app mute and MinkaConf's cursor previews"
 if command -v python3 >/dev/null 2>&1 && ! python3 -c 'import PIL' 2>/dev/null; then
     missing+=("python Pillow (MinkaConf's cursor previews; without it no cursor themes are listed)")

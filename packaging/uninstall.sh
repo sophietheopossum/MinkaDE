@@ -2,7 +2,8 @@
 # Remove a MinkaDE tester install: what the usr/ tree beside this script
 # put in /usr, and what older tarballs put there. Leaves what it wrote in
 # your home directory: your settings (~/.config/minka-settings.json), the
-# compositor's logs (~/shoji_wm/), the shell's and MinkaMon's logs
+# compositor's logs (~/.local/state/shoji_wm/, and ~/shoji_wm/ from older
+# builds and the hang watchdog), the shell's and MinkaMon's logs
 # (~/.local/state/minka/), MinkaConf's cursor previews (~/.cache/minkaconf/)
 # and your screenshots (~/Pictures/Screenshots/). Delete those yourself for
 # a full wipe.
@@ -50,8 +51,9 @@ if command -v systemctl >/dev/null 2>&1; then
     systemctl --user restart xdg-desktop-portal 2>/dev/null || true
 fi
 
-echo "done. ~/.config/minka-settings.json was kept, with the logs in ~/shoji_wm/ and"
-echo "~/.local/state/minka/ and the previews in ~/.cache/minkaconf/ (remove them for a full wipe)."
+echo "done. ~/.config/minka-settings.json was kept, with the logs in ~/.local/state/shoji_wm/,"
+echo "~/shoji_wm/ and ~/.local/state/minka/ and the previews in ~/.cache/minkaconf/ (remove them"
+echo "for a full wipe)."
 if [[ -d "$XDG_CONFIG_HOME/shojiwm" ]]; then
     echo "$XDG_CONFIG_HOME/shojiwm is from an older tarball, or a ShojiWM install of its own; MinkaDE does not use it."
 fi

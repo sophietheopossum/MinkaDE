@@ -266,24 +266,30 @@ class Install(Checkout):
         self.assertTrue(os.path.isdir(os.path.join(installed, "shaders")))
 
     def test_launchers_start_the_installed_apps(self):
-        """The real dist/minkamon and dist/minkashell, run as the session runs
-        them, start the installed minka (which says how it was started and
-        exits) under their app's name."""
-        for app, launcher in (("MinkaMon", "dist/minkamon"), ("MinkaShell", "dist/minkashell")):
-            with open(os.path.join(REPO, app, launcher), "rb") as real:
-                self.write(f"{app}/{launcher}", real.read(), 0o755)
+        """The real dist/minkamon, dist/minkashell and minka-keep, run as the
+        session runs them, start the installed minka (which says how it was
+        started and exits) under their app's name."""
+        for path in ("MinkaMon/dist/minkamon", "MinkaShell/dist/minkashell",
+                     "packaging/minka-keep"):
+            with open(os.path.join(REPO, path), "rb") as real:
+                self.write(path, real.read(), 0o755)
         self.install()
         minka = self.at("/usr/bin/minka")
-        runs = (("/usr/bin/minkamon", "MinkaMon", "minkamon"),
-                ("/usr/share/minka/MinkaShell/dist/minkashell", "MinkaShell", "minkashell"))
-        for command, app, name in runs:
-            with self.subTest(app=app):
-                done = subprocess.run([self.at(command), self.at(f"/usr/share/minka/{app}")],
+        runs = ((["/usr/bin/minkamon", "/usr/share/minka/MinkaMon"], "minkamon", "minkamon"),
+                (["/usr/share/minka/MinkaShell/dist/minkashell", "/usr/share/minka/MinkaShell"],
+                 "minkashell", "minkashell"),
+                # As the session config starts MinkaShot's daemon.
+                (["/usr/lib/minka/minka-keep", "minkashot", "daemon"],
+                 "minkashot", "minkashot daemon"))
+        for (command, *args), name, ran in runs:
+            with self.subTest(name=name):
+                args = [self.at(a) if a.startswith("/usr/") else a for a in args]
+                done = subprocess.run([self.at(command), *args],
                                       env=self.env, stdin=subprocess.DEVNULL,
                                       capture_output=True, text=True, timeout=30)
                 self.assertEqual(done.returncode, 0, done.stderr)
                 with open(os.path.join(self.home, f".local/state/minka/{name}.log")) as log:
-                    self.assertIn(f"minka ran as {minka}: {name}\n", log.read())
+                    self.assertIn(f"minka ran as {minka}: {ran}\n", log.read())
 
     @unittest.skipUnless(os.path.isdir(RUST_CONFIG) and os.path.isfile(MINKA_MAIN),
                          "no Rust config or minka checkout beside this script")
@@ -291,7 +297,8 @@ class Install(Checkout):
         """minka-session, the Rust config's defaults, the launchers and the apps
         name /usr paths, which a tester's environment does not override: each
         must be one install.sh fills. minka answers to its real names here."""
-        launchers = ("MinkaMon/dist/minkamon", "MinkaShell/dist/minkashell")
+        launchers = ("MinkaMon/dist/minkamon", "MinkaShell/dist/minkashell",
+                     "packaging/minka-keep")
         for path in ("packaging/minka-session", *launchers, "MinkaShot/services/ShotState.qml"):
             with open(os.path.join(REPO, path), "rb") as real:
                 self.write(path, real.read(), 0o755)
@@ -307,7 +314,10 @@ class Install(Checkout):
         self.assertRegex(wrapper, r"(?m)^export ANTIWEBUI_VULKAN_DRIVERS=all$")
         named = set(re.findall(r"/usr/[\w./-]+", wrapper))
         with open(os.path.join(RUST_CONFIG, "minka/session.rs")) as session_rs:
-            named |= set(re.findall(r'\$\{MINKA_\w+:-(/usr/[^}"\\]+)\}', session_rs.read()))
+            config = session_rs.read()
+        named |= set(re.findall(r'\$\{MINKA_\w+:-(/usr/[^}"\\]+)\}', config))
+        # What it execs by its full path, such as minka-keep.
+        named |= set(re.findall(r'"exec (/usr/[\w./-]+)', config))
         # The launchers' default tree and the minka they run.
         for launcher in launchers:
             with open(os.path.join(REPO, launcher)) as script:
@@ -322,7 +332,7 @@ class Install(Checkout):
                     continue
                 with open(os.path.join(REPO, app, "src", name)) as source:
                     named |= set(re.findall(r'"(/usr/share/minka/[^"]+)"', source.read()))
-        for path in ("/usr/share/minka/MinkaShell", "/usr/share/minka/MinkaShot",
+        for path in ("/usr/share/minka/MinkaShell", "/usr/lib/minka/minka-keep",
                      "/usr/bin/MinkaCap", "/usr/bin/minka", "/usr/share/minka/MinkaShell/assets"):
             self.assertIn(path, named, "the patterns are stale")
         self.assertEqual(sorted(p for p in named if not os.path.exists(self.at(p))), [])

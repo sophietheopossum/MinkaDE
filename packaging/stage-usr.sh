@@ -16,12 +16,17 @@
 #                                   xwayland-satellite (minka-session and
 #                                   shojiwm-env.fish point ShojiWM at it)
 #   /usr/bin/minka-session, /usr/share/wayland-sessions/minka.desktop
+#   /usr/lib/minka/minka-keep       the launcher that logs a session app's
+#                                   output and restarts it if it dies (the
+#                                   session config starts MinkaShot's daemon
+#                                   through it)
 #   /usr/share/minka/shojiwm        the compositor's shaders and icons, read
 #                                   once the checkout it was built from is gone
 #   /usr/share/minka/<App>          the shell's and MinkaMon's assets (and the
 #                                   shell's scripts and launcher), and the QML
-#                                   trees of the apps not yet ported to AntiWebUI
-#                                   (MinkaConf, MinkaShot, MinkaLedger's window)
+#                                   trees still installed (MinkaConf,
+#                                   MinkaLedger's window, and MinkaShot's,
+#                                   which the session no longer starts)
 #                                   beside Proustite and MinkaLink, which their
 #                                   symlinks reach as ../Proustite
 #   the portal backend's D-Bus, portal and systemd files, MinkaSyu's units,
@@ -57,6 +62,7 @@ install -Dm755 MinkaMon/dist/minkamon "$USR/bin/minkamon"
 
 echo ">> session"
 install -Dm755 packaging/minka-session "$USR/bin/minka-session"
+install -Dm755 packaging/minka-keep "$USR/lib/minka/minka-keep"
 install -Dm644 packaging/minka.desktop "$USR/share/wayland-sessions/minka.desktop"
 
 echo ">> compositor assets"

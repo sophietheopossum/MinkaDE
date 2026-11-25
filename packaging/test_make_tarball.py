@@ -85,7 +85,7 @@ MEMBERS = {
     "MinkaMon/sampler-rs": ("Cargo.toml", "src/lib.rs"),
     "MinkaShell": ("Cargo.toml", "src/lib.rs", "assets/mac-glass-minimize.svg",
                    "scripts/app-mute.py", "dist/minkashell"),
-    # The crate, beside the QML tree the session still runs.
+    # The crate, beside the QML tree, installed until it is deleted.
     "MinkaShot": ("Cargo.toml", "src/lib.rs", "shell.qml", "services/ShotState.qml"),
     "MinkaSyu": ("Cargo.toml", "src/lib.rs", "README.md",
                  "dist/minka-syu.desktop", "dist/minka-syu-check.service",
@@ -108,6 +108,7 @@ CARGO_TOML = ("# fixture: Cargo.toml\n[workspace]\nresolver = \"3\"\nmembers = [
 CHECKOUT = (
     "README.md",
     "packaging/minka-session",
+    "packaging/minka-keep",
     "packaging/minka.desktop",
     # A submodule's .git is a file naming its gitdir, not a directory.
     "ShojiWM/.git",
@@ -168,6 +169,7 @@ CHECKOUT = (
 )
 EXECUTABLE = {
     "packaging/minka-session",
+    "packaging/minka-keep",
     "ShojiWM/target/release/shoji_wm",
     "ShojiWM/target/release/examples/default_config",
     "ShojiWM/target/release/xdg-desktop-portal-shojiwm",

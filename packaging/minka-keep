@@ -1,0 +1,130 @@
+#!/bin/sh
+# minka-keep: runs one of minka's apps with its output captured, and starts
+# it again if it dies.
+#
+# Usage: minka-keep NAME [ARG...]
+#
+# It runs `minka NAME ARG...`, from $MINKA_BIN when set (a build to try,
+# such as a checkout's target/release-fast/minka), else from the installed
+# /usr/bin/minka. With neither, this logs why and exits 127. The session
+# config starts it, by exec, for the session's apps (MinkaShot's daemon is
+# `minka-keep minkashot daemon`), so its parent is the compositor.
+#
+# Output is appended to ~/.local/state/minka/NAME.log, so what an app printed
+# before it died is still there after the next login.
+#
+# Restarting: the compositor starts the app once per session, and a Rust
+# panic or a Wayland or GPU error ends it. So this script stays as its parent
+# and starts it again after any exit but a clean one (status 0 is a quit, or a
+# second launch finding the first). An app that keeps dying is started less
+# and less often: after 1 s, then 2, 4, 8 and 16, then every 30 s, and after
+# 1 s again once a run has lasted a minute. To stop the app for good, signal
+# this script, not the binary: it passes the signal on and exits.
+set -eu
+
+NAME="${1:-}"
+# The name names the log, so it is one file name.
+case "$NAME" in
+    "" | */*)
+        echo "usage: minka-keep NAME [ARG...]" >&2
+        exit 2
+        ;;
+esac
+shift
+
+LOG_DIR="${XDG_STATE_HOME:-${HOME:-/tmp}/.local/state}/minka"
+LOG="$LOG_DIR/$NAME.log"
+
+# The log must never stop the app. A note that cannot be written (a full
+# disk, the directory deleted) is lost. The directory is made again before
+# each start, and an app whose log cannot be opened runs with its output on
+# /dev/null.
+log_ok() {
+    mkdir -p "$LOG_DIR" 2> /dev/null && (: >> "$LOG") 2> /dev/null
+}
+note() {
+    printf '\n=== %s %s: %s ===\n' "$NAME" "$1" "$(date -Is)" 2> /dev/null >> "$LOG" || true
+}
+
+# Roll at 2MB keeping one generation, as the shell's and MinkaMon's
+# launchers do.
+if log_ok && [ "$(wc -c < "$LOG")" -gt 2097152 ]; then
+    mv -f "$LOG" "$LOG.1" 2> /dev/null || true
+fi
+
+BIN=
+for candidate in "${MINKA_BIN:-}" /usr/bin/minka; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+        BIN=$candidate
+        break
+    fi
+done
+if [ -z "$BIN" ]; then
+    note "no minka binary (MINKA_BIN or /usr/bin/minka), not starting"
+    exit 127
+fi
+
+note "starting ($BIN $NAME${*:+ $*})"
+
+# Once the compositor is gone the session is over, and an app that exited
+# because of that must not be started again. Its socket going is not enough
+# to tell: a compositor that crashes (or aborts on its watchdog) leaves the
+# socket file behind. But the session starts this script as the compositor's
+# own child (session.rs execs it), so being handed to another parent means
+# the compositor has died.
+case "${WAYLAND_DISPLAY:-wayland-0}" in
+    /*) SOCKET="${WAYLAND_DISPLAY}" ;;
+    *) SOCKET="${XDG_RUNTIME_DIR:-/nonexistent}/${WAYLAND_DISPLAY:-wayland-0}" ;;
+esac
+COMPOSITOR=$PPID
+compositor_alive() {
+    [ -S "$SOCKET" ] && [ "$(ps -o ppid= -p $$ | tr -d ' ')" = "$COMPOSITOR" ]
+}
+
+# $child is the app, or the sleep between two runs, so a signal stops either.
+child=
+stop() {
+    trap - TERM INT HUP
+    if [ -n "$child" ]; then
+        kill -TERM "$child" 2> /dev/null || true
+        wait "$child" 2> /dev/null || true
+    fi
+    exit 0
+}
+trap stop TERM INT HUP
+
+delay=1
+while :; do
+    started=$(date +%s)
+    out=/dev/null
+    if log_ok; then
+        out=$LOG
+    fi
+    "$BIN" "$NAME" "$@" >> "$out" 2>&1 &
+    child=$!
+    status=0
+    wait "$child" || status=$?
+    child=
+    [ "$status" -ne 0 ] || exit 0
+
+    if ! compositor_alive; then
+        note "exited with status $status and the compositor is gone, not restarting"
+        exit "$status"
+    fi
+    if [ $(($(date +%s) - started)) -ge 60 ]; then
+        delay=1
+    fi
+    note "exited with status $status, restarting in ${delay}s"
+    # In the background and waited for, so a signal during the pause is
+    # handled at once rather than after the sleep.
+    sleep "$delay" &
+    child=$!
+    wait "$child" || true
+    child=
+    if ! compositor_alive; then
+        note "the compositor went during the pause, not restarting"
+        exit "$status"
+    fi
+    delay=$((delay * 2))
+    [ "$delay" -le 30 ] || delay=30
+done

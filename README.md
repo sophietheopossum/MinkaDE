@@ -9,13 +9,13 @@ into the compositor.
 
 This is a **preview for testers** — expect rough edges. Please report what
 breaks, along with `~/.local/state/minka/minkashell.log` and
-`~/shoji_wm/logs/latest.log`.
+`~/.local/state/shoji_wm/logs/latest.log`.
 
 ## What's in the tarball
 
 | path            | contents                                                        |
 |-----------------|-----------------------------------------------------------------|
-| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaShot's screenshot commands and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps not yet ported to AntiWebUI (MinkaConf, MinkaShot, MinkaLedger's window), the shell's and MinkaMon's assets, and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
+| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaShot's screenshot daemon and commands and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps not yet ported to AntiWebUI (MinkaConf, MinkaLedger's window) and MinkaShot's old QML tree, the shell's and MinkaMon's assets, and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
 | `src/`          | full sources, for `--from-source` installs                      |
 | `install.sh`, `uninstall.sh` | the installer, and its undo, which removes what `usr/` holds |
 
@@ -23,8 +23,8 @@ breaks, along with `~/.local/state/minka/minkashell.log` and
 
 Required at runtime:
 
-- **quickshell** (`qs`), with its screen-capture support — renders MinkaConf,
-  MinkaShot and MinkaLedger's window, until they move to AntiWebUI
+- **quickshell** (`qs`) — renders MinkaConf and MinkaLedger's window, until
+  they move to AntiWebUI
   (Arch: AUR `quickshell`; Fedora COPR / Nix packages exist; otherwise build from source)
 - **pipewire + wireplumber** — audio and screen sharing
 - **xorg-xwayland** — X11 app support
@@ -130,8 +130,8 @@ reload).
   Minka's.
 - If the shell crashes, its launcher starts it again: after 1 s, then 2, 4,
   8 and 16 s, then every 30 s while it keeps crashing. `minkashell.log` says
-  why it died.
-- Logs: compositor `~/shoji_wm/logs/latest.log`, shell
+  why it died. The screenshot daemon (Print) is restarted the same way.
+- Logs: compositor `~/.local/state/shoji_wm/logs/latest.log`, shell
   `~/.local/state/minka/minkashell.log`, monitor
-  `~/.local/state/minka/minkamon.log`, screenshots `/tmp/minkashot.log`,
-  overlay `/tmp/minkafx.log`.
+  `~/.local/state/minka/minkamon.log`, screenshots
+  `~/.local/state/minka/minkashot.log`, overlay `/tmp/minkafx.log`.
