@@ -16,7 +16,7 @@
     },
     {
       "label": "minka: build (release-fast)",
-      "detail": "cargo build --profile release-fast -p minka: MinkaDE's one binary (minka/), with the compositor, its portal, xwayland-satellite, MinkaShell, MinkaMon and its sampler, MinkaFX, MinkaCap, MinkaSyu, MinkaThermal, MinkaLedger's core, bartizan-lsp and keysend in it, into target/release-fast/minka. No LTO and incremental, so an edit relinks in seconds. Nothing in the session changes: it runs the installed package. To try this build, run an app from it (`target/release-fast/minka minkamon`), or start the shell or MinkaMon through their launchers with MINKA_BIN set to it. AntiWebUI has no step of its own: the apps compile the submodule's working tree, uncommitted changes included.",
+      "detail": "cargo build --profile release-fast -p minka: MinkaDE's one binary (minka/), with the compositor, its portal, xwayland-satellite, MinkaShell, MinkaMon and its sampler, MinkaFX, MinkaShot's screenshot commands, MinkaSyu, MinkaThermal, MinkaLedger's core, bartizan-lsp and keysend in it, into target/release-fast/minka. No LTO and incremental, so an edit relinks in seconds. Nothing in the session changes: it runs the installed package. To try this build, run an app from it (`target/release-fast/minka minkamon`), or start the shell or MinkaMon through their launchers with MINKA_BIN set to it. AntiWebUI has no step of its own: the apps compile the submodule's working tree, uncommitted changes included.",
       "type": "shell",
       "command": "systemd-run --user --scope -q --collect -p MemoryHigh=6G -p MemoryMax=10G -p MemorySwapMax=2G -- cargo build --profile release-fast -p minka",
       "options": {

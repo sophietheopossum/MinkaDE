@@ -55,7 +55,7 @@ ROOT = f"minkade-{VERSION}"
 
 # The names the stand-in minka answers to, as the real one's apps! list has them.
 NAMES = ("shoji_wm", "xdg-desktop-portal-shojiwm", "xwayland-satellite", "MinkaFX", "MinkaCap",
-         "minkashell", "minkamon", "minkamon-sampler", "minka-syu", "minka-syu-gui",
+         "minkashell", "minkashot", "minkamon", "minkamon-sampler", "minka-syu", "minka-syu-gui",
          "minka-thermal", "minka-ledger", "bartizan-lsp")
 
 
@@ -76,7 +76,6 @@ def minka_script(names=NAMES, fallback=True):
 # The stand-in's Cargo workspace: each member, with the files it holds.
 MEMBERS = {
     "bartizan-lsp": ("Cargo.toml", "src/lib.rs"),
-    "MinkaCap": ("Cargo.toml", "src/lib.rs"),
     "MinkaFX": ("Cargo.toml", "src/lib.rs"),
     "MinkaIPC": ("Cargo.toml", "src/lib.rs"),
     "MinkaLedger": ("Cargo.toml", "src/lib.rs", "src/main.rs", "ui/shell.qml",
@@ -86,6 +85,8 @@ MEMBERS = {
     "MinkaMon/sampler-rs": ("Cargo.toml", "src/lib.rs"),
     "MinkaShell": ("Cargo.toml", "src/lib.rs", "assets/mac-glass-minimize.svg",
                    "scripts/app-mute.py", "dist/minkashell"),
+    # The crate, beside the QML tree the session still runs.
+    "MinkaShot": ("Cargo.toml", "src/lib.rs", "shell.qml", "services/ShotState.qml"),
     "MinkaSyu": ("Cargo.toml", "src/lib.rs", "README.md",
                  "dist/minka-syu.desktop", "dist/minka-syu-check.service",
                  "dist/minka-syu-check.timer"),
@@ -145,7 +146,6 @@ CHECKOUT = (
         "MinkaMon/sampler-rs", "MinkaSyu/gui", "minka", "tools/md3e-trial")),
     "MinkaShell/.idea/workspace.xml",
     # The crates' own builds from before the workspace: never shipped.
-    "MinkaCap/target/debug/MinkaCap",
     "MinkaIPC/target/debug/libminka_ipc.rlib",
     "MinkaShell/target/release/minkashell",
     "MinkaMon/sampler-rs/target/release/minkamon-sampler",
@@ -165,9 +165,6 @@ CHECKOUT = (
     "MinkaLink/.git",
     "MinkaLink/qmldir",
     "MinkaLink/ShojiClient.qml",
-    "MinkaShot/.git",
-    "MinkaShot/shell.qml",
-    "MinkaShot/services/ShotState.qml",
 )
 EXECUTABLE = {
     "packaging/minka-session",
@@ -179,7 +176,6 @@ EXECUTABLE = {
     "target/debug/minka",
     "target/release/MinkaFX",
     "target/release/minkashell",
-    "MinkaCap/target/debug/MinkaCap",
     "MinkaShell/target/release/minkashell",
     "MinkaShell/dist/minkashell",
     "MinkaMon/sampler-rs/target/release/minkamon-sampler",

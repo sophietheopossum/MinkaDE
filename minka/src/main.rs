@@ -39,8 +39,10 @@ apps! {
     "xdg-desktop-portal-shojiwm" => xdg_desktop_portal_shojiwm::main(),
     "xwayland-satellite" => xwayland_satellite::cli::main(),
     "MinkaFX" => minka_fx::main(),
-    "MinkaCap" => minka_cap::main(),
+    // MinkaCap was its own crate; the name stays while the QML MinkaShot runs it.
+    "MinkaCap" => minkashot::cap_main(),
     "minkashell" => minkashell::main(),
+    "minkashot" => minkashot::main(),
     "minkamon" => minkamon::main(),
     "minkamon-sampler" => minkamon_sampler::main(),
     "minka-syu" => minka_syu::main(),

@@ -23,9 +23,10 @@ set -gx MINKA_SHELL_DIR $HOME/Documents/src/MinkaDE/MinkaShell
 # The shell's launcher (MinkaShell/dist/minkashell) runs the shell from the
 # installed /usr/bin/minka (MINKA_BIN names another build to try).
 set -gx MINKA_SHOT_DIR $HOME/Documents/src/MinkaDE/MinkaShot
-# MinkaFX and MinkaCap are part of minka too: the config and MinkaShot run
-# the package's /usr/bin/MinkaFX and /usr/bin/MinkaCap unless MINKA_FX_BIN or
-# MINKA_CAP_BIN names something else.
+# MinkaFX is part of minka too, and MinkaCap is now a name of minkashot (its
+# window capture): the config and MinkaShot run the package's /usr/bin/MinkaFX
+# and /usr/bin/MinkaCap unless MINKA_FX_BIN or MINKA_CAP_BIN names something
+# else.
 # MinkaMon's launcher (which owns the logging) from the checkout, and the
 # directory it is given, from which it finds a checkout build to try
 # ($MINKA_MON_DIR/../target/...) when MINKA_BIN is unset and there is no

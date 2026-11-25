@@ -4,8 +4,9 @@
 # Installs the Minka desktop environment. Most of it is one binary, minka,
 # which is the ShojiWM compositor with Minka's config compiled in, its
 # ScreenCast portal backend, the patched xwayland-satellite, the MinkaFX
-# overlay, MinkaCap, the MinkaShell shell, the MinkaMon system monitor and
-# the other Minka apps, each run through a link named after it. Beside it go
+# overlay, the MinkaShell shell, the MinkaMon system monitor, MinkaShot's
+# screenshot commands and the other Minka apps, each run through a link
+# named after it. Beside it go
 # the compositor's shaders and icons, the QML apps (MinkaConf, MinkaShot and
 # MinkaLedger's window) with the shared Proustite / MinkaLink singletons, a
 # "Minka" Wayland session entry for your display manager, and the apps'

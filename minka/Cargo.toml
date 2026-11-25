@@ -19,8 +19,8 @@ shojiwm_minka = { path = "../ShojiWM/src/shojiwm_minka" }
 xdg-desktop-portal-shojiwm = { path = "../ShojiWM/src/xdg-desktop-portal-shojiwm" }
 xwayland-satellite = { path = "../xwayland-satellite" }
 MinkaFX = { path = "../MinkaFX" }
-MinkaCap = { path = "../MinkaCap" }
 minkashell = { path = "../MinkaShell" }
+minkashot = { path = "../MinkaShot" }
 minkamon = { path = "../MinkaMon" }
 minkamon-sampler = { path = "../MinkaMon/sampler-rs" }
 minka-syu = { path = "../MinkaSyu" }

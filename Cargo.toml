@@ -18,13 +18,13 @@
 resolver = "3"
 members = [
     "bartizan-lsp",
-    "MinkaCap",
     "MinkaFX",
     "MinkaIPC",
     "MinkaLedger",
     "MinkaMon",
     "MinkaMon/sampler-rs",
     "MinkaShell",
+    "MinkaShot",
     "MinkaSyu",
     "MinkaSyu/gui",
     "MinkaThermal",

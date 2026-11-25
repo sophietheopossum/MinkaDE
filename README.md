@@ -15,7 +15,7 @@ breaks, along with `~/.local/state/minka/minkashell.log` and
 
 | path            | contents                                                        |
 |-----------------|-----------------------------------------------------------------|
-| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaCap and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps not yet ported to AntiWebUI (MinkaConf, MinkaShot, MinkaLedger's window), the shell's and MinkaMon's assets, and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
+| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaShot's screenshot commands and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps not yet ported to AntiWebUI (MinkaConf, MinkaShot, MinkaLedger's window), the shell's and MinkaMon's assets, and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
 | `src/`          | full sources, for `--from-source` installs                      |
 | `install.sh`, `uninstall.sh` | the installer, and its undo, which removes what `usr/` holds |
 

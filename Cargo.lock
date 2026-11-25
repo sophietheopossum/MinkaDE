@@ -3,17 +3,6 @@
 version = 4
 
 [[package]]
-name = "MinkaCap"
-version = "0.1.0"
-dependencies = [
- "minka-note",
- "png 0.17.16",
- "rustix 0.38.44",
- "wayland-client",
- "wayland-protocols",
-]
-
-[[package]]
 name = "MinkaFX"
 version = "0.1.0"
 dependencies = [
@@ -3064,7 +3053,6 @@ dependencies = [
 name = "minka"
 version = "0.1.0"
 dependencies = [
- "MinkaCap",
  "MinkaFX",
  "bartizan-lsp",
  "keysend",
@@ -3077,6 +3065,7 @@ dependencies = [
  "minkamon",
  "minkamon-sampler",
  "minkashell",
+ "minkashot",
  "shojiwm_minka",
  "xdg-desktop-portal-shojiwm",
  "xwayland-satellite",
@@ -3165,6 +3154,17 @@ dependencies = [
  "proustite",
  "serde_json",
  "zbus",
+]
+
+[[package]]
+name = "minkashot"
+version = "0.1.0"
+dependencies = [
+ "MinkaIPC",
+ "anti-webui",
+ "libc",
+ "minka-note",
+ "serde_json",
 ]
 
 [[package]]
