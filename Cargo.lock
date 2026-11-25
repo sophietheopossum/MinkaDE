@@ -3172,9 +3172,11 @@ version = "0.1.0"
 dependencies = [
  "MinkaIPC",
  "anti-webui",
+ "anti-webui-md3e",
  "libc",
  "minka-instance",
  "minka-note",
+ "proustite",
  "serde_json",
 ]
 
