@@ -73,6 +73,18 @@ def _kib(value):
     return n * _UNIT.get(parts[1], 1)
 
 
+def _text(path):
+    """What a file under /proc says, for the reads that carry a name another
+    process chose: a comm, a dma-buf's name in its fdinfo. The kernel cuts a
+    comm at 15 bytes, in the middle of a character if that is where the 15th
+    falls, and read strictly such a name raised UnicodeDecodeError, which is
+    no OSError: one client with one ended the sampler at every walk, and it
+    did on 27/11/2026. A byte that is not UTF-8 comes back as its \\xNN
+    escape instead, which json.dumps() keeps as it is."""
+    with open(path, encoding="utf-8", errors="backslashreplace") as fh:
+        return fh.read()
+
+
 def read_meminfo():
     out = {}
     try:
@@ -128,8 +140,7 @@ def read_zram():
 
 def _comm(pid):
     try:
-        with open(f"/proc/{pid}/comm") as fh:
-            return fh.read().strip()
+        return _text(f"/proc/{pid}/comm").strip()
     except OSError:
         return "?"
 
@@ -173,8 +184,7 @@ def scan_fds(want_dmabuf, at=None):
             if at:
                 at(pid, fd)
             try:
-                with open(f"/proc/{pid}/fdinfo/{fd}") as fh:
-                    body = fh.read()
+                body = _text(f"/proc/{pid}/fdinfo/{fd}")
             except OSError:
                 continue
             kv = {}
@@ -351,10 +361,8 @@ class Walker:
             if fd is not None:
                 out["fd"] = int(fd)
         try:
-            with open(f"/proc/self/task/{self.tid}/stat") as fh:
-                out["state"] = fh.read().rpartition(")")[2].split()[0]
-            with open(f"/proc/self/task/{self.tid}/wchan") as fh:
-                out["wchan"] = fh.read().strip()
+            out["state"] = _text(f"/proc/self/task/{self.tid}/stat").rpartition(")")[2].split()[0]
+            out["wchan"] = _text(f"/proc/self/task/{self.tid}/wchan").strip()
         except (OSError, IndexError):
             pass
         return out

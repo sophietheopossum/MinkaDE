@@ -40,6 +40,12 @@ MIB = 1024 * 1024  # in bytes, the unit of a dma-buf's size
 
 BROWSER, COMPOSITOR, OTHER = 5000001, 5000002, 5000003
 
+# A comm as the kernel keeps it: the first 15 bytes of the name, here 14
+# letters and the first byte of a two-byte one. It is not valid UTF-8, and
+# CUT_READ is what the sampler reads it as.
+CUT = "Benutzeroberflä".encode()[:15]
+CUT_READ = "Benutzeroberfl\\xc3"
+
 _listdir = os.listdir
 _readlink = os.readlink
 
@@ -50,8 +56,9 @@ def read(path):
 
 
 def write(path, text):
-    with open(path, "w") as handle:
-        handle.write(text)
+    """Bytes are written as they are: /proc is not always text."""
+    with open(path, "wb") as handle:
+        handle.write(text if isinstance(text, bytes) else text.encode())
 
 
 # Each of these is one open fd: (what /proc/<pid>/fd/<n> links to, its fdinfo).
@@ -180,11 +187,12 @@ class SamplerCase(unittest.TestCase):
         write(f"{self.root}/sys/block/{name}/disksize", disksize + "\n")
 
     def spawn(self, pid, comm, *fds):
-        """A process holding the given fds, numbered from 3."""
+        """A process holding the given fds, numbered from 3. `comm` may be
+        bytes."""
         proc = f"{self.root}/proc/{pid}"
         os.makedirs(f"{proc}/fd")
         os.makedirs(f"{proc}/fdinfo")
-        write(f"{proc}/comm", comm + "\n")
+        write(f"{proc}/comm", (comm if isinstance(comm, bytes) else comm.encode()) + b"\n")
         for number, (target, fdinfo) in enumerate(fds, start=3):
             os.symlink(target, f"{proc}/fd/{number}")
             write(f"{proc}/fdinfo/{number}", fdinfo)
@@ -256,6 +264,25 @@ class Sweep(SamplerCase):
         self.spawn(COMPOSITOR, "shoji_wm", fd, fd, fd, fd, fd)
         clients, _ = gpumemwatch.scan_fds(False)
         self.assertEqual([client["tgtt"] for client in clients], [799704])
+
+    # One client whose name the kernel cut in the middle of a character ended
+    # the sampler at every walk: on 27/11/2026 a rehearsal's dummy did, and
+    # systemd restarted it 10 s later.
+    def test_client_with_a_name_cut_mid_character_is_logged(self):
+        self.spawn(OTHER + 1, CUT, card(29, gtt="4096 KiB"))
+        clients, _ = gpumemwatch.scan_fds(False)
+        self.assertIn((OTHER + 1, CUT_READ), [(c["pid"], c["comm"]) for c in clients])
+        self.main("--count", "1", "--dmabuf")
+        self.assertEqual(self.status, 0)
+        self.assertIn(CUT_READ, [c["comm"] for c in self.samples()[0]["drm"]])
+
+    # A dma-buf's name is whatever bytes its exporter's caller set, and the
+    # kernel does not check them.
+    def test_dma_buf_named_in_bytes_that_are_not_utf8_is_counted(self):
+        named = dmabuf(902, 3)
+        self.spawn(OTHER + 1, "app", (named[0], named[1].encode() + b"name:\tcaf\xe9\n"))
+        _, dbuf = gpumemwatch.scan_fds(True)
+        self.assertEqual((dbuf["n_unique"], dbuf["by_comm"]), (1, {"app": [3 * 1024, 1]}))
 
     def test_node_without_accounting_is_still_listed(self):
         self.spawn(OTHER, "MinkaFX", nvidia(), nvidia())

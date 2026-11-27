@@ -24,11 +24,14 @@ Design:
     Walker), so it runs on a thread of its own, the loop goes on reading
     GPUActive meanwhile, and a stage whose walk is not back in 2 s goes ahead
     on the last attribution that did arrive.
-  * A critical stage's signals do not wait on the disk for its capture. What
-    a capture records dies with the target, so the stage reads it ahead of
-    the SIGTERM, and writes the file once its signals are sent. The warn
-    stage still writes its capture from the loop, which takes no reading
-    while that write lasts.
+  * A capture is read at once, from /proc, since what it records dies with
+    the target, and its file is written where no signal waits for it. The
+    critical stage writes the file once its signals are sent. The warn stage
+    hands it to a thread, because the critical line can be crossed while the
+    disk holds that write, and a loop that waited for it took no reading.
+    Two corners are left: with no thread to be had the warn stage writes
+    from the loop, as it used to, and the loop takes no reading while the
+    critical stage writes, so what falls due meanwhile waits for the disk.
   * Escalation is staged and each stage must persist -- a burst of GPU memory
     while a video decodes is normal, a plateau above the line is not.
 
@@ -85,16 +88,30 @@ DRM_UNIT = {"KiB": 1, "MiB": 1024, "GiB": 1024 * 1024}
 DRM_MAJOR = 226
 
 
+def _text(path):
+    """What a /proc file says. Every read of /proc goes through here.
+
+    A name in one is whatever bytes its process chose, and the kernel cuts a
+    comm at 15 of them, in the middle of a character if that is where the
+    15th falls. Read strictly, such a name raised UnicodeDecodeError, which is
+    no OSError and so was caught nowhere: one DRM client with one ended the
+    watchdog at every walk, the walk at start-up included, for as long as
+    that client ran. So a byte that is not UTF-8 comes back as its \\xNN
+    escape, which prints anywhere and is the same at every read, as the
+    comparison in _same_process() needs."""
+    with open(path, encoding="utf-8", errors="backslashreplace") as handle:
+        return handle.read()
+
+
 def read_meminfo():
     """GPUActive and MemAvailable in KiB. GPUActive is absent on kernels
     without the xe/i915 accounting patch; treat that as 'no signal'."""
     out = {}
     try:
-        with open(MEMINFO) as handle:
-            for line in handle:
-                key, _, rest = line.partition(":")
-                if key in ("GPUActive", "MemAvailable", "MemTotal", "SwapFree"):
-                    out[key] = int(rest.split()[0])
+        for line in _text(MEMINFO).splitlines():
+            key, _, rest = line.partition(":")
+            if key in ("GPUActive", "MemAvailable", "MemTotal", "SwapFree"):
+                out[key] = int(rest.split()[0])
     except OSError:
         return {}
     return out
@@ -102,8 +119,7 @@ def read_meminfo():
 
 def _comm(pid):
     try:
-        with open(f"/proc/{pid}/comm") as handle:
-            return handle.read().strip()
+        return _text(f"/proc/{pid}/comm").strip()
     except OSError:
         return ""
 
@@ -112,8 +128,7 @@ def _start_time(pid):
     """Field 22 of /proc/<pid>/stat. Pinned alongside the PID so a recycled
     PID is never mistaken for the process we decided to signal."""
     try:
-        with open(f"/proc/{pid}/stat") as handle:
-            data = handle.read()
+        data = _text(f"/proc/{pid}/stat")
     except OSError:
         return None
     # comm can contain spaces and parentheses; everything after the last ')'
@@ -177,8 +192,7 @@ def gpu_clients():
             if not _is_drm_fd(pid, fd):
                 continue
             try:
-                with open(f"{fdinfo_dir}/{fd}") as handle:
-                    text = handle.read()
+                text = _text(f"{fdinfo_dir}/{fd}")
             except OSError:
                 continue
             if DRM_CLIENT_ID not in text:
@@ -333,7 +347,10 @@ def snapshot(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
     what the decision saw, and the fds are not walked again ahead of the
     signal. `caveat` is Walker.caveat() for that walk."""
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    path = os.path.join(capture_dir, f"gpuwatchdog-{stamp}.txt")
+    # The stage is in the name. A warn and a critical capture can be taken in
+    # the same second, by the same reading even, and under one name the second
+    # replaced the first.
+    path = os.path.join(capture_dir, f"gpuwatchdog-{stamp}-{reason}.txt")
     lines = [
         f"reason: {reason}",
         f"when: {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
@@ -351,28 +368,24 @@ def snapshot(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
     ):
         lines.append(f"--- {name} ---")
         try:
-            with open(source) as handle:
-                lines.append(handle.read())
+            lines.append(_text(source))
         except OSError as error:  # a capture must never break the watchdog
             lines.append(f"({name} failed: {error})")
 
     if target:
-        pid = target[0]
-        lines.append(f"--- process {pid} ---")
+        proc = f"/proc/{target[0]}"
+        lines.append(f"--- process {target[0]} ---")
         for name in ("status", "wchan", "stack"):
             try:
-                with open(f"/proc/{pid}/{name}") as handle:
-                    lines.append(f"[{name}]\n{handle.read()}")
+                lines.append(f"[{name}]\n{_text(f'{proc}/{name}')}")
             except OSError as error:
                 lines.append(f"[{name}] unavailable: {error}")
         lines.append("[threads] tid state wchan")
         try:
-            for tid in sorted(os.listdir(f"/proc/{pid}/task")):
+            for tid in sorted(os.listdir(f"{proc}/task")):
                 try:
-                    with open(f"/proc/{pid}/task/{tid}/stat") as handle:
-                        state = handle.read().rpartition(")")[2].split()[0]
-                    with open(f"/proc/{pid}/task/{tid}/wchan") as handle:
-                        wchan = handle.read().strip() or "-"
+                    state = _text(f"{proc}/task/{tid}/stat").rpartition(")")[2].split()[0]
+                    wchan = _text(f"{proc}/task/{tid}/wchan").strip() or "-"
                     lines.append(f"  {tid} {state} {wchan}")
                 except OSError:
                     continue
@@ -390,7 +403,7 @@ def write_capture(path, text):
     be written: a capture must never break the watchdog."""
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w") as handle:
+        with open(path, "w", encoding="utf-8") as handle:
             handle.write(text)
         return path
     except OSError as error:
@@ -398,11 +411,22 @@ def write_capture(path, text):
         return None
 
 
-def capture(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
-    """A snapshot() written at once: for the warn stage, which sends no signal
-    of its own. The loop takes no reading while the write lasts."""
-    return write_capture(*snapshot(capture_dir, reason, reading, target,
-                                   dry_run, clients, caveat))
+def write_behind(path, text):
+    """write_capture() on a thread of its own, for the warn stage, whose loop
+    has readings still to take: the critical line can be 15 s away, and a
+    machine that short of memory keeps its disk busy. The thread is a daemon,
+    so a watchdog on its way out does not wait for the disk either: a capture
+    it has not written by then is lost, or left empty or cut short under the
+    name the WARN line gave. Returns the thread, or None when there was none
+    to be had and the capture was written here."""
+    writer = threading.Thread(target=write_capture, args=(path, text),
+                              name="capture", daemon=True)
+    try:
+        writer.start()
+    except RuntimeError:    # no thread to be had: write here, as before
+        write_capture(path, text)
+        return None
+    return writer
 
 
 def notify(uid, summary, body):
@@ -583,11 +607,17 @@ def main():
             warned = True
             seen = walker.fresh(args.walk_wait)
             target = seen.target if seen else None
-            path = capture(args.capture_dir, "warn", reading, target, args.dry_run,
-                           seen.clients if seen else {}, walker.caveat())
+            path, text = snapshot(args.capture_dir, "warn", reading, target,
+                                  args.dry_run, seen.clients if seen else {},
+                                  walker.caveat())
             log(f"WARN {reading} target={target} capture={path}{walker.caveat()}")
             notify(args.uid, "GPU memory climbing",
                    f"{reading}\nHolding: {target[2] if target else 'unknown'}")
+            # The file last, and on a thread of its own: the critical line can
+            # be crossed while the disk holds it. The log line above has named
+            # it already, as the critical stage's does, and a write that fails
+            # says so in a line of its own, by name.
+            write_behind(path, text)
 
         if gpu >= crit_kib and avail <= crit_avail_kib:
             above_crit_since = above_crit_since or now
@@ -621,6 +651,11 @@ def main():
         # watchdog killed inside the stage loses it, which is the price of no
         # signal waiting on the disk. The log lines name the file before it
         # exists; a write that fails says so in a line of its own, by name.
+        # The loop takes no reading while the write lasts: a warn stage or a
+        # heartbeat due meanwhile waits for it, and so does the next critical
+        # stage once the write outlasts the cooldown less the hold after a
+        # stage that signalled (285 s as shipped), or the whole cooldown after
+        # one that did not.
         path, text = snapshot(args.capture_dir, "critical", reading, target,
                               args.dry_run, seen.clients, walker.caveat())
         try:

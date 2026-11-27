@@ -6,13 +6,20 @@ Nothing here touches the machine it runs on. The watchdog sees a /proc built
 under a temp dir, fds whose device numbers are made up and a clock that only
 counts; os.kill and subprocess.run are recorders; every PID is above the
 kernel's PID_MAX_LIMIT. So no test can signal a process, raise a desktop
-notification or write to /var/log/gpuwatchdog.
+notification or write to /var/log/gpuwatchdog: a file or directory the
+watchdog makes outside the temp dir fails the test instead.
 
 The fd walk runs where it was asked for, not on a thread, so that a run is the
 same every time; self.stalled makes it stand still instead, as it does when a
 GPU driver holds it. Only the Threaded tests start a real one.
+
+A capture handed to a thread is likewise written by the clock: self.disk_stall
+seconds after it was handed over, with the loop not held meanwhile, and the
+loop is handed a stand-in for the thread that fails the test if it is waited
+for. Only the Behind tests start the real one.
 """
 
+import codecs
 import contextlib
 import errno
 import io
@@ -40,6 +47,12 @@ GIB = 1024 * 1024  # in KiB, the unit of /proc/meminfo
 # such process.
 BROWSER, COMPOSITOR, OTHER = 5000001, 5000002, 5000003
 
+# A comm as the kernel keeps it: the first 15 bytes of the name, here 14
+# letters and the first byte of a two-byte one. It is not valid UTF-8, and
+# CUT_READ is what the watchdog reads it as.
+CUT = "Benutzeroberflä".encode()[:15]
+CUT_READ = "Benutzeroberfl\\xc3"
+
 # What os.stat() answers for an fd, by what the fd is open on. An inotify fd
 # is an anonymous inode, which has no file type at all.
 RENDER_NODE = types.SimpleNamespace(st_mode=stat.S_IFCHR | 0o666,
@@ -50,16 +63,19 @@ ANON_INODE = types.SimpleNamespace(st_mode=0o600, st_rdev=0)
 
 _listdir = os.listdir
 _stat = os.stat
+_makedirs = os.makedirs
+_write_behind = gpuwatchdog.write_behind
 
 
 def read(path):
-    with open(path) as handle:
+    with open(path, encoding="utf-8") as handle:
         return handle.read()
 
 
 def write(path, text):
-    with open(path, "w") as handle:
-        handle.write(text)
+    """Bytes are written as they are: /proc is not always text."""
+    with open(path, "wb") as handle:
+        handle.write(text if isinstance(text, bytes) else text.encode())
 
 
 def drm(client, total, shared="0"):
@@ -124,7 +140,21 @@ class Clock:
         return time.strftime(fmt, time.gmtime(self.now))
 
 
-class WatchdogCase(unittest.TestCase):
+class Fence:
+    """Fails the test for a file or directory the watchdog would make outside
+    self.root: a bug that writes elsewhere would otherwise write to this
+    machine, in the directory the suite was started from."""
+
+    def fenced(self, path, mode="w"):
+        if set(mode) & set("wax+") and not os.path.abspath(path).startswith(self.root + "/"):
+            self.fail(f"the watchdog made {path!r} outside its temp dir")
+
+    def _makedirs(self, path, *args, **kwargs):
+        self.fenced(path)
+        return _makedirs(path, *args, **kwargs)
+
+
+class WatchdogCase(Fence, unittest.TestCase):
     """A watchdog wired to a fake machine: /proc, clock, signals, subprocesses."""
 
     def setUp(self):
@@ -145,8 +175,13 @@ class WatchdogCase(unittest.TestCase):
         self.journal = []       # (seconds since the run began, message)
         self.stalled = False    # whether a walk that begins now stands still
         self.out = []           # the walkers whose walk has not come back
+        self.encodings = set()  # every encoding the watchdog opened a file in
+        self.writers = []       # the stand-ins write_behind() handed back
+        self.pending = []       # captures handed over and not yet on the disk
         self.meminfo(gpu=1.9, avail=6)
         self.addCleanup(self.each_capture_written_once)
+        self.addCleanup(self.every_file_opened_as_utf8)
+        self.addCleanup(self.no_writer_waited_for)
 
         def patch(*args, **kwargs):
             return self.enterContext(mock.patch.object(*args, **kwargs))
@@ -157,11 +192,13 @@ class WatchdogCase(unittest.TestCase):
               lambda message: self.journal.append((self.clock.elapsed, message)))
         patch(os, "listdir", self._listdir)
         patch(os, "stat", self._stat)
+        patch(os, "makedirs", self._makedirs)
         patch(os, "kill", self._kill)
         patch(os, "geteuid", return_value=0)
         self.spawned = patch(subprocess, "run",
                              return_value=subprocess.CompletedProcess([], 0, "", ""))
         self.notify = patch(gpuwatchdog, "notify")
+        patch(gpuwatchdog, "write_behind", self._write_behind)
         if self.inline_walks:
             patch(gpuwatchdog.Walker, "_spawn", lambda walker: self._spawn(walker))
 
@@ -169,9 +206,38 @@ class WatchdogCase(unittest.TestCase):
 
     def each_capture_written_once(self):
         """Checked after every test: a second write of a capture is a second
-        wait on the disk, and the listing in captured() cannot show it."""
+        wait on the disk, and the listing in captured() cannot show it. Nor
+        may a test end before a capture it handed over has landed: what it
+        asserts would be about a disk still being written."""
         written = [path for path in self.opened if path.startswith(self.capture_dir)]
         self.assertEqual(sorted(written), sorted(set(written)))
+        self.assertEqual(self.pending, [])
+
+    def every_file_opened_as_utf8(self):
+        """Checked after every test: a file opened as text in the locale's
+        encoding reads and writes a name differently under another locale,
+        and under an ASCII one a name outside ASCII raises."""
+        self.assertEqual(self.encodings - {"utf-8"}, set())
+
+    def no_writer_waited_for(self):
+        """Checked after every test: a loop that waits for the thread writing
+        its capture waits on the disk again."""
+        for writer in self.writers:
+            writer.join.assert_not_called()
+            writer.is_alive.assert_not_called()
+
+    def _write_behind(self, path, text):
+        """Stands in for the thread a capture is written on: the file is there
+        once the disk lets go of it, and nothing may wait for that."""
+        def lands():
+            self.pending.remove(path)
+            with mock.patch.object(self, "disk_stall", 0.0):
+                gpuwatchdog.write_capture(path, text)
+
+        self.pending.append(path)
+        self.at(self.disk_stall, lands)
+        self.writers.append(mock.Mock(spec=threading.Thread))
+        return self.writers[-1]
 
     def _spawn(self, walker):
         if self.stalled:
@@ -195,6 +261,11 @@ class WatchdogCase(unittest.TestCase):
 
     def _open(self, path, *args, **kwargs):
         self.opened.append(path)
+        mode = args[0] if args else kwargs.get("mode", "r")
+        if "b" not in mode:
+            encoding = args[2] if len(args) > 2 else kwargs.get("encoding")
+            self.encodings.add(encoding and codecs.lookup(encoding).name)
+        self.fenced(path, mode)
         if path.startswith(self.capture_dir):
             self.clock.now += self.disk_stall
         return open(self._path(path), *args, **kwargs)
@@ -234,21 +305,30 @@ class WatchdogCase(unittest.TestCase):
     def spawn(self, pid, comm, *fdinfo, start=1):
         """A process with one fd per fdinfo text: open on a render node when
         the text is a DRM client's, on an anonymous inode otherwise. Spawning
-        a live PID again is that PID recycled."""
+        a live PID again is that PID recycled. `comm` may be bytes."""
         self.exit(pid)
         proc = f"{self.root}/proc/{pid}"
         os.makedirs(f"{proc}/fdinfo")
-        os.makedirs(f"{proc}/task/{pid}")
+        comm = comm if isinstance(comm, bytes) else comm.encode()
+        write(f"{proc}/comm", comm + b"\n")
         # Field 22, the start time, is the 20th after the comm's closing paren.
-        stat_line = f"{pid} ({comm}) S {'0 ' * 18}{start} 0 0\n"
-        write(f"{proc}/comm", comm + "\n")
-        write(f"{proc}/stat", stat_line)
-        write(f"{proc}/task/{pid}/stat", stat_line)
-        write(f"{proc}/task/{pid}/wchan", "futex_do_wait")
+        write(f"{proc}/stat", b"%d (%s) S %s%d 0 0\n" % (pid, comm, b"0 " * 18, start))
+        write(f"{proc}/status", b"Name:\t%s\nState:\tS (sleeping)\nPid:\t%d\n" % (comm, pid))
+        write(f"{proc}/wchan", "futex_do_wait")
+        write(f"{proc}/stack", "[<0>] futex_do_wait+0x5d/0xa0\n")
+        self.thread(pid, pid, comm)
         for fd, text in enumerate(fdinfo):
             write(f"{proc}/fdinfo/{fd}", text)
             self.nodes[f"/proc/{pid}/fd/{fd}"] = (
-                RENDER_NODE if "drm-client-id" in text else ANON_INODE)
+                RENDER_NODE if "drm-client-id" in str(text) else ANON_INODE)
+
+    def thread(self, pid, tid, name):
+        """A thread of `pid`, asleep in a futex. `name` may be bytes."""
+        task = f"{self.root}/proc/{pid}/task/{tid}"
+        os.makedirs(task)
+        name = name if isinstance(name, bytes) else name.encode()
+        write(f"{task}/stat", b"%d (%s) S 0 0\n" % (tid, name))
+        write(f"{task}/wchan", "futex_do_wait")
 
     def exit(self, pid):
         shutil.rmtree(f"{self.root}/proc/{pid}", ignore_errors=True)
@@ -275,7 +355,8 @@ class WatchdogCase(unittest.TestCase):
         return [when for when, message in self.journal if message.startswith(prefix)]
 
     def captured(self):
-        """The first line of every capture written, oldest first."""
+        """The first line of every capture written, by name: oldest first,
+        and within one second critical before warn."""
         try:
             names = sorted(_listdir(self.capture_dir))
         except (FileNotFoundError, NotADirectoryError):
@@ -302,6 +383,39 @@ class Attribution(WatchdogCase):
             self.assertEqual(gpuwatchdog._start_time(OTHER), "42514", comm)
         self.exit(OTHER)
         self.assertIsNone(gpuwatchdog._start_time(OTHER))
+
+    # A byte that is not UTF-8 is read as its escape, the same each time. Read
+    # strictly, it raised an error that nothing caught.
+    def test_name_cut_mid_character_is_read(self):
+        self.spawn(OTHER, CUT, drm(29, "4096 KiB"), start=42514)
+        self.assertEqual(gpuwatchdog._comm(OTHER), CUT_READ)
+        self.assertEqual(gpuwatchdog._start_time(OTHER), "42514")
+        self.assertTrue(gpuwatchdog._same_process(OTHER, CUT_READ, "42514"))
+        # Same PID, same start time, another name: not the process pinned.
+        self.assertFalse(gpuwatchdog._same_process(OTHER, "Benutzeroberfl", "42514"))
+        self.assertEqual(gpuwatchdog.gpu_clients(), {OTHER: 4096})
+        self.assertIsNone(gpuwatchdog.pick_target({"hellfire"}, {OTHER: 4096}))
+
+    # An allowlisted name with a byte in it that is not UTF-8 is another name.
+    # A reader that dropped the byte would have made that process a target.
+    def test_allowlisted_name_with_a_byte_that_is_not_utf8_is_no_target(self):
+        for raw in (b"hellfire\xc3", b"\xffhellfire", b"hell\xfffire"):
+            self.spawn(OTHER, raw, drm(29, "4096 KiB"))
+            self.assertIsNone(gpuwatchdog.pick_target({"hellfire"}, {OTHER: 4096}), raw)
+
+    # A name that is UTF-8 and outside ASCII is read as itself.
+    def test_name_outside_ascii_is_read_as_itself(self):
+        self.spawn(OTHER, "fenêtre", drm(29, "4096 KiB"))
+        self.assertEqual(gpuwatchdog._comm(OTHER), "fenêtre")
+
+    # Nothing in a DRM fdinfo is known to be anything but ASCII: the kernel
+    # takes a drm-client-name only in printable ASCII (drm_validate_value_string,
+    # which refused this one on 27/11/2026). The read goes through the same
+    # reader as the rest all the same, and must not be the one that raises.
+    def test_fdinfo_that_is_not_utf8_is_read(self):
+        named = drm(28, "165828 KiB").encode() + b"drm-client-name:\tfen\xeatre\n"
+        self.spawn(BROWSER, "hellfire", named)
+        self.assertEqual(gpuwatchdog.gpu_clients(), {BROWSER: 165828})
 
     def test_private_is_total_minus_shared(self):
         self.spawn(BROWSER, "hellfire", drm(28, "165828 KiB", "37648 KiB"))
@@ -403,6 +517,45 @@ class Escalation(WatchdogCase):
         self.assertEqual(self.captured(), ["reason: warn"])
         self.assertEqual(self.notify.call_count, 1)
         self.assertEqual(self.signals, [])
+        # What the warn capture is for: who holds the memory and what its
+        # threads are doing, beside everything else that holds some.
+        (capture,) = _listdir(self.capture_dir)
+        text = read(os.path.join(self.capture_dir, capture))
+        self.assertIn("\ndry-run: False\n", text)
+        self.assertIn(f"\ntarget: ({BROWSER}, 7340036, 'hellfire')\n", text)
+        self.assertIn(f"  {BROWSER} S futex_do_wait\n", text)
+        self.assertRegex(text, rf"{COMPOSITOR} shoji_wm +9437188\n")
+
+    # The capture that says who holds the memory when no allowlisted process
+    # does is the one most worth having.
+    def test_warn_with_no_allowlisted_holder_still_leaves_its_capture(self):
+        self.exit(BROWSER)
+        self.meminfo(gpu=5, avail=6)
+        self.watch(seconds=70)
+        self.assertEqual(self.captured(), ["reason: warn"])
+        (capture,) = _listdir(self.capture_dir)
+        text = read(os.path.join(self.capture_dir, capture))
+        self.assertIn("target: None\n", text)
+        self.assertRegex(text, rf"{COMPOSITOR} shoji_wm +9437188\n")
+
+    def test_warn_with_no_attribution_yet_says_so_and_goes_on(self):
+        self.stall()
+        self.meminfo(gpu=5, avail=6)
+        self.watch("--walk-wait", "0", seconds=70)
+        (warned,) = self.logged("WARN ")
+        self.assertIn("target=None", warned)
+        (capture,) = _listdir(self.capture_dir)
+        self.assertIn("target: None (no attribution: the fd walk has been out ",
+                      read(os.path.join(self.capture_dir, capture)))
+
+    def test_warn_capture_says_how_old_its_attribution_is(self):
+        self.meminfo(gpu=5, avail=6)
+        self.at(12, self.stall)
+        self.watch("--walk-wait", "0", seconds=70)
+        (capture,) = _listdir(self.capture_dir)
+        self.assertRegex(read(os.path.join(self.capture_dir, capture)),
+                         r"target: \(5000001, 7340036, 'hellfire'\) \(attribution \d+s old: "
+                         r"the fd walk has been out \d+s\)\n")
 
     def test_dip_below_the_line_restarts_the_hold(self):
         self.meminfo(gpu=5, avail=6)
@@ -494,12 +647,108 @@ class Escalation(WatchdogCase):
         named = critical.partition("capture=")[2].split()[0]
         self.assertIn(f"capture {named} failed: ", said.getvalue())
 
+    # The warn stage's capture was written from the loop, which took no
+    # reading until the disk let go of the file. With the critical line
+    # crossed 50 s in and that write held for 30 s, the SIGTERM went out at
+    # 91 s where 65 s was due.
+    def test_stalled_disk_at_the_warn_stage_does_not_stop_the_readings(self):
+        self.meminfo(gpu=5, avail=6)
+        self.at(50, lambda: self.meminfo(gpu=8, avail=1))
+        self.disk_stall = 30.0
+        self.on_term = self.quits
+        self.watch(seconds=140)
+        (warned,) = self.logged_at("WARN ")
+        self.assertAlmostEqual(warned, 60, delta=1)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertAlmostEqual(self.sent_at[0], 65, delta=1)
+        # Neither capture was on the disk yet, and both are in the end.
+        self.assertEqual(self.on_disk, [None])
+        self.assertEqual(self.captured(), ["reason: warn", "reason: critical"])
+        # The WARN line named its file before it was written.
+        named = self.logged("WARN ")[0].partition("capture=")[2].split()[0]
+        self.assertEqual(named, os.path.join(self.capture_dir, min(_listdir(self.capture_dir))))
+
+    # With no thread to be had the warn capture is written from the loop, as
+    # it used to be: the one corner where the disk can still hold a SIGTERM
+    # back. The WARN line and the notification go out ahead of the write.
+    def test_no_thread_for_the_warn_capture_writes_it_last_from_the_loop(self):
+        self.meminfo(gpu=5, avail=6)
+        self.at(50, lambda: self.meminfo(gpu=8, avail=1))
+        self.disk_stall = 30.0
+        self.on_term = self.quits
+        notified_at = []
+        self.notify.side_effect = lambda *_: notified_at.append(self.clock.elapsed)
+        with mock.patch.object(gpuwatchdog, "write_behind", _write_behind), \
+                mock.patch.object(threading.Thread, "start",
+                                  side_effect=RuntimeError("can't start new thread")):
+            self.watch(seconds=140)
+        (warned,) = self.logged_at("WARN ")
+        self.assertAlmostEqual(warned, 60, delta=1)
+        self.assertAlmostEqual(notified_at[0], 60, delta=1)
+        self.assertAlmostEqual(self.sent_at[0], 91, delta=1)
+        self.assertEqual(self.captured(), ["reason: warn", "reason: critical"])
+
+    # A warn and a critical capture taken by one reading had one name between
+    # them, and the critical one replaced the other.
+    def test_warn_and_critical_captures_of_one_reading_are_both_kept(self):
+        self.meminfo(gpu=5, avail=6)
+        self.at(45.5, lambda: self.meminfo(gpu=8, avail=1))
+        self.on_term = self.quits
+        self.watch(seconds=120)
+        self.assertEqual(self.logged_at("WARN "), self.logged_at("CRITICAL"))
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertEqual(self.captured(), ["reason: critical", "reason: warn"])
+
+    # One DRM client whose name was cut in the middle of a character ended the
+    # watchdog at its start-up walk, and at every restart after that.
+    def test_client_with_a_name_cut_mid_character_does_not_end_the_watchdog(self):
+        self.spawn(OTHER, CUT, drm(29, "4096 KiB"))
+        self.meminfo(gpu=8, avail=1)
+        self.on_term = self.quits
+        self.watch(seconds=120)
+        self.assertEqual(self.logged("attribution ok"),
+                         ["attribution ok: 3 DRM clients visible"])
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertAlmostEqual(self.sent_at[0], 15, delta=1)
+        (capture,) = _listdir(self.capture_dir)
+        self.assertIn(f"{OTHER} {CUT_READ} ",
+                      read(os.path.join(self.capture_dir, capture)))
+
+    # ...and a thread of the target with such a name ended it at the critical
+    # stage's snapshot: ahead of the CRITICAL line, the notification and the
+    # SIGTERM, so the journal showed nothing of the stage but the traceback.
+    def test_target_thread_with_a_name_cut_mid_character_costs_no_signal(self):
+        self.thread(BROWSER, BROWSER + 1, CUT)
+        self.meminfo(gpu=8, avail=1)
+        self.on_term = self.quits
+        self.watch(seconds=120)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertAlmostEqual(self.sent_at[0], 15, delta=1)
+        (capture,) = _listdir(self.capture_dir)
+        self.assertIn(f"  {BROWSER + 1} S futex_do_wait",
+                      read(os.path.join(self.capture_dir, capture)))
+
+    # A name outside ASCII goes into the capture as itself, in UTF-8.
+    def test_name_outside_ascii_reaches_the_capture_as_utf8(self):
+        self.spawn(OTHER, "fenêtre", drm(29, "4096 KiB"))
+        self.meminfo(gpu=8, avail=1)
+        self.on_term = self.quits
+        self.watch(seconds=120)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        (capture,) = _listdir(self.capture_dir)
+        with open(os.path.join(self.capture_dir, capture), "rb") as handle:
+            self.assertIn(f"{OTHER} fenêtre ".encode("utf-8"), handle.read())
+
     def test_dry_run_reports_and_never_signals(self):
         self.meminfo(gpu=8, avail=1)
         self.watch("--dry-run", seconds=600)
         self.assertEqual(self.signals, [])
         self.assertTrue(self.logged("dry-run:"))
         self.assertIn("reason: critical", self.captured())
+        # Each capture says it was a rehearsal, the warn one among them.
+        self.assertIn("reason: warn", self.captured())
+        for name in _listdir(self.capture_dir):
+            self.assertIn("\ndry-run: True\n", read(os.path.join(self.capture_dir, name)), name)
 
     # A stage walks every fd on the machine while memory is short and, at the
     # critical one, with the signal still to send: once, not once to pick the
@@ -720,24 +969,33 @@ class ShippedUnit(WatchdogCase):
 
 
 class Capture(WatchdogCase):
-    def taken(self, take, directory):
-        """`take` (capture or snapshot) of a runaway browser, for `directory`."""
+    def snapshot(self, directory, reason="critical"):
+        """The snapshot of a runaway browser, for `directory`."""
         self.spawn(BROWSER, "hellfire", drm(28, "7340036 KiB"))
-        return take(directory, "critical", "GPUActive=8.00 GiB",
-                    (BROWSER, 7340036, "hellfire"), True, gpuwatchdog.gpu_clients())
+        return gpuwatchdog.snapshot(directory, reason, "GPUActive=8.00 GiB",
+                                    (BROWSER, 7340036, "hellfire"), True,
+                                    gpuwatchdog.gpu_clients())
 
     def capture(self, directory):
-        return self.taken(gpuwatchdog.capture, directory)
+        return gpuwatchdog.write_capture(*self.snapshot(directory))
 
     # A snapshot runs ahead of the SIGTERM, so it must not wait on a disk:
     # everything in it is read from /proc, and the file is a separate step.
     def test_snapshot_reads_only_proc_and_writes_nothing(self):
-        path, text = self.taken(gpuwatchdog.snapshot, self.capture_dir)
+        path, text = self.snapshot(self.capture_dir)
         self.assertIn(gpuwatchdog.MEMINFO, self.opened)
         self.assertEqual([p for p in self.opened if not p.startswith("/proc/")], [])
         self.assertFalse(os.path.exists(self.capture_dir))
         self.assertEqual(gpuwatchdog.write_capture(path, text), path)
         self.assertEqual(read(path), text)
+
+    # The stage is in the name: two stages can take a capture in one second.
+    def test_capture_is_named_after_its_stage(self):
+        names = [os.path.relpath(self.snapshot(self.capture_dir, reason)[0],
+                                 self.capture_dir)
+                 for reason in ("warn", "critical")]
+        self.assertRegex(names[0], r"^gpuwatchdog-\d{8}-\d{6}-warn\.txt$")
+        self.assertEqual(names[1], names[0].replace("warn", "critical"))
 
     def test_capture_records_what_dies_with_the_process(self):
         text = read(self.capture(self.capture_dir))
@@ -746,6 +1004,8 @@ class Capture(WatchdogCase):
         self.assertIn(f"  {BROWSER} S futex_do_wait", text)
         self.assertRegex(text, rf"{BROWSER} hellfire +7340036")
         self.assertIn("--- meminfo ---\nMemTotal:", text)
+        self.assertIn(f"--- process {BROWSER} ---\n[status]\nName:\thellfire\n", text)
+        self.assertIn("[wchan]\nfutex_do_wait\n[stack]\n[<0>] futex_do_wait+", text)
 
     # Each `cat` a capture used to run was a fork and an exec, with memory
     # short and, at the critical stage, the signal still to send.
@@ -759,7 +1019,7 @@ class Capture(WatchdogCase):
         with contextlib.redirect_stderr(io.StringIO()) as said:
             self.assertIsNone(self.capture(os.path.join(blocker, "captures")))
         self.assertRegex(said.getvalue(),
-                         r"capture \S+/captures/gpuwatchdog-\S+\.txt failed: ")
+                         r"capture \S+/captures/gpuwatchdog-\S+-critical\.txt failed: ")
 
 
 class Threaded(WatchdogCase):
@@ -805,6 +1065,62 @@ class Threaded(WatchdogCase):
         self.assertEqual(latest.target, (BROWSER, 2000, "hellfire"))
         self.assertEqual(walker.caveat(), "")
         self.assertEqual(self.opened.count(f"/proc/{BROWSER}/fdinfo/0"), 2)
+
+
+class Behind(Fence, unittest.TestCase):
+    """write_behind() on the thread it really starts, with the disk holding
+    the capture's file where it holds it: at the open."""
+
+    def setUp(self):
+        self.root = self.enterContext(tempfile.TemporaryDirectory())
+        self.path = os.path.join(self.root, "captures", "gpuwatchdog-warn.txt")
+        self.enterContext(mock.patch.object(gpuwatchdog, "open", self._open, create=True))
+        self.enterContext(mock.patch.object(os, "makedirs", self._makedirs))
+
+    def _open(self, path, mode="r", *args, **kwargs):
+        self.fenced(path, mode)
+        return open(path, mode, *args, **kwargs)
+
+    def test_write_is_not_waited_for(self):
+        reached, let_go = threading.Event(), threading.Event()
+
+        def holding(*args, **kwargs):
+            reached.set()
+            let_go.wait(30)
+            return self._open(*args, **kwargs)
+
+        with mock.patch.object(gpuwatchdog, "open", holding, create=True), \
+                mock.patch.object(threading, "excepthook") as crashed:
+            with mock.patch.object(threading.Thread, "join") as joined:
+                writer = gpuwatchdog.write_behind(self.path, "reason: warn\n")
+            joined.assert_not_called()
+            if writer is None:
+                self.fail("the capture was written here, not on a thread")
+            self.assertTrue(reached.wait(30))
+            held = (writer.is_alive(), os.path.exists(self.path))
+            let_go.set()
+            writer.join(30)
+        crashed.assert_not_called()
+        self.assertEqual(held, (True, False))
+        # A watchdog on its way out does not wait for the disk either.
+        self.assertTrue(writer.daemon)
+        self.assertEqual(read(self.path), "reason: warn\n")
+
+    def test_no_thread_to_be_had_writes_here(self):
+        with mock.patch.object(threading.Thread, "start",
+                               side_effect=RuntimeError("can't start new thread")):
+            self.assertIsNone(gpuwatchdog.write_behind(self.path, "reason: warn\n"))
+        self.assertEqual(read(self.path), "reason: warn\n")
+
+    def test_write_that_fails_says_so_and_ends_its_thread_quietly(self):
+        write(os.path.join(self.root, "captures"), "")      # not a directory
+        with contextlib.redirect_stderr(io.StringIO()) as said, \
+                mock.patch.object(threading, "excepthook") as crashed:
+            writer = gpuwatchdog.write_behind(self.path, "reason: warn\n")
+            if writer:
+                writer.join(30)
+        crashed.assert_not_called()
+        self.assertIn(f"capture {self.path} failed: ", said.getvalue())
 
 
 class Notify(unittest.TestCase):
