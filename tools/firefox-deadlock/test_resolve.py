@@ -228,7 +228,8 @@ def run(*cmd):
 
 
 @unittest.skipUnless(platform.machine() == "x86_64", "the fixture is x86-64 code")
-@unittest.skipUnless(all(shutil.which(t) for t in ("gcc", "readelf", "objdump", "strip", "nm")),
+@unittest.skipUnless(all(shutil.which(t)
+                         for t in ("gcc", "readelf", "objdump", "strip", "nm", "objcopy")),
                      "needs gcc and binutils")
 class Resolve(unittest.TestCase):
 
@@ -459,6 +460,22 @@ class Resolve(unittest.TestCase):
         self.assertEqual((done.returncode, done.stdout), (2, ""))
         self.assertTrue(done.stderr.endswith(
             f"error: 0x{start:x} comes from build {other}, but {self.lib} is build {BUILD_ID}\n"),
+            done.stderr)
+
+    def test_a_library_without_a_build_id_resolves_offsets_but_refuses_frames(self):
+        # objcopy leaves every other section at its address, so the offsets still hold.
+        bare = os.path.join(self.tmp, "libfixture-no-build-id.so")
+        run("objcopy", "--remove-section=.note.gnu.build-id", self.lib, bare)
+        start = self.at["plain"]
+        done = self.run_resolve("--lib", bare, f"0x{start:x}")
+        self.assertEqual((done.returncode, done.stderr), (0, ""))
+        self.assertEqual([line for line in done.stdout.splitlines() if line],
+                         [f"{bare}: build-id (none)"] + self.resolve(start))
+        # A whole frame names a build, which this library cannot be shown to be.
+        done = self.run_resolve("--lib", bare, f"[{BUILD_ID}]@0x7f823c600000+0x{start:x}")
+        self.assertEqual((done.returncode, done.stdout), (2, ""))
+        self.assertTrue(done.stderr.endswith(
+            f"error: 0x{start:x} comes from build {BUILD_ID}, but {bare} has no build-id\n"),
             done.stderr)
 
     def test_a_frame_without_its_offset_or_with_more_is_refused(self):
