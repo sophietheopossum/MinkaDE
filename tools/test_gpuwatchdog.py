@@ -137,12 +137,16 @@ class WatchdogCase(unittest.TestCase):
         self.opened = []        # every path the watchdog opened, in order
         self.signals = []       # (pid, signal) in the order sent
         self.sent_at = []       # ...and when, in seconds since the run began
+        self.on_disk = []       # ...and the captures written by then: None
+                                # while there is no capture directory at all
+        self.disk_stall = 0.0   # seconds the disk holds a capture's file open
         self.on_term = None     # what the target does on SIGTERM; None ignores it
         self.kill_error = None  # raised by os.kill once the signal is recorded
         self.journal = []       # (seconds since the run began, message)
         self.stalled = False    # whether a walk that begins now stands still
         self.out = []           # the walkers whose walk has not come back
         self.meminfo(gpu=1.9, avail=6)
+        self.addCleanup(self.each_capture_written_once)
 
         def patch(*args, **kwargs):
             return self.enterContext(mock.patch.object(*args, **kwargs))
@@ -162,6 +166,12 @@ class WatchdogCase(unittest.TestCase):
             patch(gpuwatchdog.Walker, "_spawn", lambda walker: self._spawn(walker))
 
     inline_walks = True
+
+    def each_capture_written_once(self):
+        """Checked after every test: a second write of a capture is a second
+        wait on the disk, and the listing in captured() cannot show it."""
+        written = [path for path in self.opened if path.startswith(self.capture_dir)]
+        self.assertEqual(sorted(written), sorted(set(written)))
 
     def _spawn(self, walker):
         if self.stalled:
@@ -185,6 +195,8 @@ class WatchdogCase(unittest.TestCase):
 
     def _open(self, path, *args, **kwargs):
         self.opened.append(path)
+        if path.startswith(self.capture_dir):
+            self.clock.now += self.disk_stall
         return open(self._path(path), *args, **kwargs)
 
     def _listdir(self, path="."):
@@ -200,6 +212,8 @@ class WatchdogCase(unittest.TestCase):
     def _kill(self, pid, sig):
         self.signals.append((pid, sig))
         self.sent_at.append(self.clock.elapsed)
+        self.on_disk.append(self.captured() if os.path.isdir(self.capture_dir)
+                            else None)
         if self.kill_error:
             raise self.kill_error
         if sig == SIGKILL:
@@ -264,7 +278,7 @@ class WatchdogCase(unittest.TestCase):
         """The first line of every capture written, oldest first."""
         try:
             names = sorted(_listdir(self.capture_dir))
-        except FileNotFoundError:
+        except (FileNotFoundError, NotADirectoryError):
             return []
         return [read(os.path.join(self.capture_dir, name)).split("\n", 1)[0]
                 for name in names]
@@ -417,6 +431,69 @@ class Escalation(WatchdogCase):
         self.assertEqual(self.signals, [(BROWSER, SIGTERM), (BROWSER, SIGKILL)])
         self.assertAlmostEqual(self.sent_at[1] - self.sent_at[0], 10, delta=1)
 
+    # What a capture records dies with the target, so it is read ahead of the
+    # SIGTERM: the browser is gone by the time the file is written.
+    def test_capture_is_read_before_the_sigterm_and_written_after(self):
+        self.meminfo(gpu=8, avail=1)
+        self.on_term = self.quits
+        self.watch(seconds=120)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertEqual(self.on_disk, [None])
+        (capture,) = _listdir(self.capture_dir)
+        text = read(os.path.join(self.capture_dir, capture))
+        self.assertIn("reason: critical", text)
+        self.assertIn(f"  {BROWSER} S futex_do_wait", text)
+
+    # A target that ignores the SIGTERM is still there to be read at the
+    # SIGKILL, but not as the stage found it.
+    def test_capture_of_a_target_that_ignores_sigterm_is_from_before_it(self):
+        self.meminfo(gpu=8, avail=1)
+        self.on_term = lambda: write(
+            f"{self.root}/proc/{BROWSER}/task/{BROWSER}/wchan", "do_exit")
+        self.watch(seconds=40)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM), (BROWSER, SIGKILL)])
+        (capture,) = _listdir(self.capture_dir)
+        self.assertIn(f"  {BROWSER} S futex_do_wait",
+                      read(os.path.join(self.capture_dir, capture)))
+
+    # A run that ends inside the grace leaves the stage by an exception, with
+    # the SIGTERM sent and the SIGKILL not: the capture is written all the same.
+    def test_stage_left_by_an_exception_still_leaves_its_capture(self):
+        self.meminfo(gpu=8, avail=1)
+        self.watch(seconds=20)      # Stop comes out of the grace loop's sleep
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertEqual(self.captured(), ["reason: critical"])
+
+    # The capture's file is the one step of a stage that waits on the disk,
+    # and it used to come first: a disk that held it for 30 s sent the SIGTERM
+    # 30 s late.
+    def test_stalled_disk_does_not_hold_the_signals_back(self):
+        self.meminfo(gpu=8, avail=1)
+        self.disk_stall = 30.0
+        self.watch(seconds=40)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM), (BROWSER, SIGKILL)])
+        self.assertAlmostEqual(self.sent_at[0], 15, delta=1)
+        self.assertAlmostEqual(self.sent_at[1], 25, delta=1)
+        self.assertEqual(self.on_disk, [None, None])
+        self.assertEqual(self.captured(), ["reason: critical"])
+        # The CRITICAL line named the file 10 s before it was written.
+        (capture,) = _listdir(self.capture_dir)
+        self.assertIn(f"capture={os.path.join(self.capture_dir, capture)}",
+                      self.logged("CRITICAL")[0])
+
+    # The log has named the file by the time its write fails, so the failure
+    # is a line of its own that names it too, and it costs neither signal.
+    def test_capture_that_cannot_be_written_costs_no_signal(self):
+        blocker = os.path.join(self.root, "not-a-directory")
+        write(blocker, "")
+        self.meminfo(gpu=8, avail=1)
+        with contextlib.redirect_stderr(io.StringIO()) as said:
+            self.watch("--capture-dir", os.path.join(blocker, "captures"), seconds=40)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM), (BROWSER, SIGKILL)])
+        (critical,) = self.logged("CRITICAL")
+        named = critical.partition("capture=")[2].split()[0]
+        self.assertIn(f"capture {named} failed: ", said.getvalue())
+
     def test_dry_run_reports_and_never_signals(self):
         self.meminfo(gpu=8, avail=1)
         self.watch("--dry-run", seconds=600)
@@ -527,6 +604,7 @@ class Escalation(WatchdogCase):
         self.watch(seconds=600)
         self.assertTrue(self.logged("CRITICAL"))
         self.assertEqual(self.signals, [])
+        self.assertIn("reason: critical", self.captured())
 
     def test_one_intervention_per_cooldown(self):
         def relaunched_and_runs_away_again():
@@ -549,6 +627,8 @@ class Escalation(WatchdogCase):
         self.watch(seconds=20)
         self.assertTrue(self.logged("CRITICAL"))
         self.assertEqual(self.signals, [])
+        # A stage that stands down still leaves its capture.
+        self.assertEqual(self.captured(), ["reason: critical"])
 
     def test_target_whose_start_time_is_unreadable_is_not_signalled(self):
         os.remove(f"{self.root}/proc/{BROWSER}/stat")
@@ -584,6 +664,19 @@ class Escalation(WatchdogCase):
         self.meminfo(gpu=8, avail=1)
         self.watch(seconds=120)
         self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+        self.assertIn("reason: critical", self.captured())
+
+    # Only the SIGKILL is refused: the stage ends as it does when one is sent.
+    def test_refused_sigkill_does_not_stop_the_watchdog(self):
+        def refuse_the_next():
+            self.kill_error = PermissionError(errno.EPERM, "Operation not permitted")
+
+        self.meminfo(gpu=8, avail=1)
+        self.on_term = refuse_the_next
+        self.watch(seconds=40)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM), (BROWSER, SIGKILL)])
+        self.assertTrue(self.logged(f"SIGKILL {BROWSER} failed"))
+        self.assertEqual(self.captured(), ["reason: critical"])
 
     def test_missing_ptrace_capability_is_announced(self):
         self.spawn(OTHER, "systemd-resolve")
@@ -627,11 +720,24 @@ class ShippedUnit(WatchdogCase):
 
 
 class Capture(WatchdogCase):
-    def capture(self, directory):
+    def taken(self, take, directory):
+        """`take` (capture or snapshot) of a runaway browser, for `directory`."""
         self.spawn(BROWSER, "hellfire", drm(28, "7340036 KiB"))
-        return gpuwatchdog.capture(directory, "critical", "GPUActive=8.00 GiB",
-                                   (BROWSER, 7340036, "hellfire"), True,
-                                   gpuwatchdog.gpu_clients())
+        return take(directory, "critical", "GPUActive=8.00 GiB",
+                    (BROWSER, 7340036, "hellfire"), True, gpuwatchdog.gpu_clients())
+
+    def capture(self, directory):
+        return self.taken(gpuwatchdog.capture, directory)
+
+    # A snapshot runs ahead of the SIGTERM, so it must not wait on a disk:
+    # everything in it is read from /proc, and the file is a separate step.
+    def test_snapshot_reads_only_proc_and_writes_nothing(self):
+        path, text = self.taken(gpuwatchdog.snapshot, self.capture_dir)
+        self.assertIn(gpuwatchdog.MEMINFO, self.opened)
+        self.assertEqual([p for p in self.opened if not p.startswith("/proc/")], [])
+        self.assertFalse(os.path.exists(self.capture_dir))
+        self.assertEqual(gpuwatchdog.write_capture(path, text), path)
+        self.assertEqual(read(path), text)
 
     def test_capture_records_what_dies_with_the_process(self):
         text = read(self.capture(self.capture_dir))
@@ -650,8 +756,10 @@ class Capture(WatchdogCase):
     def test_unwritable_capture_dir_is_not_fatal(self):
         blocker = os.path.join(self.root, "not-a-directory")
         write(blocker, "")
-        with contextlib.redirect_stderr(io.StringIO()):
+        with contextlib.redirect_stderr(io.StringIO()) as said:
             self.assertIsNone(self.capture(os.path.join(blocker, "captures")))
+        self.assertRegex(said.getvalue(),
+                         r"capture \S+/captures/gpuwatchdog-\S+\.txt failed: ")
 
 
 class Threaded(WatchdogCase):

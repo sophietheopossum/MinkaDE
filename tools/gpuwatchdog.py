@@ -24,6 +24,11 @@ Design:
     Walker), so it runs on a thread of its own, the loop goes on reading
     GPUActive meanwhile, and a stage whose walk is not back in 2 s goes ahead
     on the last attribution that did arrive.
+  * A critical stage's signals do not wait on the disk for its capture. What
+    a capture records dies with the target, so the stage reads it ahead of
+    the SIGTERM, and writes the file once its signals are sent. The warn
+    stage still writes its capture from the loop, which takes no reading
+    while that write lasts.
   * Escalation is staged and each stage must persist -- a burst of GPU memory
     while a video decodes is normal, a plateau above the line is not.
 
@@ -318,9 +323,11 @@ class Walker:
                 f"the fd walk has been out {now - self.began:.0f}s)")
 
 
-def capture(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
-    """Snapshot everything that dies with the process: thread states, wchan,
-    its DRM fdinfo, and the system's memory and pressure picture.
+def snapshot(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
+    """Read everything that dies with the process: thread states, wchan,
+    and the system's memory and pressure picture. Returns the capture's path
+    and its text and writes nothing: all of it is read from /proc, so this
+    waits on no disk and can run ahead of a signal.
 
     `clients` is the walk the target was picked from: the table then shows
     what the decision saw, and the fds are not walked again ahead of the
@@ -375,15 +382,27 @@ def capture(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
     lines.append("--- gpu clients (private GTT, KiB) ---")
     for pid, kib in sorted(clients.items(), key=lambda kv: -kv[1])[:12]:
         lines.append(f"  {pid:>8} {_comm(pid):<20} {kib:>10}")
+    return path, "\n".join(lines) + "\n"
 
+
+def write_capture(path, text):
+    """Put a snapshot() on disk. Returns its path, or None when it could not
+    be written: a capture must never break the watchdog."""
     try:
-        os.makedirs(capture_dir, exist_ok=True)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as handle:
-            handle.write("\n".join(lines) + "\n")
+            handle.write(text)
         return path
     except OSError as error:
-        print(f"capture failed: {error}", file=sys.stderr, flush=True)
+        print(f"capture {path} failed: {error}", file=sys.stderr, flush=True)
         return None
+
+
+def capture(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
+    """A snapshot() written at once: for the warn stage, which sends no signal
+    of its own. The loop takes no reading while the write lasts."""
+    return write_capture(*snapshot(capture_dir, reason, reading, target,
+                                   dry_run, clients, caveat))
 
 
 def notify(uid, summary, body):
@@ -594,58 +613,69 @@ def main():
             continue
 
         target = seen.target
-        path = capture(args.capture_dir, "critical", reading, target, args.dry_run,
-                       seen.clients, walker.caveat())
-        if not target:
-            log(f"CRITICAL {reading} but no target in {sorted(targets)} holds GPU "
-                f"memory; not signalling. capture={path}")
-            acted_at = now
-            continue
-
-        pid, kib, comm = target
-        started = seen.started
-        log(f"CRITICAL {reading} target={comm}({pid}) holding "
-            f"{kib / 1048576:.2f} GiB capture={path}{walker.caveat()}")
-        notify(args.uid, "GPU runaway: restarting " + comm,
-               f"{reading}\n{comm} holds {kib / 1048576:.1f} GiB. "
-               f"Sending SIGTERM so the session is saved.")
-
-        if args.dry_run:
-            log(f"dry-run: would SIGTERM {pid}")
-            acted_at = now
-            continue
-
-        # Re-read identity immediately before signalling: between the scan and
-        # here the process may have exited and the PID been reused.
-        if not _same_process(pid, comm, started):
-            log(f"target {pid} changed identity before signalling; standing down")
-            acted_at = now
-            continue
-
+        # Read here, since what a capture records dies with the target, and
+        # written by the `finally` below, after the stage's last signal and
+        # whichever way the code leaves the stage. The write is the one step
+        # here that waits on the disk, and a machine this short of memory
+        # keeps its disk busy. Until then the capture is only in memory: a
+        # watchdog killed inside the stage loses it, which is the price of no
+        # signal waiting on the disk. The log lines name the file before it
+        # exists; a write that fails says so in a line of its own, by name.
+        path, text = snapshot(args.capture_dir, "critical", reading, target,
+                              args.dry_run, seen.clients, walker.caveat())
         try:
-            os.kill(pid, signal.SIGTERM)
-        except OSError as error:
-            log(f"SIGTERM {pid} failed: {error}")
-            acted_at = now
-            continue
+            if not target:
+                log(f"CRITICAL {reading} but no target in {sorted(targets)} holds "
+                    f"GPU memory; not signalling. capture={path}")
+                acted_at = now
+                continue
 
-        deadline = time.monotonic() + args.term_grace
-        while time.monotonic() < deadline:
-            time.sleep(0.5)
+            pid, kib, comm = target
+            started = seen.started
+            log(f"CRITICAL {reading} target={comm}({pid}) holding "
+                f"{kib / 1048576:.2f} GiB capture={path}{walker.caveat()}")
+            notify(args.uid, "GPU runaway: restarting " + comm,
+                   f"{reading}\n{comm} holds {kib / 1048576:.1f} GiB. "
+                   f"Sending SIGTERM so the session is saved.")
+
+            if args.dry_run:
+                log(f"dry-run: would SIGTERM {pid}")
+                acted_at = now
+                continue
+
+            # Re-read identity immediately before signalling: between the scan
+            # and here the process may have exited and the PID been reused.
             if not _same_process(pid, comm, started):
-                break
-        if _same_process(pid, comm, started):
-            log(f"{comm}({pid}) ignored SIGTERM for {args.term_grace}s; SIGKILL")
-            try:
-                os.kill(pid, signal.SIGKILL)
-            except OSError as error:
-                log(f"SIGKILL {pid} failed: {error}")
-        else:
-            log(f"{comm}({pid}) exited on SIGTERM")
+                log(f"target {pid} changed identity before signalling; standing down")
+                acted_at = now
+                continue
 
-        acted_at = time.monotonic()
-        above_warn_since = above_crit_since = None
-        warned = False
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except OSError as error:
+                log(f"SIGTERM {pid} failed: {error}")
+                acted_at = now
+                continue
+
+            deadline = time.monotonic() + args.term_grace
+            while time.monotonic() < deadline:
+                time.sleep(0.5)
+                if not _same_process(pid, comm, started):
+                    break
+            if _same_process(pid, comm, started):
+                log(f"{comm}({pid}) ignored SIGTERM for {args.term_grace}s; SIGKILL")
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                except OSError as error:
+                    log(f"SIGKILL {pid} failed: {error}")
+            else:
+                log(f"{comm}({pid}) exited on SIGTERM")
+
+            acted_at = time.monotonic()
+            above_warn_since = above_crit_since = None
+            warned = False
+        finally:
+            write_capture(path, text)
 
 
 if __name__ == "__main__":
