@@ -284,6 +284,27 @@ minkarepo publish minkade
   of phantom timeline. `$SHOJI_LOG_DIR` overrides the directory. Builds without commit
   `59ea204c`, such as the `shoji_wm.previous` kept by the 20/11/2026 install, still write to
   the old `~/shoji_wm/logs`.
+- **The compositor keeps its memory in RAM** (27/11/2026; minkade 0.96.0-1 and older do not
+  have it): the Rust config sets `ConfigBuilder::pin_memory` (`session::pin_memory()`, off
+  when nested), and `shojiwm_rs::memory_pin` then calls
+  `mlockall(MCL_CURRENT | MCL_FUTURE | MCL_ONFAULT)` at launch, so a page the compositor has
+  used is not read from disk again. It needs `<user> hard memlock unlimited` in a file under
+  `/etc/security/limits.d/` (hers goes in `/etc/security/limits.d/50-minka-memlock.conf`) and
+  a new login: systemd gives every login 8 MiB, neither the package nor the tarball sets a
+  limit, and with a finite limit the compositor locks nothing and says so in one line. Check
+  with `prlimit --memlock --pid $(pgrep -x shoji_wm)` (`unlimited` twice),
+  `grep Locked /proc/$(pgrep -x shoji_wm)/smaps_rollup` (the RAM held, shared pages counted by
+  their share, so it reads below the resident set; `VmLck` in `/proc/<pid>/status` is address
+  space, about 2.4 GB, not RAM) and the `shojiwm_rs::memory_pin` line in `latest.log`
+  (`memory pinned` or `memory not pinned`). `SHOJI_PIN_MEMORY=off` turns it off, and the
+  variable cannot turn it on. Not covered: the first touch of a page, files read or written
+  with ordinary system calls (shaders, decoration images, cursor shapes at first use) and GPU
+  buffers, which the xe driver may swap out by itself. Left as they are: every process the
+  compositor starts inherits the raised soft limit (not the lock), client `wl_shm` pool pages
+  the compositor has read stay in RAM while the pool is mapped, and heap an allocator frees
+  with `madvise` (mimalloc, glibc's thread arenas) is not handed back to the kernel. A
+  `heap-debug` build (`ShojiWM/dist/install.sh --rust-config --debug`) does not pin: with its
+  assertions on, mimalloc aborts when it purges freed memory that is locked.
 
 ### Before syncing ShojiWM with upstream
 
