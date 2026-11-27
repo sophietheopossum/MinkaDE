@@ -7,9 +7,9 @@
 # overlay, the MinkaShell shell, the MinkaMon system monitor, MinkaShot's
 # screenshot daemon and commands and the other Minka apps, each run through
 # a link named after it. Beside it go the compositor's shaders and icons,
-# the QML apps (MinkaConf and MinkaLedger's window, and MinkaShot's old
-# tree) with the shared Proustite / MinkaLink singletons, a "Minka" Wayland
-# session entry for your display manager, and the apps' launchers.
+# the QML apps (MinkaConf and MinkaLedger's window) with the shared
+# Proustite / MinkaLink singletons, a "Minka" Wayland session entry for your
+# display manager, and the apps' launchers.
 #
 # Usage:
 #   ./install.sh                 install the prebuilt x86_64 binary (default)
@@ -86,9 +86,12 @@ echo ">> installing system files (sudo)"
 # in one does not outlive this one: a removed QML file would keep loading.
 mapfile -t trees < <(find usr -type d -name 'minka*' -prune -printf '/%p\n')
 sudo rm -rf "${trees[@]}"
-# And the ones older tarballs installed that this one no longer has:
-# MinkaSyu's QML window, up to 0.92.0.
+# And what older tarballs installed that this one no longer has: MinkaSyu's
+# QML window, up to 0.92.0, and up to 0.96.0 the MinkaCap name, which
+# MinkaShot's QML daemon ran. That daemon's own tree was in
+# /usr/share/minka, and went with it above.
 sudo rm -rf /usr/share/minka-syu
+sudo rm -f /usr/bin/MinkaCap
 
 # --no-portal leaves out the portal backend: its link, the portal file
 # xdg-desktop-portal reads, and the D-Bus and systemd files that start it.

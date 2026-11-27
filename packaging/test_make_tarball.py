@@ -54,7 +54,7 @@ VERSION = "9.9-test"
 ROOT = f"minkade-{VERSION}"
 
 # The names the stand-in minka answers to, as the real one's apps! list has them.
-NAMES = ("shoji_wm", "xdg-desktop-portal-shojiwm", "xwayland-satellite", "MinkaFX", "MinkaCap",
+NAMES = ("shoji_wm", "xdg-desktop-portal-shojiwm", "xwayland-satellite", "MinkaFX",
          "minkashell", "minkashot", "minkamon", "minkamon-sampler", "minka-syu", "minka-syu-gui",
          "minka-thermal", "minka-ledger", "bartizan-lsp")
 
@@ -85,8 +85,8 @@ MEMBERS = {
     "MinkaMon/sampler-rs": ("Cargo.toml", "src/lib.rs"),
     "MinkaShell": ("Cargo.toml", "src/lib.rs", "assets/mac-glass-minimize.svg",
                    "scripts/app-mute.py", "dist/minkashell"),
-    # The crate, beside the QML tree, installed until it is deleted.
-    "MinkaShot": ("Cargo.toml", "src/lib.rs", "shell.qml", "services/ShotState.qml"),
+    # A crate with nothing to install: its README must stay out of usr/.
+    "MinkaShot": ("Cargo.toml", "src/lib.rs", "README.md"),
     "MinkaSyu": ("Cargo.toml", "src/lib.rs", "README.md",
                  "dist/minka-syu.desktop", "dist/minka-syu-check.service",
                  "dist/minka-syu-check.timer"),
@@ -191,15 +191,12 @@ CONTENTS = {
 # Each QML app reaches the shared singletons through these, as in the real tree.
 CHECKOUT_LINKS = {
     "MinkaConf/Proustite": "../Proustite",
-    "MinkaShot/Proustite": "../Proustite",
-    "MinkaShot/MinkaLink": "../MinkaLink",
     "MinkaLedger/ui/Proustite": "../../Proustite",
     "MinkaLedger/ui/MinkaLink": "../../MinkaLink",
 }
 # Where each QML tree is installed, from where in the checkout.
 QML_APPS = {
     "usr/share/minka/MinkaConf": "MinkaConf",
-    "usr/share/minka/MinkaShot": "MinkaShot",
     "usr/share/minka/MinkaLedger": "MinkaLedger/ui",
 }
 # Each installed singleton link, as installed/<link>.
@@ -447,6 +444,15 @@ class MakeTarball(Checkout):
         for link in APP_LINKS:
             with self.subTest(link=link):
                 self.assertTrue(os.path.isfile(os.path.join(out, ROOT, link, "qmldir")))
+
+    def test_minkashot_installs_no_tree(self):
+        """Its Rust reads nothing from /usr/share/minka, so its directory,
+        README and all, is no app tree."""
+        with tarfile.open(self.build(VERSION)) as tar:
+            usr = describe_tar(tar, f"{ROOT}/usr")
+        self.assertIn("share/minka/MinkaShell", usr, "the path pattern is stale")
+        self.assertEqual(sorted(p for p in usr if p.split("/")[:3]
+                                == ["share", "minka", "MinkaShot"]), [])
 
     def test_version_defaults_to_0_1(self):
         done = self.run_script()

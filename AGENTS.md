@@ -12,7 +12,7 @@ dual-screen "Duo" mode).
 | **ShojiWM**    | Rust (smithay) + Rust config | Compositor. **bea4dev's project, not Sophie's** — she maintains patches (e.g. an unmerged HDR pipeline), has good rapport with him, and he is actively developing it. Patching compositor core is fine and is often the only place a fix can live; the caveat is about attribution, not scope. |
 | **MinkaShell** | AntiWebUI (Rust)           | Session shell: bar, dock, start menu, calendar/status/battery popovers, notifications. `dist/minkashell` execs `minka-keep minkashell`, which runs it from MinkaDE's one binary (`minka minkashell`), logs to `~/.local/state/minka/minkashell.log`, and restarts it when it dies (after 1, 2, 4, 8, 16, then every 30 s). There is no Quickshell fallback (24/11/2026). |
 | **MinkaMon**   | AntiWebUI (Rust)           | System monitor. `sampler-rs/` (`minkamon-sampler`) streams JSON-lines stats; main window is clickable machine schematic opening satellite instrument windows. |
-| **MinkaShot**  | Quickshell/QML + Rust      | Screenshot tool, being ported. Print arms its daemon: frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. The Rust crate is the command line, `minkashot full\|region\|win\|list` (`minka minkashot ...`): no overlay, no input, an exit status for each failure. `win` captures a window's own buffer through the toolkit's ext-image-copy-capture (occlusion-free, no raising). MinkaCap, its own crate until 25/11/2026, is folded in: `MinkaCap grab\|list` is a name for `win`/`list`, kept while the QML daemon calls it. `minkashot daemon` is the Rust daemon to replace the QML one (25/11/2026): it holds `$XDG_RUNTIME_DIR/minkashot.lock`, hears Print and answers `minkashot interactive\|cancel\|status` (exit 5 when none runs). It has the whole overlay now: each output frozen under its own layer, drag, loupe, window pick, the compact md3e toolbar (delay, Window, retry, copy to the clipboard as `image/png`), the countdown, and a snackbar when a save or copy fails. The session config starts the Rust daemon through `/usr/lib/minka/minka-keep` (log `~/.local/state/minka/minkashot.log`, restarted like the shell) from the next minkade package; the session running now keeps the QML daemon until that package is installed and she logs in again. The QML tree stays installed until it is deleted. |
+| **MinkaShot**  | AntiWebUI (Rust)           | Screenshot tool. Print arms its daemon: frozen frame + loupe crosshair → region/window capture to `~/Pictures/Screenshots/`. The command line is `minkashot full\|region\|win\|list` (`minka minkashot ...`): no overlay, no input, an exit status for each failure. `win` captures a window's own buffer through the toolkit's ext-image-copy-capture (occlusion-free, no raising). MinkaCap, its own crate until 25/11/2026, became `win` and `list`; the `MinkaCap` name went with the QML daemon that called it (26/11/2026). `minkashot daemon` is the daemon, one per session: it holds `$XDG_RUNTIME_DIR/minkashot.lock`, hears Print and answers `minkashot interactive\|cancel\|status` (exit 5 when none runs). It has the whole overlay: each output frozen under its own layer, drag, loupe, window pick, the compact md3e toolbar (delay, Window, retry, copy to the clipboard as `image/png`), the countdown, and a snackbar when a save or copy fails. The session config starts it through `/usr/lib/minka/minka-keep` (log `~/.local/state/minka/minkashot.log`, restarted like the shell). The QML tree was deleted on 26/11/2026. Packages up to minkade 0.96.0-1 install it (`/usr/share/minka/MinkaShot`) and a `/usr/bin/MinkaCap` link, and 0.96.0 starts neither. |
 | **MinkaConf**  | Quickshell/QML             | Settings utility.                                                                                                                                                                                                    |
 | **MinkaFX**    | Rust (wgpu)                | Guido-style overlay process (snap preview, future OSDs).                                                                                                                                                             |
 | **Proustite**  | QML singleton + Rust crate | **Shared palette.** Named after "ruby silver" mineral (scarlet that light tarnishes black) — spiritual successor to Eternal Darkness theme. The `proustite` crate gives the AntiWebUI apps the same tokens, read from `Proustite.qml` at build time.                                                                          |
@@ -27,13 +27,15 @@ XWayland bridge.
 ## Theming (Proustite)
 
 - **No literal colors in widgets** — every color goes through `Theme` token. Each
-  AntiWebUI app's `theme.rs` adds its own tokens to the `proustite` crate's; each QML
-  app still to be ported has a `services/Theme.qml` facade doing the same (MinkaShot scrim).
+  AntiWebUI app's `theme.rs` adds its own tokens to the `proustite` crate's (MinkaShot's scrim);
+  each QML app still to be ported has a `services/Theme.qml` facade doing the same
+  (MinkaLedger's `seriesPalette`).
 - `red` is `#FF0000`; the old MinkaMon `glow` token merged into `red`.
 - **Shared submodules are consumed via symlink into each QML app's config root**
-  (`MinkaShot/Proustite -> ../Proustite`, same for MinkaLink). Quickshell only honours
-  qmldir singleton registration for paths *inside* the shell root, so `import "../Proustite"`
-  works but `import "../../Proustite"` loads files as plain components (undefined tokens).
+  (`MinkaConf/Proustite -> ../Proustite`; `MinkaLedger/ui` links MinkaLink too). Quickshell
+  only honours qmldir singleton registration for paths *inside* the shell root, so
+  `import "../Proustite"` works but `import "../../Proustite"` loads files as plain components
+  (undefined tokens).
 - **Never name shared singleton after a Qt type** — QtQuick's built-in `Palette`
   silently shadowed our singleton; that's why it's `Proustite`, not `Palette`.
 
@@ -60,9 +62,9 @@ Stated by Sophie on 17/11/2026, for apps as they move from Quickshell to AntiWeb
   MinkaSyu get restyled this way; MinkaLedger, MinkaShot and MinkaConf move to AntiWebUI. Write
   no new QML.
 - **No more Quickshell (24/11/2026, her call):** "port the unported apps to antiwebui, no more
-  quickshell". MinkaShot, MinkaConf and MinkaLedger's window are being ported, and then every QML
-  tree, fallback path and Quickshell dependency goes, MinkaShell's included ("minkashell should not
-  fallback to quickshell").
+  quickshell". MinkaShot is ported and its QML tree deleted (26/11/2026). MinkaConf and
+  MinkaLedger's window are being ported, and then every QML tree, fallback path and Quickshell
+  dependency goes, MinkaShell's included ("minkashell should not fallback to quickshell").
 - **Font: Roboto Flex everywhere** (17/11/2026: "let's go with roboto flex everywhere"), for
   all proportional text in MinkaDE's own UI. Monospace text stays monospace. Noto Sans remains
   the fallback, and Noto's CJK and emoji fonts still cover what Roboto Flex lacks.
@@ -164,7 +166,7 @@ uses it. Her rule: "if something can be deduplicated, i probably want it".
 ## Build / lint / run
 
 ```sh
-# Lint QML (MinkaConf, MinkaShot and MinkaLedger's ui/ until their ports land; from the
+# Lint QML (MinkaConf and MinkaLedger's ui/ until their ports land; from the
 # app's dir). ABSOLUTE path: qt5-declarative owned /usr/bin/qmllint and was removed
 # 29/8/2026, so there is no qmllint on PATH at all now. Never pipe this: like cargo below, `| head` makes $? report head, and the
 # Qt5 binary that used to be first on PATH failed with a BARE 255 and no message.
@@ -259,11 +261,12 @@ minkarepo publish minkade
   `ShojiWM/packages/config/src` (TypeScript) is the rollback config: only the TypeScript
   build reads it, through `$SHOJI_CONFIG`, and the Rust build ignores that variable.
 - `shojiwm-env.fish` (symlinked to fish conf.d as `shojiwm.fish`) exports the
-  repo-checkout overrides for the QML trees and launchers (`MINKA_SHELL_DIR`,
-  `MINKA_SHOT_DIR`, `MINKA_MON_BIN`, `MINKA_MON_DIR`) and points
+  repo-checkout overrides for the shell's and MinkaMon's directories and launchers
+  (`MINKA_SHELL_DIR`, `MINKA_MON_BIN`, `MINKA_MON_DIR`) and points
   `SHOJI_XWAYLAND_SATELLITE_PATH` at the package's `/usr/lib/minka/xwayland-satellite`.
-  The binaries themselves are the package's. From the next minkade package on, nothing reads
-  `MINKA_SHOT_DIR`: the session starts MinkaShot's Rust daemon instead of its QML tree.
+  The binaries themselves are the package's. It still exports `MINKA_SHOT_DIR`, which nothing
+  reads since minkade 0.96.0: the session starts MinkaShot's daemon from minka, and the QML
+  tree the variable named was deleted on 26/11/2026.
   Its `SHOJI_CONFIG` line is commented out, for a TypeScript rollback.
 - The ShojiWM IPC is an NDJSON Unix socket at
   `$XDG_RUNTIME_DIR/shojiwm-$WAYLAND_DISPLAY.sock`. Query it live with `wayland-info`

@@ -15,7 +15,7 @@ breaks, along with `~/.local/state/minka/minkashell.log` and
 
 | path            | contents                                                        |
 |-----------------|-----------------------------------------------------------------|
-| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaShot's screenshot daemon and commands and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps not yet ported to AntiWebUI (MinkaConf, MinkaLedger's window) and MinkaShot's old QML tree, the shell's and MinkaMon's assets, and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
+| `usr/`          | what `install.sh` copies to `/usr`, as it is laid out there: `bin/minka`, the one prebuilt x86_64 binary (the compositor with Minka's config compiled in, its portal, xwayland-satellite, MinkaShell, MinkaMon, MinkaFX, MinkaShot's screenshot daemon and commands and the other Minka apps), with a link to it named after each; `share/minka/`, the QML apps not yet ported to AntiWebUI (MinkaConf, MinkaLedger's window), the shell's and MinkaMon's assets, and the compositor's shaders and icons (`shojiwm/`); the session entry, desktop entries, launchers and portal service files |
 | `src/`          | full sources, for `--from-source` installs                      |
 | `install.sh`, `uninstall.sh` | the installer, and its undo, which removes what `usr/` holds |
 
@@ -94,7 +94,7 @@ Uninstall with the unpacked tarball's `./uninstall.sh`: it removes what its
 - **Super+Left/Right** — focus tiles · **Super+Shift+Left/Right** — move tiles
 - **Super+Ctrl+Up/Down** — switch workspace · **Super+Shift+Up/Down** — move window between workspaces
 - **Alt+Tab** — cycle windows
-- **Print** — MinkaShot: freezes the screen; drag a region (or click WINDOW
+- **Print** — MinkaShot: freezes the screen; drag a region (or click Window
   to pick a window), Enter saves to `~/Pictures/Screenshots/`, Esc cancels
 - **Super+P** — region screenshot (hyprshot+swappy)
 

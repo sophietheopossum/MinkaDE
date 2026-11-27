@@ -27,11 +27,11 @@
 #                                   once the checkout it was built from is gone
 #   /usr/share/minka/<App>          the shell's and MinkaMon's assets (and the
 #                                   shell's scripts and launcher), and the QML
-#                                   trees still installed (MinkaConf,
-#                                   MinkaLedger's window, and MinkaShot's,
-#                                   which the session no longer starts)
-#                                   beside Proustite and MinkaLink, which their
-#                                   symlinks reach as ../Proustite
+#                                   trees still installed (MinkaConf and
+#                                   MinkaLedger's window) beside Proustite and
+#                                   MinkaLink: MinkaConf's symlink reaches
+#                                   ../Proustite, and MinkaLedger's window has
+#                                   its own copies of both
 #   the portal backend's D-Bus, portal and systemd files, MinkaSyu's units,
 #   MinkaThermal's unit, and the apps' desktop entries.
 set -euo pipefail
@@ -75,13 +75,13 @@ install -d "$SHARE/shojiwm"
 
 echo ">> app trees"
 # The shell's and MinkaMon's trees now hold only what the Rust apps read at
-# run time (assets/, the shell's scripts/); MinkaConf's and MinkaShot's are
-# still QML. dist/ is left out (what is needed from it is installed below),
-# and so is the Rust of the apps that are in minka. Anchored patterns: each
-# tree's own top level only.
+# run time (assets/, the shell's scripts/); MinkaConf's is still QML.
+# MinkaShot has no tree: its Rust reads nothing from here. dist/ is left out
+# (what is needed from it is installed below), and so is the Rust of the apps
+# that are in minka. Anchored patterns: each tree's own top level only.
 RUST=(--exclude '/*/src' --exclude '/*/sampler-rs' --exclude '/*/Cargo.toml' --exclude '/*/build.rs')
 rsync -a "${EXCLUDES[@]}" "${RUST[@]}" --exclude '/*/dist' \
-    MinkaShell MinkaConf MinkaMon MinkaShot "$SHARE/"
+    MinkaShell MinkaConf MinkaMon "$SHARE/"
 rsync -a "${EXCLUDES[@]}" "${RUST[@]}" Proustite "$SHARE/"
 rsync -a "${EXCLUDES[@]}" MinkaLink "$SHARE/"
 install -Dm755 MinkaShell/dist/minkashell "$SHARE/MinkaShell/dist/minkashell"

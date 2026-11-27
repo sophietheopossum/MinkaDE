@@ -28,10 +28,10 @@ mapfile -t trees < <(find usr -type d -name 'minka*' -prune -printf '/%p\n')
 mapfile -t files < <(find usr -type d -name 'minka*' -prune -o ! -type d -printf '/%p\n')
 sudo rm -rf "${trees[@]}"
 sudo rm -f "${files[@]}"
-# What older tarballs installed: the binaries one by one, in
-# /usr/lib/shojiwm and /usr/share/shojiwm the TypeScript runtime and
-# default config, and up to 0.92.0 MinkaSyu's QML window in
-# /usr/share/minka-syu.
+# What older tarballs installed: the binaries one by one (MinkaCap was
+# still a name of minka's up to 0.96.0), in /usr/lib/shojiwm and
+# /usr/share/shojiwm the TypeScript runtime and default config, and up to
+# 0.92.0 MinkaSyu's QML window in /usr/share/minka-syu.
 sudo rm -f /usr/bin/shoji_wm /usr/bin/MinkaFX /usr/bin/MinkaCap /usr/bin/minka-session \
     /usr/bin/minkamon /usr/bin/xdg-desktop-portal-shojiwm \
     /usr/share/wayland-sessions/minka.desktop \

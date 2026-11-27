@@ -102,6 +102,9 @@ OLDER_INSTALL = (
     "usr/share/minka/MinkaMon/minkamon-sampler",
     # MinkaSyu's QML window, installed up to 0.92.0.
     "usr/share/minka-syu/ui/shell.qml",
+    # MinkaShot's QML daemon, installed up to 0.96.0. It ran usr/bin/MinkaCap,
+    # above, which is no name of minka's any more.
+    "usr/share/minka/MinkaShot/shell.qml",
 )
 TYPESCRIPT_INSTALL = (
     "usr/lib/shojiwm/runtime/index.js",
@@ -234,7 +237,7 @@ class Install(Checkout):
                 where = ("/usr/lib/minka/" if name == "xwayland-satellite" else "/usr/bin/") + name
                 with self.subTest(name=name):
                     self.assertEqual(os.path.realpath(self.at(where)), minka)
-        for app in ("MinkaConf", "MinkaShot", "MinkaLedger"):
+        for app in ("MinkaConf", "MinkaLedger"):
             with self.subTest(app=app):
                 self.assertTrue(os.path.isfile(self.at(f"/usr/share/minka/{app}/Proustite/qmldir")))
 
@@ -352,7 +355,7 @@ class Install(Checkout):
         must be one install.sh fills. minka answers to its real names here."""
         launchers = ("MinkaMon/dist/minkamon", "MinkaShell/dist/minkashell",
                      "packaging/minka-keep")
-        for path in ("packaging/minka-session", *launchers, "MinkaShot/services/ShotState.qml"):
+        for path in ("packaging/minka-session", *launchers):
             with open(os.path.join(REPO, path), "rb") as real:
                 self.write(path, real.read(), 0o755)
         self.write("target/release/minka", minka_script(real_names()).encode(), 0o755)
@@ -375,9 +378,6 @@ class Install(Checkout):
         for launcher in launchers:
             with open(os.path.join(REPO, launcher)) as script:
                 named |= {path.rstrip(".") for path in re.findall(r"/usr/[\w./-]+", script.read())}
-        # MinkaShot's default for MinkaCap: env("MINKA_CAP_BIN") || "/usr/bin/MinkaCap".
-        with open(os.path.join(REPO, "MinkaShot/services/ShotState.qml")) as qml:
-            named |= set(re.findall(r'\|\|\s*"(/usr/[^"]+)"', qml.read()))
         # The AntiWebUI apps' own fallbacks, such as the shell's assets.
         for app in ("MinkaShell", "MinkaMon"):
             for name in os.listdir(os.path.join(REPO, app, "src")):
@@ -386,9 +386,13 @@ class Install(Checkout):
                 with open(os.path.join(REPO, app, "src", name)) as source:
                     named |= set(re.findall(r'"(/usr/share/minka/[^"]+)"', source.read()))
         for path in ("/usr/share/minka/MinkaShell", "/usr/lib/minka/minka-keep",
-                     "/usr/bin/MinkaCap", "/usr/bin/minka", "/usr/share/minka/MinkaShell/assets"):
+                     "/usr/bin/minka", "/usr/share/minka/MinkaShell/assets"):
             self.assertIn(path, named, "the patterns are stale")
         self.assertEqual(sorted(p for p in named if not os.path.exists(self.at(p))), [])
+        # MinkaCap went with MinkaShot's QML daemon: the real minka has no
+        # such name, so nothing installs its link again.
+        self.assertFalse(os.path.lexists(self.at("/usr/bin/MinkaCap")),
+                         "minka answers to MinkaCap again, or stage-usr.sh links it")
         # The session runs the shell's launcher only if it is executable.
         self.assertTrue(os.access(self.at("/usr/share/minka/MinkaShell/dist/minkashell"), os.X_OK))
 
