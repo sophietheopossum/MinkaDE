@@ -32,6 +32,8 @@ Design:
     Two corners are left: with no thread to be had the warn stage writes
     from the loop, as it used to, and the loop takes no reading while the
     critical stage writes, so what falls due meanwhile waits for the disk.
+  * Nor does a stage wait on the disk for its own code: the pages mapped at
+    start-up are locked in RAM (see lock_memory()).
   * Escalation is staged and each stage must persist -- a burst of GPU memory
     while a video decodes is normal, a plateau above the line is not.
 
@@ -98,8 +100,9 @@ def _text(path):
     watchdog at every walk, the walk at start-up included, for as long as
     that client ran. So a byte that is not UTF-8 comes back as its \\xNN
     escape, which prints anywhere and is the same at every read, as the
-    comparison in _same_process() needs."""
-    with open(path, encoding="utf-8", errors="backslashreplace") as handle:
+    comparison in _same_process() needs. Nor is a carriage return made a
+    newline, as text mode does unless told: "hellfire\\r" read as hellfire."""
+    with open(path, encoding="utf-8", errors="backslashreplace", newline="") as handle:
         return handle.read()
 
 
@@ -117,9 +120,29 @@ def read_meminfo():
     return out
 
 
+def _printable(text, keep=""):
+    """`text` with each character that does not print, other than those in
+    `keep`, as its escape: a newline as \\n, an escape sequence's ESC as
+    \\x1b. The escape is the character's repr(), which imports no codec: a
+    first use at a stage would have read one from the disk."""
+    if text.isprintable():
+        return text
+    return "".join(c if c.isprintable() or c in keep else repr(c)[1:-1] for c in text)
+
+
 def _comm(pid):
+    """A process's name, as text that prints anywhere: what /proc/<pid>/comm
+    says, less the one newline the kernel puts after it.
+
+    Only that newline goes. A name is whatever its process chose, spaces and
+    newlines included, and stripped instead " floorp " read as floorp, an
+    allowlisted name, and so was a target. What does not print comes back as
+    its escape, so that no name begins a line of its own in the journal or in
+    a capture's table. Compared with a --target, the result is exact for any
+    target that prints and has no backslash in it, since every escape brings
+    one, and main() leaves out a target that does not."""
     try:
-        return _text(f"/proc/{pid}/comm").strip()
+        return _printable(_text(f"/proc/{pid}/comm").removesuffix("\n"))
     except OSError:
         return ""
 
@@ -377,7 +400,11 @@ def snapshot(capture_dir, reason, reading, target, dry_run, clients, caveat=""):
         lines.append(f"--- process {target[0]} ---")
         for name in ("status", "wchan", "stack"):
             try:
-                lines.append(f"[{name}]\n{_text(f'{proc}/{name}')}")
+                # status's Name has only its newlines and backslashes escaped
+                # by the kernel, and the target may have renamed itself since
+                # the walk picked it: a carriage return there began a line.
+                body = _printable(_text(f"{proc}/{name}"), keep="\t\n")
+                lines.append(f"[{name}]\n{body}")
             except OSError as error:
                 lines.append(f"[{name}] unavailable: {error}")
         lines.append("[threads] tid state wchan")
@@ -427,6 +454,38 @@ def write_behind(path, text):
         write_capture(path, text)
         return None
     return writer
+
+
+# mlockall()'s flag on Linux for x86 and arm: lock every page mapped now.
+MCL_CURRENT = 1
+
+
+def lock_memory():
+    """Keep the pages the watchdog has mapped in RAM. Returns None when they
+    are locked, else why they are not.
+
+    Its anonymous memory cannot leave already (the unit's MemorySwapMax=0).
+    The interpreter's code is file pages, though, which a machine short of
+    memory drops within seconds and reads back from the disk at their next
+    use. The code a stage runs is used once a stage: on 28/11/2026 a copy's
+    start-up walk, heartbeats and first warn and critical stage took six
+    major faults, and a locked copy none. Each is a wait on a disk that is,
+    at the critical line, at its busiest; locked, the stage's own code waits
+    on no disk.
+
+    MCL_CURRENT alone, and before the first thread. MCL_FUTURE would lock
+    each later mapping as it is made: a thread that finds no finished one's
+    stack to reuse would fault in a whole 8 MB stack as it starts, the
+    critical notification's among them when the stage's walk is still out,
+    just ahead of the SIGTERM. And once a thread has run, glibc's arenas
+    make the address space too large for any small LimitMEMLOCK=. The unit
+    sets it to infinity. Under systemd's default 8 MB the call fails, and
+    the watchdog goes on as it did."""
+    import ctypes   # here: --once needs none of it
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.mlockall(MCL_CURRENT) == 0:
+        return None
+    return os.strerror(ctypes.get_errno())
 
 
 def notify(uid, summary, body):
@@ -512,11 +571,31 @@ def main():
     ap.add_argument("--once", action="store_true",
                     help="print one reading and exit")
     args = ap.parse_args()
+    # A character the output cannot carry is printed as its escape: a print
+    # that raised would end the watchdog. (A test's StringIO has no reconfigure.)
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure:
+        reconfigure(errors="backslashreplace")
 
     targets = set(args.target or ["hellfire"])
+    # A target is compared with what _comm() reads, which is exact only for a
+    # name that prints and has no backslash, and the kernel keeps 15 bytes of
+    # a name: any other target could never match its own process, or could
+    # match another. An empty one would match each process whose name could
+    # not be read, one gone mid-walk among them. Each is left out, and said
+    # so, rather than armed for ever.
+    unmatchable = sorted(t for t in targets
+                         if not t or not t.isprintable() or "\\" in t
+                         or len(t.encode()) > 15)
+    targets -= set(unmatchable)
     warn_kib = args.warn_gib * 1024 * 1024
     crit_kib = args.crit_gib * 1024 * 1024
     crit_avail_kib = args.crit_avail_gib * 1024 * 1024
+
+    if unmatchable:
+        log(f"WARNING: ignoring --target {unmatchable}: a target must be a name "
+            "that prints, has no backslash and fits in the 15 bytes the kernel "
+            "keeps of a name")
 
     if args.once:
         mem = read_meminfo()
@@ -526,6 +605,14 @@ def main():
         best = pick_target(targets, gpu_clients())
         print(f"largest target: {best if best else 'none'}")
         return 0
+
+    # Before the first thread: see lock_memory().
+    unlocked = lock_memory()
+    if unlocked:
+        log(f"note: memory not locked ({unlocked}), so a stage may wait on the "
+            "disk for its own code; the unit sets LimitMEMLOCK=infinity for this")
+    else:
+        log("memory locked")
 
     if not args.dry_run and os.geteuid() != 0:
         log("note: not root -- it can only signal processes this user owns, "

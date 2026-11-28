@@ -80,8 +80,9 @@ def _text(path):
     falls, and read strictly such a name raised UnicodeDecodeError, which is
     no OSError: one client with one ended the sampler at every walk, and it
     did on 27/11/2026. A byte that is not UTF-8 comes back as its \\xNN
-    escape instead, which json.dumps() keeps as it is."""
-    with open(path, encoding="utf-8", errors="backslashreplace") as fh:
+    escape instead, which json.dumps() keeps as it is. Nor is a carriage
+    return made a newline, as text mode does unless told."""
+    with open(path, encoding="utf-8", errors="backslashreplace", newline="") as fh:
         return fh.read()
 
 
@@ -138,9 +139,23 @@ def read_zram():
     return devs
 
 
+def _printable(text):
+    """`text` with each character that does not print as its escape: a
+    newline as \\n, an escape sequence's ESC as \\x1b. For names on a
+    terminal: the log keeps them as they are, which JSON can. Anything that
+    is not a str, as a hand-edited log may hold, prints as its str()."""
+    text = str(text)
+    if text.isprintable():
+        return text
+    return "".join(c if c.isprintable() else repr(c)[1:-1] for c in text)
+
+
 def _comm(pid):
+    """What /proc/<pid>/comm says, less the one newline the kernel puts after
+    it. Only that newline goes: stripped instead, " floorp " was logged as
+    floorp."""
     try:
-        return _text(f"/proc/{pid}/comm").strip()
+        return _text(f"/proc/{pid}/comm").removesuffix("\n")
     except OSError:
         return "?"
 
@@ -187,17 +202,28 @@ def scan_fds(want_dmabuf, at=None):
                 body = _text(f"/proc/{pid}/fdinfo/{fd}")
             except OSError:
                 continue
+            # The first line of a key is the kernel's. A dma-buf's name is
+            # whatever its holder set, up to 31 bytes, and the kernel prints
+            # it as it is and after every line read here: any line break in
+            # it (splitlines() knows ten, \n, \r and \x1c among them) starts a
+            # line, and a "size:" or "ino:" line there used to replace the
+            # real one.
             kv = {}
             for line in body.splitlines():
                 k, _, v = line.partition(":")
-                kv[k.strip()] = v.strip()
+                kv.setdefault(k.strip(), v.strip())
             if comm is None:
                 comm = _comm(pid)
             if is_dma:
+                # Only a dma-buf's fdinfo has a size line. Without one this
+                # is some other file that a link only made look like one: one
+                # at "/dmabuf:x" in a process's own mount namespace, or an fd
+                # closed and reopened between the readlink and the read. As
+                # a 0-byte buffer it zeroed the real one of its inode number.
                 try:
                     ino = int(kv.get("ino", "-1"))
-                    size = int(kv.get("size", "0"))
-                except ValueError:
+                    size = int(kv["size"])
+                except (KeyError, ValueError):
                     continue
                 dmabuf_ino[ino] = size
                 slot = dmabuf_by_pid.setdefault(comm, [0, 0])
@@ -380,7 +406,8 @@ def fmt(rec):
     ]
     walk = rec.get("walk")
     if walk is not None:
-        where = f", reading {walk['comm']}[{walk['pid']}]" if "pid" in walk else ""
+        where = (f", reading {_printable(walk['comm'])}[{walk['pid']}]"
+                 if "pid" in walk else "")
         if "fd" in walk:
             where += f" fd {walk['fd']}"
         if "state" in walk:
@@ -390,14 +417,17 @@ def fmt(rec):
         return "\n".join(out)
     acc = 0
     for c in rec["drm"]:
+        comm = _printable(c["comm"])
         if c.get("no_accounting"):
-            out.append(f"    {c['comm']:<16} [{c['pid']:>7}] {c['node']:<12} "
+            # The node is named by the fd's link, which a process in a mount
+            # namespace of its own can make say anything under /dev/dri/.
+            out.append(f"    {comm:<16} [{c['pid']:>7}] {_printable(c['node']):<12} "
                        f"(driver exports no drm-* accounting)")
             continue
         tot = c.get("tgtt", 0) + c.get("tsys", 0) + c.get("tvram", 0)
         acc += tot
         out.append(
-            f"    {c['comm']:<16} [{c['pid']:>7}] cid={str(c.get('cid')):<5} "
+            f"    {comm:<16} [{c['pid']:>7}] cid={str(c.get('cid')):<5} "
             f"{c.get('drv'):<6} total {tot/1024:9.1f} MiB   "
             f"shared {(c.get('sgtt',0)+c.get('ssys',0))/1024:8.1f} MiB   "
             f"resident {(c.get('rgtt',0)+c.get('rsys',0))/1024:9.1f} MiB")
@@ -460,38 +490,62 @@ def report(path):
     n = 0
     first = last = None
     seen_cids = set()
+    unread = 0               # lines the report cannot use: torn or damaged
     for p in (path + ".1", path):          # oldest generation first
         try:
-            fh = open(p)
+            # The sampler writes only ASCII, so any other byte is damage. Read
+            # strictly, the first one ended the report. Read as U+FFFD it
+            # costs the line it is in at most, and nothing when it replaced a
+            # plain character of a name (in an escape it breaks the escape;
+            # a \xNN escape would not be JSON either). Lines end at "\n"
+            # alone: taken for an end of line, a stray "\r" made one damaged
+            # record two unreadable lines.
+            fh = open(p, encoding="utf-8", errors="replace", newline="\n")
         except OSError:
             continue
         with fh:
             for line in fh:
+                # A damaged byte can also leave JSON that parses and is no
+                # sample: a key renamed, a figure made text. Such a line is
+                # counted here, not met as a traceback later, and a sample
+                # that cannot be shown is never kept as the one to show.
                 try:
                     r = json.loads(line)
-                except ValueError:
-                    continue
-                if "mem" not in r:
+                    if "ev" in r:
+                        continue                 # start, exit, stop
+                    t, g = r["t"], r["mem"].get("GPUActive", 0)
+                    # The figure the peak is chosen by: a renamed key read as
+                    # 0, and a digit made "e" a float, each without a word.
+                    if type(g) is not int or not r["mem"].keys() <= set(MEMINFO_KEYS):
+                        raise ValueError("not the figures the sampler writes")
+                    peaks = peak is None or g > peak["mem"].get("GPUActive", 0)
+                    names = "drm" in r and (named is None
+                                            or g > named["mem"].get("GPUActive", 0))
+                    if peaks or names:
+                        fmt(r)
+                    cids = set()
+                    for c in r.get("drm", ()):
+                        try:
+                            cids.add(int(c.get("cid")))
+                        except (TypeError, ValueError, OverflowError):
+                            pass                 # a node with no accounting has none
+                except (ValueError, LookupError, TypeError, AttributeError):
+                    unread += 1
                     continue
                 n += 1
-                first = first or r["t"]
-                last = r["t"]
-                g = r["mem"].get("GPUActive", 0)
-                if peak is None or g > peak["mem"].get("GPUActive", 0):
+                first = first or t
+                last = t
+                if peaks:
                     peak = r
-                if "drm" in r and (named is None
-                                   or g > named["mem"].get("GPUActive", 0)):
+                if names:
                     named = r
-                for c in r.get("drm", ()):
-                    if c.get("cid") is not None:
-                        try:
-                            seen_cids.add(int(c["cid"]))
-                        except (TypeError, ValueError):
-                            pass
+                seen_cids |= cids
+    skipped = (f" ({unread} unreadable line{'' if unread == 1 else 's'} skipped)"
+               if unread else "")
     if peak is None:
-        print(f"no samples in {path}", file=sys.stderr)
+        print(f"no samples in {path}{skipped}", file=sys.stderr)
         return 1
-    print(f"{n} samples, {first} .. {last}\npeak GPUActive sample:\n")
+    print(f"{n} samples, {first} .. {last}{skipped}\npeak GPUActive sample:\n")
     print(fmt(peak))
     if "drm" not in peak and named is not None:
         print("\nhighest sample that has attribution:\n")
@@ -535,6 +589,12 @@ def main():
     ap.add_argument("--once", action="store_true", help="one sample to stdout")
     ap.add_argument("--report", metavar="LOG", help="summarise an existing log")
     a = ap.parse_args()
+    # A character the terminal cannot show is printed as its escape, not met
+    # as a traceback: U+FFFD from a damaged byte, a name outside ASCII on an
+    # ASCII terminal. (A test's StringIO has no reconfigure.)
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure:
+        reconfigure(errors="backslashreplace")
 
     if a.report:
         return report(a.report)

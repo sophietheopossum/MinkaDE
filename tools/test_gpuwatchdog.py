@@ -140,10 +140,12 @@ class Clock:
         return time.strftime(fmt, time.gmtime(self.now))
 
 
-class Fence:
+class Fence(unittest.TestCase):
     """Fails the test for a file or directory the watchdog would make outside
     self.root: a bug that writes elsewhere would otherwise write to this
     machine, in the directory the suite was started from."""
+
+    root: str   # each test's temp dir, which its setUp() makes
 
     def fenced(self, path, mode="w"):
         if set(mode) & set("wax+") and not os.path.abspath(path).startswith(self.root + "/"):
@@ -198,6 +200,8 @@ class WatchdogCase(Fence, unittest.TestCase):
         self.spawned = patch(subprocess, "run",
                              return_value=subprocess.CompletedProcess([], 0, "", ""))
         self.notify = patch(gpuwatchdog, "notify")
+        # A real mlockall() here would lock the test run's own memory.
+        self.locked = patch(gpuwatchdog, "lock_memory", return_value=None)
         patch(gpuwatchdog, "write_behind", self._write_behind)
         if self.inline_walks:
             patch(gpuwatchdog.Walker, "_spawn", lambda walker: self._spawn(walker))
@@ -402,6 +406,29 @@ class Attribution(WatchdogCase):
         for raw in (b"hellfire\xc3", b"\xffhellfire", b"hell\xfffire"):
             self.spawn(OTHER, raw, drm(29, "4096 KiB"))
             self.assertIsNone(gpuwatchdog.pick_target({"hellfire"}, {OTHER: 4096}), raw)
+
+    # The kernel ends a comm with one newline, and that is all that may go:
+    # stripped, each of these read as hellfire and was a target.
+    def test_allowlisted_name_with_spaces_or_a_newline_is_no_target(self):
+        for raw in (b" hellfire", b"hellfire ", b"\thellfire", b"hellfire\n",
+                    b"hellfire\r", b"\nhellfire"):
+            self.spawn(OTHER, raw, drm(29, "4096 KiB"))
+            self.assertIsNone(gpuwatchdog.pick_target({"hellfire"}, {OTHER: 4096}), raw)
+        self.spawn(OTHER, "hellfire", drm(29, "4096 KiB"), start=42514)
+        self.assertEqual(gpuwatchdog.pick_target({"hellfire"}, {OTHER: 4096}),
+                         (OTHER, 4096, "hellfire"))
+        # Same PID, same start time, renamed since: not the process pinned.
+        write(f"{self.root}/proc/{OTHER}/comm", b"hellfire \n")
+        self.assertFalse(gpuwatchdog._same_process(OTHER, "hellfire", "42514"))
+
+    # What does not print is read as its escape, so a name keeps to its line.
+    def test_name_that_does_not_print_is_read_as_its_escapes(self):
+        for raw, read_as in ((b"a\nb", "a\\nb"), (b"\x1b[2Jtab\there", "\\x1b[2Jtab\\there"),
+                             ("x\u2028y".encode(), "x\\u2028y"), (b" floorp ", " floorp "),
+                             # A byte that is not UTF-8 reads as it does alone.
+                             (b"\xff\r", "\\xff\\r")):
+            self.spawn(OTHER, raw)
+            self.assertEqual(gpuwatchdog._comm(OTHER), read_as, raw)
 
     # A name that is UTF-8 and outside ASCII is read as itself.
     def test_name_outside_ascii_is_read_as_itself(self):
@@ -739,6 +766,21 @@ class Escalation(WatchdogCase):
         with open(os.path.join(self.capture_dir, capture), "rb") as handle:
             self.assertIn(f"{OTHER} fenêtre ".encode("utf-8"), handle.read())
 
+    # A name is whatever its process chose, newlines included. Now that only
+    # the kernel's newline goes, this one (15 bytes, all a comm holds) would,
+    # printed as it is, begin a line of the table with the header of a stage
+    # that signalled. A count of those by the line's start would take it for
+    # one; one by whole lines (`grep -x`) would not.
+    def test_client_name_cannot_add_a_line_to_the_capture(self):
+        self.spawn(OTHER, b"\ndry-run: False", drm(29, "4096 KiB"))
+        self.meminfo(gpu=8, avail=1)
+        self.watch("--dry-run", seconds=120)
+        self.assertEqual(self.captured(), ["reason: critical", "reason: warn"])
+        for name in _listdir(self.capture_dir):
+            text = read(os.path.join(self.capture_dir, name))
+            self.assertNotIn("\ndry-run: False", text, name)
+            self.assertIn(f"{OTHER} \\ndry-run: False ", text, name)
+
     def test_dry_run_reports_and_never_signals(self):
         self.meminfo(gpu=8, avail=1)
         self.watch("--dry-run", seconds=600)
@@ -934,6 +976,83 @@ class Escalation(WatchdogCase):
         (warning,) = self.logged("WARNING")
         self.assertIn("CAP_SYS_PTRACE", warning)
 
+    # The journal makes an entry of each line: printed as it is, this name
+    # (15 bytes) wrote one that reads as the watchdog's heartbeat.
+    def test_name_in_a_log_line_keeps_to_it(self):
+        self.spawn(OTHER, b"x\nalive: forged")
+        self.denied.add(f"/proc/{OTHER}/fdinfo")
+        self.watch(seconds=1)
+        (warning,) = self.logged("WARNING")
+        self.assertIn("(e.g. x\\nalive: forged(5000003))", warning)
+        self.assertEqual([m for _, m in self.journal if "\n" in m], [])
+
+    # A target is compared with the name as read, escapes and all. One that
+    # does not print never matched its own process, one with a backslash in
+    # it could match another (this one, a tab read as \t), one past 15 bytes
+    # never matches at all (Benutzeroberflä is 15 characters and 16 bytes),
+    # and an empty one matches each process whose name cannot be read: each
+    # is left out, and said so. 15 bytes, the most a comm holds, are a target.
+    def test_target_that_cannot_match_as_written_is_left_out_loudly(self):
+        self.spawn(OTHER, b"fire\tfox", drm(29, "8388608 KiB"))
+        self.meminfo(gpu=8, avail=1)
+        self.on_term = self.quits
+        self.watch("--target", "hellfire", "--target", "fire\\tfox", "--target", "fire\tfox",
+                   "--target", "Isolated Web Con", "--target", "Isolated Web Co",
+                   "--target", "Benutzeroberflä", "--target", "€€€€€",
+                   "--target", "", seconds=120)
+        (warning,) = self.logged("WARNING")
+        self.assertIn("ignoring --target ['', 'Benutzeroberflä', 'Isolated Web Con', "
+                      "'fire\\tfox', 'fire\\\\tfox']", warning)
+        self.assertIn("targets=['Isolated Web Co', 'hellfire', '€€€€€']",
+                      self.logged("armed")[0])
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+
+    # A name outside ASCII is a target like any other.
+    def test_target_outside_ascii_is_armed_and_signalled(self):
+        self.spawn(OTHER, "fenêtre", drm(29, "8388608 KiB"))
+        self.meminfo(gpu=8, avail=1)
+
+        def quits():
+            self.exit(OTHER)
+            self.meminfo(gpu=1.9, avail=6)
+
+        self.on_term = quits
+        self.watch("--target", "hellfire", "--target", "fenêtre", seconds=120)
+        self.assertEqual(self.logged("WARNING"), [])
+        self.assertEqual(self.signals, [(OTHER, SIGTERM)])
+
+    # What the output cannot carry is printed as its escape: a print that
+    # raised, on a terminal or a journal stream that is not UTF-8, ended it.
+    def test_once_on_an_ascii_terminal(self):
+        self.spawn(OTHER, "fenêtre", drm(29, "8388608 KiB"))
+        terminal = io.TextIOWrapper(io.BytesIO(), encoding="ascii")
+        with mock.patch.object(sys, "argv", ["gpuwatchdog", "--once", "--target", "fenêtre"]), \
+                contextlib.redirect_stdout(terminal):
+            self.assertEqual(gpuwatchdog.main(), 0)
+        terminal.flush()
+        self.assertIn(b"largest target: (5000003, 8388608, 'fen\\xeatre')",
+                      terminal.buffer.getvalue())
+
+    # Before the first thread: once one has run, glibc's arenas put the
+    # address space past any small limit, and a walk is a thread.
+    def test_memory_is_locked_before_the_first_walk(self):
+        order = []
+        self.locked.side_effect = lambda: order.append("lock")
+        with mock.patch.object(gpuwatchdog, "gpu_clients",
+                               side_effect=lambda: order.append("walk") or {}):
+            self.watch(seconds=1)
+        self.assertEqual(order[:2], ["lock", "walk"])
+        self.assertEqual(self.logged("memory locked"), ["memory locked"])
+
+    def test_memory_that_cannot_be_locked_costs_only_a_line(self):
+        self.locked.return_value = "Cannot allocate memory"
+        self.meminfo(gpu=8, avail=1)
+        self.on_term = self.quits
+        self.watch(seconds=120)
+        (note,) = self.logged("note: memory not locked (Cannot allocate memory)")
+        self.assertIn("LimitMEMLOCK=infinity", note)
+        self.assertEqual(self.signals, [(BROWSER, SIGTERM)])
+
     def test_boot_before_any_drm_client_is_not_a_warning(self):
         self.exit(BROWSER)
         self.exit(COMPOSITOR)
@@ -947,6 +1066,7 @@ class Escalation(WatchdogCase):
             self.assertEqual(gpuwatchdog.main(), 0)
         self.assertIn("GPUActive: 1.90 GiB", out.getvalue())
         self.assertIn("hellfire", out.getvalue())
+        self.locked.assert_not_called()
 
 
 class ShippedUnit(WatchdogCase):
@@ -966,6 +1086,12 @@ class ShippedUnit(WatchdogCase):
         self.runaway("gpuwatchdog-dryrun.conf")
         self.assertTrue(self.logged("dry-run:"))
         self.assertEqual(self.signals, [])
+
+    # The script locks its whole address space, 26 MB at start-up, which
+    # systemd's default limit of 8 MB refuses.
+    def test_unit_lets_the_watchdog_lock_its_memory(self):
+        self.assertIn("LimitMEMLOCK=infinity",
+                      read(os.path.join(HERE, "gpuwatchdog.service")).splitlines())
 
 
 class Capture(WatchdogCase):
@@ -1006,6 +1132,18 @@ class Capture(WatchdogCase):
         self.assertIn("--- meminfo ---\nMemTotal:", text)
         self.assertIn(f"--- process {BROWSER} ---\n[status]\nName:\thellfire\n", text)
         self.assertIn("[wchan]\nfutex_do_wait\n[stack]\n[<0>] futex_do_wait+", text)
+
+    # status escapes only a newline and a backslash in Name, and the target
+    # can rename itself between the walk and the snapshot: this one's \r
+    # began a line, "dry-run: False" in a rehearsal's capture.
+    def test_target_renamed_since_the_walk_keeps_to_its_line(self):
+        self.spawn(BROWSER, "hellfire", drm(28, "7340036 KiB"))
+        write(f"{self.root}/proc/{BROWSER}/status",
+              b"Name:\t\rdry-run: False\nState:\tS (sleeping)\n")
+        _, text = gpuwatchdog.snapshot(self.capture_dir, "critical", "GPUActive=8.00 GiB",
+                                       (BROWSER, 7340036, "hellfire"), True, {})
+        self.assertIn("[status]\nName:\t\\rdry-run: False\nState:\tS (sleeping)\n", text)
+        self.assertNotIn("\r", text)
 
     # Each `cat` a capture used to run was a fork and an exec, with memory
     # short and, at the critical stage, the signal still to send.
@@ -1065,6 +1203,47 @@ class Threaded(WatchdogCase):
         self.assertEqual(latest.target, (BROWSER, 2000, "hellfire"))
         self.assertEqual(walker.caveat(), "")
         self.assertEqual(self.opened.count(f"/proc/{BROWSER}/fdinfo/0"), 2)
+
+
+class LockMemory(unittest.TestCase):
+    """lock_memory() against a stand-in for libc: the real call would lock
+    this test run's own memory."""
+
+    def lock(self, result, error=0):
+        libc = mock.Mock()
+        libc.mlockall.return_value = result
+        with mock.patch("ctypes.CDLL", return_value=libc) as cdll, \
+                mock.patch("ctypes.get_errno", return_value=error):
+            answer = gpuwatchdog.lock_memory()
+        cdll.assert_called_once_with(None, use_errno=True)
+        return libc, answer
+
+    # MCL_CURRENT (1) alone. MCL_FUTURE (2) would lock each later mapping,
+    # a new thread's whole stack among them, and MCL_ONFAULT (4) would leave
+    # out the code that has not run yet, which is the code a stage runs.
+    def test_locks_what_is_mapped_now_and_nothing_later(self):
+        libc, answer = self.lock(0)
+        libc.mlockall.assert_called_once_with(1)
+        self.assertIsNone(answer)
+
+    def test_refusal_says_why(self):
+        for error in (errno.ENOMEM, errno.EPERM):
+            with self.subTest(error=errno.errorcode[error]):
+                _, answer = self.lock(-1, error)
+                self.assertEqual(answer, os.strerror(error))
+
+    # Nor does escaping a name import anything, as encoding it did: the codec
+    # was read from the disk at its first use, at a stage. In an interpreter
+    # of its own, since this one may hold that codec already.
+    def test_escaping_a_name_imports_nothing(self):
+        probe = ("import sys; sys.path.insert(0, sys.argv[1]); import gpuwatchdog; "
+                 "before = set(sys.modules); "
+                 "gpuwatchdog._printable(''.join(map(chr, (97, 27, 13, 0x200b, 0xe0001))), "
+                 "keep=chr(9) + chr(10)); "
+                 "sys.exit(sorted(set(sys.modules) - before) or None)")
+        done = subprocess.run([sys.executable, "-I", "-B", "-c", probe, HERE],
+                              capture_output=True, text=True, timeout=60)
+        self.assertEqual((done.returncode, done.stderr), (0, ""))
 
 
 class Behind(Fence, unittest.TestCase):

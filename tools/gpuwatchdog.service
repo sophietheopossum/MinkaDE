@@ -47,6 +47,13 @@ OOMScoreAdjust=-999
 # monitors system.slice here (see oomctl), so opt this cgroup out by name.
 ManagedOOMPreference=omit
 MemorySwapMax=0
+# MemorySwapMax= keeps its anonymous memory in; this keeps its code in too.
+# The script locks what it has mapped at start-up (lock_memory(), MCL_CURRENT),
+# and the kernel asks that the limit cover that whole address space: 26 MB on
+# 28/11/2026, all of it then in RAM. MemoryMax= below still bounds it. Under
+# systemd's default of 8 MB the script says "memory not locked" and runs as
+# it did.
+LimitMEMLOCK=infinity
 Nice=-5
 # It reads /proc and sends at most one signal; anything larger than this is a
 # bug in the watchdog, and being killed for it is the right outcome.

@@ -22,6 +22,7 @@ import errno
 import io
 import json
 import os
+import shutil
 import signal
 import sys
 import tempfile
@@ -284,6 +285,48 @@ class Sweep(SamplerCase):
         _, dbuf = gpumemwatch.scan_fds(True)
         self.assertEqual((dbuf["n_unique"], dbuf["by_comm"]), (1, {"app": [3 * 1024, 1]}))
 
+    # The kernel ends a comm with one newline, and that is all that may go.
+    # The log keeps the rest as it is: JSON can.
+    def test_name_is_logged_as_the_process_set_it(self):
+        self.spawn(OTHER + 1, b" floorp ", card(29, gtt="4096 KiB"))
+        self.spawn(OTHER + 2, b"a\nb\x1b[2J", card(30, gtt="4096 KiB"))
+        self.spawn(OTHER + 3, b"floorp\r", card(31, gtt="4096 KiB"))
+        self.main("--count", "1")
+        self.assertEqual(sorted(c["comm"] for c in self.samples()[0]["drm"]),
+                         [" floorp ", "a\nb\x1b[2J", "floorp\r"])
+
+    # A dma-buf's name is printed last in its fdinfo and as it is, and its
+    # holder may put line breaks in it. The first "size:" and "ino:" lines
+    # are the kernel's; these names' own (31 bytes at most, all a name holds)
+    # made this 4 MiB buffer 93 GiB, and the compositor's other buffer, so
+    # that the two counted once.
+    def test_dma_buf_name_cannot_rewrite_its_size_or_inode(self):
+        for forged in ("\nsize:\t99999999999\nino:\t900",
+                       "\x1csize:\t99999999999\x1cino:\t900",
+                       "\N{LINE SEPARATOR}size:\t99999999999\N{LINE SEPARATOR}ino:\t900"):
+            self.assertLessEqual(len(forged.encode()), 31)
+            with self.subTest(forged=forged):
+                for pid in (COMPOSITOR, OTHER + 1):
+                    shutil.rmtree(f"{self.root}/proc/{pid}", ignore_errors=True)
+                self.spawn(COMPOSITOR, "shoji_wm", dmabuf(900, 10))
+                link, fdinfo = dmabuf(901, 4)
+                self.spawn(OTHER + 1, "app", (link, f"{fdinfo}name:\t{forged}\n"))
+                _, dbuf = gpumemwatch.scan_fds(True)
+                self.assertEqual((dbuf["n_unique"], dbuf["kib"]), (2, 14 * 1024))
+                self.assertEqual(dbuf["by_comm"], {"shoji_wm": [10 * 1024, 1],
+                                                   "app": [4 * 1024, 1]})
+
+    # A link can make another file look like a dma-buf: one at "/dmabuf:x"
+    # in a mount namespace of its holder's own. Its fdinfo has no size line,
+    # and as a 0-byte buffer it zeroed the real one of its inode number.
+    def test_file_that_only_looks_like_a_dma_buf_is_not_counted(self):
+        self.spawn(COMPOSITOR, "shoji_wm", dmabuf(900, 10))
+        self.spawn(OTHER + 1, "app",
+                   ("/dmabuf:x", "pos:\t0\nflags:\t0100000\nmnt_id:\t31\nino:\t900\n"))
+        _, dbuf = gpumemwatch.scan_fds(True)
+        self.assertEqual(dbuf, {"n_unique": 1, "kib": 10 * 1024,
+                                "by_comm": {"shoji_wm": [10 * 1024, 1]}})
+
     def test_node_without_accounting_is_still_listed(self):
         self.spawn(OTHER, "MinkaFX", nvidia(), nvidia())
         clients, _ = gpumemwatch.scan_fds(False)
@@ -356,6 +399,18 @@ class Sweep(SamplerCase):
         self.assertIn("dma-buf: 2 unique buffers, 14.0 MiB", text)
         self.assertFalse(os.path.exists(self.log_path))
 
+    # A name goes to a terminal, and one that held an escape sequence acted
+    # on it: this one clears the screen.
+    def test_once_shows_what_does_not_print_as_its_escapes(self):
+        self.spawn(OTHER + 1, b"a\nb\x1b[2J", card(29, gtt="4096 KiB"))
+        # A node is named by its link, which a process in a mount namespace
+        # of its own can make say anything under /dev/dri/.
+        self.spawn(OTHER + 2, b"\x1b[2J", ("/dev/dri/\x1b[2J", nvidia()[1]))
+        text = self.main("--once")
+        self.assertRegex(text, r"\n    a\\nb\\x1b\[2J +\[5000004\] cid=29 ")
+        self.assertRegex(text, r"\n    \\x1b\[2J +\[5000005\] \\x1b\[2J +\(driver exports no")
+        self.assertNotIn("\x1b", text)
+
 
 class LogFile(SamplerCase):
     def log(self, cap):
@@ -394,7 +449,7 @@ class Report(SamplerCase):
                      "tgtt": 4096} for cid in cids]}) + "\n"
 
     def report(self, older, newer):
-        os.makedirs(os.path.dirname(self.log_path))
+        os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
         if older is not None:
             write(self.log_path + ".1", older)
         write(self.log_path, newer)
@@ -422,7 +477,120 @@ class Report(SamplerCase):
             + '{"t":"2026-10-10T07:09:40+0100","mono":12.5,"mem":{"GPUAc\n'
             + self.sample("2026-10-10T07:09:55+0100", 1.6, 7)
             + '{"t":"2026-10-10T07:10:10+0100","ev":"exit","samples":2}\n'))
-        self.assertIn("2 samples, ", text)
+        self.assertIn("2 samples, 2026-10-10T07:09:25+0100 .. 2026-10-10T07:09:55+0100 "
+                      "(1 unreadable line skipped)\n", text)
+
+    # The sampler writes only ASCII, so a byte outside it is damage. Read
+    # strictly, the first one ended the report with a traceback.
+    def test_report_reads_past_a_damaged_byte(self):
+        named = self.sample("2026-10-10T07:09:40+0100", 6.5, 7).replace("floorp", "flo\x00rp")
+        text = self.report(
+            self.sample("2026-10-10T07:09:25+0100", 1.5, 7).encode()
+            # In a name: the sample is still read, with U+FFFD for the byte.
+            + named.encode().replace(b"\x00", b"\xff")
+            # In the figures: its line is lost, and only that line.
+            + self.sample("2026-10-10T07:09:55+0100", 9.5, 7)
+            .replace('"mono": 1.0', '"mono": 1.\x00').encode().replace(b"\x00", b"\xff")
+            + b"\xfe\xff\n" + b"42\n",
+            self.sample("2026-10-10T07:10:10+0100", 1.6, 7))
+        self.assertEqual(self.status, 0)
+        self.assertIn("3 samples, 2026-10-10T07:09:25+0100 .. 2026-10-10T07:10:10+0100 "
+                      "(3 unreadable lines skipped)\n", text)
+        self.assertRegex(text, r"07:09:40\+0100 +GPUActive +6\.500 GiB")
+        self.assertIn("    flo\ufffdrp ", text)
+
+    # ...and a byte in a key, or one that changes a figure, can leave JSON
+    # that parses and is no sample the sampler wrote.
+    def test_report_reads_past_a_damaged_key(self):
+        good = self.sample("2026-10-10T07:09:25+0100", 1.5, 7)
+        def damaged(gpu, old, new, *cids):
+            return self.sample("2026-10-10T07:09:40+0100", gpu,
+                               *(cids or (7,))).replace(old, new, 1)
+        # The 9.x lines would each be the peak, and none can be shown, so
+        # each is unread: the peak shown is the 2.5 GiB sample, whose stray
+        # \r JSON takes for a space.
+        text = self.report(None, good
+                           + damaged(9.1, '"t"', '"\ufffd"')
+                           + damaged(9.2, '"zram"', '"z\ufffdam"')
+                           + damaged(9.3, '"comm"', '"c\ufffdmm"')
+                           + damaged(9.4, '"mem"', '"m\ufffdm"')
+                           # As the peak, text would have made every later
+                           # comparison raise, so every later sample unread.
+                           + damaged(9.5, str(int(9.5 * GIB)), '"9\ufffd"')
+                           + damaged(9.6, '"drm": [', '"drm": [1, ')
+                           # Read as 0, and as infinity: either would have
+                           # put a lower peak, or a false one, in its place.
+                           + damaged(9.7, '"GPUActive"', '"GPUAct\ufffdve"')
+                           + damaged(9.8, '"GPUActive": 10', '"GPUActive": 1e')
+                           + damaged(2.5, '"mono": 1.0', '"mono":\r1.0')
+                           # Not the peak: only a client id is lost from the
+                           # first two, so 10 is seen, and the third is no
+                           # sample, so 9 is not.
+                           + damaged(1.2, '"cid"', '"c\ufffdd"', 7, 10)
+                           + damaged(1.1, '"cid": "7"', '"cid": Infinity')
+                           + damaged(1.3, '"drm": [', '"drm": [1, ', 7, 9)
+                           + self.sample("2026-10-10T07:10:10+0100", 1.6, 7, 8))
+        self.assertEqual(self.status, 0)
+        self.assertIn("5 samples, 2026-10-10T07:09:25+0100 .. 2026-10-10T07:10:10+0100 "
+                      "(9 unreadable lines skipped)\n", text)
+        self.assertRegex(text, r"07:09:40\+0100 +GPUActive +2\.500 GiB")
+        self.assertIn("saw 3 of ids 7..10", text)
+        self.assertIn("NEVER SAMPLED: 1 client id(s) [9]", text)
+
+    # A sample is checked when it would be shown: as the peak, or as the
+    # highest that has attribution, either alone. The first is a blind
+    # 8.9 GiB here, the second 6.0 GiB, and each sample above is damaged.
+    def test_report_checks_the_peak_and_the_named_sample_alone(self):
+        def blind(t, gpu):
+            return json.dumps({
+                "t": t, "mono": 2.0, "mem": {"GPUActive": int(gpu * GIB)}, "zram": {},
+                "walk": {"late_s": 52.0, "pid": 1529, "comm": "shoji_wm", "fd": 41}}) + "\n"
+        text = self.report(None, self.sample("2026-10-13T05:40:00+0100", 6.0, 7)
+                           + blind("2026-10-13T05:41:00+0100", 8.9)
+                           # Not the peak, and would be the highest named.
+                           + self.sample("2026-10-13T05:42:00+0100", 7.0, 7)
+                           .replace('"comm"', '"c\ufffdmm"')
+                           # The peak, with no attribution to name.
+                           + blind("2026-10-13T05:43:00+0100", 9.5)
+                           .replace('"zram"', '"z\ufffdam"'))
+        self.assertEqual(self.status, 0)
+        self.assertIn("2 samples, 2026-10-13T05:40:00+0100 .. 2026-10-13T05:41:00+0100 "
+                      "(2 unreadable lines skipped)\n", text)
+        self.assertRegex(text, r"05:41:00\+0100 +GPUActive +8\.900 GiB")
+        self.assertRegex(text, r"highest sample that has attribution:\n\n"
+                               r"2026-10-13T05:40:00\+0100 +GPUActive +6\.000 GiB")
+
+    # A terminal that cannot show U+FFFD gets its escape, not a traceback.
+    def test_report_on_an_ascii_terminal(self):
+        os.makedirs(os.path.dirname(self.log_path))
+        write(self.log_path, self.sample("2026-10-10T07:09:25+0100", 1.5, 7).encode()
+              .replace(b"floorp", b"fl\xffrp"))
+        terminal = io.TextIOWrapper(io.BytesIO(), encoding="ascii")
+        with contextlib.redirect_stdout(terminal), \
+                mock.patch.object(sys, "argv", ["gpumemwatch", "--report", self.log_path]):
+            self.assertEqual(gpumemwatch.main(), 0)
+        terminal.flush()
+        self.assertIn(b"    fl\\ufffdrp ", terminal.buffer.getvalue())
+
+    # A comm that is not text, as only a hand-edited log can hold, prints as
+    # it did before names went through _printable().
+    def test_report_of_a_name_that_is_not_text(self):
+        text = self.report(None, self.sample("2026-10-10T07:09:25+0100", 1.5, 7)
+                           .replace('"floorp"', "42"))
+        self.assertEqual(self.status, 0)
+        self.assertRegex(text, r"\n    42 +\[      1\] cid=7 ")
+
+    # A name goes to a terminal: as its escapes, whatever the log held.
+    def test_report_shows_what_does_not_print_as_its_escapes(self):
+        blind = json.dumps({
+            "t": "2026-10-13T05:42:09+0100", "mono": 2.0,
+            "mem": {"GPUActive": int(8.9 * GIB)}, "zram": {},
+            "walk": {"late_s": 52.0, "pid": 1529, "comm": "\x1b[2J", "fd": 41}}) + "\n"
+        text = self.report(None, self.sample("2026-10-10T07:09:25+0100", 1.5, 7)
+                           .replace("floorp", "\\u001b]0;pwned\\u0007") + blind)
+        self.assertIn("    \\x1b]0;pwned\\x07 ", text)
+        self.assertIn("reading \\x1b[2J[1529] fd 41", text)
+        self.assertNotIn("\x1b", text)
 
     def test_report_names_client_ids_it_never_sampled(self):
         text = self.report(None, self.sample("2026-10-10T07:09:25+0100", 1.5, 7, 9, 12))
@@ -449,6 +617,9 @@ class Report(SamplerCase):
         text = self.report(None, '{"t":"2026-10-10T07:09:25+0100","ev":"start"}\n')
         self.assertEqual(self.status, 1)
         self.assertIn("no samples", text)
+        text = self.report(None, '{"t":"2026-10-10T07:09:25+0100","mono":1.0,"me\n')
+        self.assertEqual(self.status, 1)
+        self.assertIn(f"no samples in {self.log_path} (1 unreadable line skipped)", text)
 
 
 class Daemon(SamplerCase):
