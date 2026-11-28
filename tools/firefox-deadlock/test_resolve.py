@@ -146,6 +146,15 @@ SHAPE(loaded_twice, "lea run+%c0(%%rip),%%rax\n\tmov %%rax,sink(%%rip)\n\t"
 SHAPE(address_replaced, SECOND_AT SECOND_LENGTH "mov %%rax,%%rdi\n\tcall take")
 SHAPE(branch_between, SECOND_LENGTH SECOND_AT "jmp 1f\n1:\n\tcall take")
 SHAPE(call_too_far, SECOND_AT SECOND_LENGTH "nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tcall take")
+/* A jmp through the GOT leaves the function, as a tail call to an exported function does
+   (the linker would make one to a hidden function a direct jmp); one through a register
+   stays in it, as a switch's does. */
+SHAPE(got_tail_call, SECOND_LENGTH SECOND_AT "jmp *anchor@GOTPCREL(%%rip)")
+SHAPE(switch_jump, SECOND_AT SECOND_LENGTH "jmp *%%rax")
+/* One address passed with three lengths, the shortest neither first nor last. */
+SHAPE(shortest_length, SECOND_AT SECOND_LENGTH "call take\n\t"
+                       SECOND_AT "mov $6,%%esi\n\tcall take\n\t"
+                       SECOND_AT SECOND_LENGTH "call take")
 
 /* A printf-style call: %al holds a count of vector registers, %esi an argument. */
 __attribute__((used)) static const char c_format[] = "\0    0x%08x (Unknown1)\n";
@@ -165,6 +174,12 @@ void c_length(void) { report(select_multiple + 1, LEN("select-multiple")); }
 void multiple(void) { sink = select_multiple + 1 + LEN("select-"); }
 static const char odd_run[] = "\0even" "an odd literal!" "and the run goes on";
 void odd_length(void) { take(odd_run + 1 + LEN("even"), LEN("an odd literal!")); }
+
+/* Lengths at the shortest a literal may be: 5 is believed, 4 is not. Neither literal comes
+   just after a NUL, which would keep the NUL reading whatever the length. */
+static const char short_run[] = "\0" "Some(" "Error" "None" " and the run goes on";
+void length_five(void) { take(short_run + 1 + LEN("Some("), LEN("Error")); }
+void length_four(void) { take(short_run + 1 + LEN("Some(") + LEN("Error"), LEN("None")); }
 
 /* Rust's field names, run together: one cut between two letters, where code loads the
    next. That load goes into %r8, as a lea with REX.R. */
@@ -213,9 +228,10 @@ CFLAGS = [
 FUNCTIONS = (["anchor", "paths", "plain", "silent", "caller", "filtered", "crowded",
               "recursive", "take", "report", "rusty", "rust_path", "cpp_report",
               "canvas_method", "length_after", "prefixed_call", "tail_call", "loaded_twice",
-              "address_replaced", "branch_between", "call_too_far", "variadic",
+              "address_replaced", "branch_between", "call_too_far", "got_tail_call",
+              "switch_jump", "shortest_length", "variadic",
               "panic_message", "next_panic", "c_length", "multiple", "odd_length",
-              "field_name", "next_field",
+              "length_five", "length_four", "field_name", "next_field",
               "uses_rust_path"]
              + [f"callee{i:02}" for i in range(CALLEES)] + ["fan", "last"])
 
@@ -264,9 +280,9 @@ class Resolve(unittest.TestCase):
         cls.next = dict(zip(order, order[1:]))  # function start -> the next one's
 
     @staticmethod
-    def run_resolve(*args):
+    def run_resolve(*args, script=SCRIPT):
         return subprocess.run(
-            [sys.executable, "-I", "-B", SCRIPT, *args],
+            [sys.executable, "-I", "-B", script, *args],
             capture_output=True, text=True, timeout=120,
             env=dict(os.environ, LC_ALL="C", NO_COLOR="1"))
 
@@ -275,9 +291,9 @@ class Resolve(unittest.TestCase):
         blank lines or the first, which names the library."""
         return self.resolve_args(*(f"0x{a:x}" for a in addresses))
 
-    def resolve_args(self, *offsets):
+    def resolve_args(self, *offsets, script=SCRIPT):
         """The same, for OFFSET arguments as she would type them."""
-        done = self.run_resolve("--lib", self.lib, *offsets)
+        done = self.run_resolve("--lib", self.lib, *offsets, script=script)
         self.assertEqual((done.returncode, done.stderr), (0, ""))
         lines = [line for line in done.stdout.splitlines() if line]
         self.assertEqual(lines[0], f"{self.lib}: build-id {BUILD_ID}")
@@ -402,6 +418,32 @@ class Resolve(unittest.TestCase):
             expected += [self.header(self.at[name], name), line]
         self.assertEqual(self.resolve(*(self.at[name] for name, _ in shapes)), expected)
 
+    def test_a_jmp_through_the_got_is_a_tail_call_and_one_through_a_register_is_not(self):
+        got, switch = self.at["got_tail_call"], self.at["switch_jump"]
+        self.assertEqual(self.resolve(got, switch), [
+            self.header(got, "got_tail_call"),
+            "    str: 'second literal'",
+            self.header(switch, "switch_jump"),
+            "    str: 'second literalservo/components/style/gecko/wrapper.rs'",
+        ])
+
+    def test_an_address_passed_with_several_lengths_is_read_to_the_shortest(self):
+        address = self.at["shortest_length"]
+        self.assertEqual(self.resolve(address), [
+            self.header(address, "shortest_length"),
+            "    str: 'second'",
+        ])
+
+    def test_a_length_shorter_than_five_is_not_believed(self):
+        # Like a NUL-terminated string shorter than five: as likely stray bytes as text.
+        five, four = self.at["length_five"], self.at["length_four"]
+        self.assertEqual(self.resolve(five, four), [
+            self.header(five, "length_five"),
+            "    str: 'Error'",
+            self.header(four, "length_four"),
+            "    str: 'None and the run goes on'",
+        ])
+
     def test_a_panic_message_is_read_to_half_its_tagged_length(self):
         # Read to its NUL, it is the whole run, from "assertion" to "goes on".
         address = self.at["panic_message"]
@@ -484,6 +526,22 @@ class Resolve(unittest.TestCase):
             self.assertEqual((done.returncode, done.stdout), (2, ""), frame)
             self.assertTrue(done.stderr.endswith(
                 f"error: argument OFFSET: invalid offset value: '{frame}'\n"), done.stderr)
+
+    def test_run_through_a_symlink_it_finds_fde_py_beside_the_link_or_else_itself(self):
+        start = self.at["plain"]
+        expected = self.resolve(start)
+        # A link in a directory with no fde.py, as on PATH: the one beside resolve.py.
+        alone = os.path.join(tempfile.mkdtemp(dir=self.tmp), "resolve")
+        os.symlink(SCRIPT, alone)
+        self.assertEqual(self.resolve_args(f"0x{start:x}", script=alone), expected)
+        # A link beside an fde.py of its own: that one comes first.
+        beside = os.path.join(tempfile.mkdtemp(dir=self.tmp), "resolve")
+        os.symlink(SCRIPT, beside)
+        with open(os.path.join(os.path.dirname(beside), "fde.py"), "w") as handle:
+            handle.write('raise SystemExit("the fde.py beside the link")\n')
+        done = self.run_resolve("--lib", self.lib, f"0x{start:x}", script=beside)
+        self.assertEqual((done.returncode, done.stdout, done.stderr),
+                         (1, "", "the fde.py beside the link\n"))
 
     def test_floorps_libxul_is_the_default(self):
         done = self.run_resolve("--help")
